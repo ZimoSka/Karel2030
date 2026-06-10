@@ -46,8 +46,31 @@ dialógy, i18n cez data-i18n, mock mód (?mock=1), vendor knižnice lokálne.
 **Overené v prehliadači:** mock mód (beh s opakuj, parse error dialóg) AJ
 reálny server end-to-end (`kym nie stena` cez WS, Karel došiel k stene,
 0 chýb v konzole). Diery kontraktu v static/NOTES.md.
-**Zostáva (T3.2):** učiteľský mód — nastavenia sveta UI, misie editor,
-„Zdieľaj žiakom" UI; otestovať žiacky mód s reálnym tokenom.
+**Zostáva → rozpísané v T3.2 nižšie (GUI parita s desktopom).**
+
+### T3.2 — Dorovnanie GUI funkcií voči desktop Karel 2010  🔴 AKTUÁLNE
+Vývoj a testovanie na **lokálnom Dockeri** (deploy odložený, viď „Odložené").
+Gap-analýza (web GUI má: beh/stop/reset, speed, príklady, 3D, inventár+počítadlá,
+dpad+5 akčných tlačidiel, CodeMirror editor + plochý zoznam príkazov, dialógy
+intro/mission/budget/limit/parse_error, i18n, disabled_cmds, direct ovládanie):
+
+Chýba oproti desktopu:
+- [ ] **A. Tlačidlá pohľadu kamery** (Def/Pred/Vrch/Bok) v navigátore
+- [ ] **B. Príkazový režim** — písané príkazy + log (desktop tab „Príkazovo")
+- [ ] **C. Filter príkazov** — strom kategórií (pohyb/štruktúry/podmienky/vlastné)
+      namiesto plochého zoznamu
+- [ ] **D. Nastavenia sveta (učiteľ)** — dialóg so 6 záložkami: Popis, Miestnosť
+      (rozmery, štart Karela, pohybové obmedzenia), Zásoby, Príkazy (zakázať),
+      Pohľad, Misia. Veľká položka.
+- [ ] **E. Editor misií (GoalCondition)** — súčasť D, záložka Misia
+- [ ] **F. Otvoriť/Uložiť program a svet** — menu/tlačidlá; load svetov cez API,
+      uloženie programu (workspace), export/import .karxml
+- [ ] **G. Prepínač jazyka** — UI jazyk + prog jazyk (dropdowny)
+- [ ] **H. Editácia miestnosti myšou** v 3D (klásť/brať tehly, steny, značky) —
+      učiteľská tvorba svetov; náročné, možno neskôr
+
+Poradie: rýchle výhry A+B+C (žiacky zážitok), potom veľké D+E (učiteľská tvorba),
+potom F+G, H zvážiť.
 
 ### T4 — Docker + deploy  🟡 build overený, nasadenie zostáva
 ✅ Dockerfile, docker-compose.yml, .dockerignore, GitHub Actions → ghcr.io,
@@ -59,11 +82,18 @@ beh end-to-end (state→started→step→finished, Karel došiel k stene).
 ✅ **GitHub Actions overené** — beh 27295518843 zelený: testy → buildx →
 push do `ghcr.io/zimoska/karel2030:latest` (+ :SHA), manifest potvrdený.
 (Staršie zlyhania boli prechodný Docker Hub timeout, nie chyba.)
-**Zostáva pre nasadenie:**
-- Package v ghcr.io je default **private** — pre `compose pull` na serveri buď
-  spraviť public (repo je public, jednoduché), alebo login tokenom
-- SSH kľúč na linux server + nasadenie (docker context / compose pull)
-- (drobnosť) actions bežia na Node 20 — pred sep 2026 bumpnúť verzie
+**Nasadenie → ODLOŽENÉ** (viď „Odložené na neskôr").
+
+---
+
+## ⏸ Odložené na neskôr (po dorovnaní GUI)
+
+- **Nasadenie na linux server** — SSH kľúč (root) + `docker context`/`compose pull`;
+  package v ghcr.io spraviť public alebo login tokenom; Node 20 → bump verzií actions.
+  CI/CD (build+push do ghcr.io) je hotové a overené, chýba len krok na serveri.
+- **Perzistentné zdieľanie žiackych liniek (UI)** — backend tok hotový a otestovaný
+  (assignment→linky→workspace, zápis do /data). Chýba učiteľské UI „Zdieľaj žiakom"
+  + žiacky link flow v prehliadači. Spraví sa po D (nastavenia sveta).
 
 ### T5 — Blockly editor  ⏸ po T3
 - Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
