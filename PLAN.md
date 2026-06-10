@@ -48,7 +48,7 @@ reálny server end-to-end (`kym nie stena` cez WS, Karel došiel k stene,
 0 chýb v konzole). Diery kontraktu v static/NOTES.md.
 **Zostáva → rozpísané v T3.2 nižšie (GUI parita s desktopom).**
 
-### T3.2 — Dorovnanie GUI funkcií voči desktop Karel 2010  🔴 AKTUÁLNE
+### T3.2 — Dorovnanie GUI funkcií voči desktop Karel 2010  ✅ HOTOVÉ (A–G)
 Vývoj a testovanie na **lokálnom Dockeri** (deploy odložený, viď „Odložené").
 Gap-analýza (web GUI má: beh/stop/reset, speed, príklady, 3D, inventár+počítadlá,
 dpad+5 akčných tlačidiel, CodeMirror editor + plochý zoznam príkazov, dialógy
@@ -60,22 +60,18 @@ Chýba oproti desktopu:
       ws.direct — hotové, overené
 - [x] **C. Filter príkazov** — filter input + skupiny (pohyb/štruktúry/podmienky)
       + „Tvoje príkazy" z editora — hotové, overené
-- [ ] **D. Nastavenia sveta (učiteľ)** — dialóg so 6 záložkami: Popis, Miestnosť
-      (rozmery, štart Karela, pohybové obmedzenia), Zásoby, Príkazy (zakázať),
-      Pohľad, Misia. Veľká položka.
-- [ ] **E. Editor misií (GoalCondition)** — súčasť D, záložka Misia
-- [ ] **F. Otvoriť/Uložiť svet a program**
-      - F1: otvoriť/uložiť svet na **lokálny disk** (.karxml) — pre učiteľa
-        (browser download + file upload)
-      - F2: úroveň **admin** — uložiť svet do **volume v kontajneri** (publikovať)
-      - F3: dropdown **„Predvyrobené svety"** — učiteľ si vyberie zo svetov
-        publikovaných pre všetkých (baked worlds/ + admin-uložené v data/worlds/)
-      - F4: otvoriť/uložiť **program** žiaka/učiteľa (.prg/text)
-      - vyžaduje backend: merge worlds/ + data/worlds/ v `/api/worlds`,
-        POST `/api/worlds` (admin) na publikovanie, rola admin na webe
-- [ ] **G. Prepínač jazyka** — UI jazyk + prog jazyk (dropdowny)
+- [x] **D. Nastavenia sveta (učiteľ)** — dialóg so 6 záložkami (settings.js),
+      end-to-end overené (resize, title, limity, zakázané príkazy, kamera)
+- [x] **E. Editor misií (GoalCondition)** — add/edit/remove podmienok (6 typov,
+      eval/when/op/negate, snapshot z aktuálneho stavu) — overené
+- [x] **F. Otvoriť/Uložiť svet a program** — F1 lokálny disk (.karxml), F2 admin
+      publish do volume, F3 dropdown predvyrobených svetov, F4 program ↔ súbor.
+      Backend: merge worlds/+data/worlds/, POST /api/worlds, WS export_world,
+      rola admin (?role=admin). Overené (publish AdminTest, load Bludisko).
+- [x] **G. Prepínač jazyka** — UI jazyk (localStorage) + prog jazyk (per-svet
+      cez applySettings) dropdowny; overené (EN UI + EN príkazy).
 
-Poradie: ✅ A+B+C (žiacky zážitok), → D+E (učiteľská tvorba), → F, → G.
+✅ **T3.2 GUI parita HOTOVÁ** (A–G). Web GUI dorovnané s desktop Karel 2010.
 
 > **Pozn.:** editácia miestnosti myšou v 3D NIE je v pláne — nebola ani
 > v pôvodnom Karlovi. Učiteľ skladá svet priamym ovládaním (B) + uloží (F).

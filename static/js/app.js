@@ -16,6 +16,7 @@
   const $ = (id) => document.getElementById(id);
 
   let T = {};                       // ui preklady
+  let uiLang = localStorage.getItem('karel_ui_lang') || 'sk';
   const t = (k, dflt) => T[k] || dflt || k;
   let primaryKw = {};               // TOKEN → primárne slovo
   let state = null;                 // posledný state JSON
@@ -167,6 +168,7 @@
     if (reason === 'connect' || reason === 'load') {
       // prog jazyk sveta → editor + zoznam príkazov
       const code = (st.settings && st.settings.prog_lang) || 'sk';
+      const psel = $('prog-lang'); if (psel && psel.value !== code) psel.value = code;
       api.progLang(code).then(lang => {
         primaryKw = lang.primary || {};
         editor.setLang(lang);
@@ -293,6 +295,40 @@
     KarelSettings.open({ state, t, onApply: (payload) => ws.applySettings(payload) });
   };
 
+  /* G. Prepínač jazyka (UI + prog) ------------------------------------- */
+  function fillSelect(sel, items, current) {
+    sel.innerHTML = '';
+    items.forEach(it => { const o = document.createElement('option'); o.value = it.code; o.textContent = it.name; if (it.code === current) o.selected = true; sel.appendChild(o); });
+  }
+  function loadLangDropdowns() {
+    api.uiLangs().then(ls => {
+      fillSelect($('ui-lang'), ls, uiLang);
+      $('ui-lang').onchange = (e) => {
+        uiLang = e.target.value; localStorage.setItem('karel_ui_lang', uiLang);
+        api.uiStrings(uiLang).then(s => { T = s; applyI18n(); updateCmdsList(); }).catch(() => {});
+      };
+    }).catch(() => {});
+    if (!STUDENT) api.progLangs().then(ls => {
+      const cur = (state && state.settings && state.settings.prog_lang) || 'sk';
+      fillSelect($('prog-lang'), ls, cur);
+      $('prog-lang').onchange = (e) => {
+        const code = e.target.value;
+        ws.applySettings({ settings: { prog_lang: code } });   // ulož do sveta
+        api.progLang(code).then(lang => {                       // okamžite prelaď editor + zoznam
+          primaryKw = lang.primary || {};
+          editor.setLang(lang); updateCmdsList(lang);
+          rebuildActionTitles();
+        }).catch(() => {});
+      };
+    }).catch(() => {});
+  }
+  // tlačidlá priameho ovládania majú title = primárne slovo (pre ws.direct)
+  function rebuildActionTitles() {
+    document.querySelectorAll('#dpad [data-cmd]').forEach(b => {
+      const w = primaryKw[b.dataset.cmd]; if (w) b.title = w;
+    });
+  }
+
   /* F. Otvoriť/Uložiť svet a program ----------------------------------- */
   let _pendingExport = null;   // callback(karxml) po world_export správe
   function download(name, text, mime) {
@@ -363,11 +399,12 @@
 
   /* ---------- štart ---------- */
   async function boot() {
-    // UI preklady
+    // UI preklady (jazyk z localStorage)
     try {
-      T = await api.uiStrings('sk');
+      T = await api.uiStrings(uiLang);
       applyI18n();
     } catch (e) { /* HTML defaulty sú slovenské */ }
+    loadLangDropdowns();
 
     if (STUDENT) {
       document.body.classList.add('student');     // žiak: bez nastavení (server vynucuje)
