@@ -53,22 +53,41 @@
         </tbody>
       </table>
       <div id="karel-pos"></div>
+      <div id="view-presets">
+        <button class="view-btn" data-az="225" data-el="28" data-i18n="nav.view_def">↙ Def</button>
+        <button class="view-btn" data-az="180" data-el="20" data-i18n="nav.view_front">↖ Pred</button>
+        <button class="view-btn" data-az="225" data-el="85" data-i18n="nav.view_top">⬆ Vrch</button>
+        <button class="view-btn" data-az="135" data-el="18" data-i18n="nav.view_side">↔ Bok</button>
+      </div>
     </section>
 
     <section class="panel" id="control">
       <h2 data-i18n="control.title">Ovládanie Karela</h2>
-      <div id="dpad">
-        <button class="ctl" id="ctl-fwd"  data-cmd="FORWARD" title="dopredu">▲</button>
-        <button class="ctl" id="ctl-left" data-cmd="LEFT"    title="vlavo">◀</button>
-        <button class="ctl" id="ctl-right"data-cmd="RIGHT"   title="vpravo">▶</button>
-        <button class="ctl" id="ctl-back" data-cmd="BACK"    title="dozadu">▼</button>
+      <div id="ctl-tabs">
+        <button class="ctl-tab active" data-tab="graphic" data-i18n="control.tab_graphic">Graficky</button>
+        <button class="ctl-tab" data-tab="command" data-i18n="control.tab_command">Príkazovo</button>
       </div>
-      <div id="actions">
-        <button class="act" data-cmd="DROP">Polož<br>tehlu</button>
-        <button class="act" data-cmd="DROP_BIG">Polož<br>veľkú</button>
-        <button class="act" data-cmd="PICK">Zdvihni<br>tehlu</button>
-        <button class="act" data-cmd="MARK">Označ<br>★</button>
-        <button class="act" data-cmd="CLEAR">Odznač<br>★</button>
+
+      <div id="tab-graphic">
+        <div id="dpad">
+          <button class="ctl" id="ctl-fwd"  data-cmd="FORWARD" title="dopredu">▲</button>
+          <button class="ctl" id="ctl-left" data-cmd="LEFT"    title="vlavo">◀</button>
+          <button class="ctl" id="ctl-right"data-cmd="RIGHT"   title="vpravo">▶</button>
+          <button class="ctl" id="ctl-back" data-cmd="BACK"    title="dozadu">▼</button>
+        </div>
+        <div id="actions">
+          <button class="act" data-cmd="DROP">Polož<br>tehlu</button>
+          <button class="act" data-cmd="DROP_BIG">Polož<br>veľkú</button>
+          <button class="act" data-cmd="PICK">Zdvihni<br>tehlu</button>
+          <button class="act" data-cmd="MARK">Označ<br>★</button>
+          <button class="act" data-cmd="CLEAR">Odznač<br>★</button>
+        </div>
+      </div>
+
+      <div id="tab-command" class="hidden">
+        <div id="cmd-log"></div>
+        <input id="cmd-input" type="text" autocomplete="off" spellcheck="false"
+               data-i18n-ph="control.cmd_prompt" placeholder="Príkaz (Enter = vykonaj):">
       </div>
     </section>
   </div>
@@ -82,7 +101,9 @@
   </div>
   <div class="panel" id="cmds-panel">
     <h2 data-i18n="program_panel.cmd_list_hdr">Príkazy</h2>
-    <ul id="cmds-list"></ul>
+    <input id="cmds-filter" type="text" autocomplete="off"
+           data-i18n-ph="program_panel.filter_hdr" placeholder="Filter">
+    <div id="cmds-groups"></div>
   </div>
 </div>
 

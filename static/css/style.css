@@ -75,6 +75,38 @@ button.tb.accent { background: var(--accent-dim); border-color: var(--accent); }
 #inv-table td { padding: 3px 4px; border-top: 1px solid var(--border); }
 #inv-table td:last-child { text-align: right; color: var(--accent); }
 #karel-pos { margin-top: 6px; color: var(--fg-dim); font-size: 12px; }
+#view-presets { display: flex; gap: 4px; margin-top: 8px; }
+.view-btn {
+  flex: 1 1 0; background: var(--bg-dark); color: var(--fg-dim);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 2px; font-size: 11px; cursor: pointer;
+}
+.view-btn:hover { border-color: var(--accent); color: var(--fg); }
+.view-btn:disabled { opacity: .4; cursor: default; }
+
+/* Taby ovládania */
+#ctl-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.ctl-tab {
+  flex: 1 1 0; background: var(--bg-dark); color: var(--fg-dim);
+  border: 1px solid var(--border); border-radius: 4px 4px 0 0;
+  padding: 4px; font: inherit; font-size: 12px; cursor: pointer;
+}
+.ctl-tab.active { background: var(--panel); color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Príkazový režim (log + input) */
+#cmd-log {
+  height: 120px; overflow-y: auto; background: var(--bg-dark);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px;
+  font: 12px Consolas, monospace; margin-bottom: 6px;
+}
+#cmd-log .in  { color: var(--accent); }
+#cmd-log .err { color: var(--err); }
+#cmd-input, #cmds-filter {
+  width: 100%; background: var(--bg-dark); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px; font: 13px Consolas, monospace;
+}
+#cmds-filter { margin-bottom: 6px; }
 
 /* Ovládanie */
 #dpad {
@@ -114,12 +146,18 @@ button.act { flex: 1 1 40%; font-size: 12px; padding: 6px 4px; line-height: 1.2;
 .cm-karel-disabled { color: var(--err); text-decoration: line-through; }
 .cm-karel-proc   { color: #cc99ff; }
 
-#cmds-panel { flex: 0 0 220px; overflow-y: auto; }
-#cmds-list { list-style: none; margin: 0; padding: 0; font: 13px Consolas, monospace; }
-#cmds-list li { padding: 2px 6px; border-radius: 4px; cursor: pointer; }
-#cmds-list li:hover { background: var(--border); }
-#cmds-list li.struct { color: #66aaff; }
-#cmds-list li.cond   { color: #44dddd; }
+#cmds-panel { flex: 0 0 220px; overflow-y: auto; display: flex; flex-direction: column; }
+#cmds-groups { overflow-y: auto; font: 13px Consolas, monospace; }
+.cmd-group-hdr {
+  color: var(--fg-dim); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .5px; margin: 8px 0 2px; user-select: none;
+}
+.cmd-group-hdr:first-child { margin-top: 0; }
+.cmd-item { padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+.cmd-item:hover { background: var(--border); }
+.cmd-item.struct { color: #66aaff; }
+.cmd-item.cond   { color: #44dddd; }
+.cmd-item.proc   { color: #cc99ff; }
 
 /* ===== Dialóg ===== */
 #overlay {

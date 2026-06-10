@@ -26,6 +26,10 @@
       const v = T[el.dataset.i18n];
       if (v) el.textContent = v;
     });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      const v = T[el.dataset.i18nPh];
+      if (v) el.placeholder = v;
+    });
   }
 
   /* ---------- dialógy ---------- */
@@ -73,27 +77,57 @@
       `Karel: (${st.karel.x}, ${st.karel.y}) ${st.karel.dir}`;
   }
 
-  /* ---------- zoznam príkazov ---------- */
+  /* ---------- zoznam príkazov (zoskupený filter strom) ---------- */
+  let _lastLang = null;
   function updateCmdsList(lang) {
-    const ul = $('cmds-list');
-    ul.innerHTML = '';
+    if (lang) _lastLang = lang;
+    lang = _lastLang;
+    if (!lang) return;
+    const cont = $('cmds-groups');
+    cont.innerHTML = '';
+    const filter = ($('cmds-filter').value || '').toLowerCase();
     const disabled = new Set([...(lang.disabled || []),
                               ...((state && state.settings && state.settings.disabled_cmds) || [])]);
     const groups = [
-      { toks: ['FORWARD', 'BACK', 'LEFT', 'RIGHT', 'DROP', 'PICK', 'DROP_BIG', 'MARK', 'CLEAR', 'SLOWLY', 'QUICKLY'], cls: '' },
-      { toks: ['REPEAT', 'WHILE', 'IF', 'PROCEDURE'], cls: 'struct' },
-      { toks: ['WALL', 'BRICK', 'FREE', 'SIGN', 'NOT', 'AND', 'OR', 'TRUE', 'FALSE'], cls: 'cond' },
+      { key: 'program_panel.filter_mov', dflt: '🚶 Pohyb',
+        toks: ['FORWARD', 'BACK', 'LEFT', 'RIGHT', 'DROP', 'PICK', 'DROP_BIG', 'MARK', 'CLEAR', 'SLOWLY', 'QUICKLY'], cls: '' },
+      { key: 'program_panel.filter_str', dflt: '🔀 Štruktúry',
+        toks: ['REPEAT', 'WHILE', 'IF', 'PROCEDURE'], cls: 'struct' },
+      { key: 'program_panel.filter_cnd', dflt: '❓ Podmienky',
+        toks: ['WALL', 'BRICK', 'FREE', 'SIGN', 'NOT', 'AND', 'OR', 'TRUE', 'FALSE'], cls: 'cond' },
     ];
-    groups.forEach(g => g.toks.forEach(tok => {
-      if (disabled.has(tok)) return;
-      const w = lang.primary[tok];
-      if (!w) return;
-      const li = document.createElement('li');
-      li.textContent = w;
-      li.className = g.cls;
-      li.onclick = () => editor.insert(w + ' ');
-      ul.appendChild(li);
-    }));
+    const addItem = (parent, word, cls) => {
+      if (filter && word.toLowerCase().indexOf(filter) === -1) return false;
+      const d = document.createElement('div');
+      d.textContent = word; d.className = 'cmd-item ' + cls;
+      d.onclick = () => editor.insert(word + ' ');
+      parent.appendChild(d); return true;
+    };
+    groups.forEach(g => {
+      const words = g.toks.filter(tk => !disabled.has(tk)).map(tk => lang.primary[tk]).filter(Boolean);
+      const items = document.createDocumentFragment();
+      let any = false;
+      words.forEach(w => { if (addItem(items, w, g.cls)) any = true; });
+      if (any) {
+        const h = document.createElement('div');
+        h.className = 'cmd-group-hdr'; h.textContent = t(g.key, g.dflt);
+        cont.appendChild(h); cont.appendChild(items);
+      }
+    });
+    // Moje príkazy — procedúry definované v editore (prikaz/procedure <meno>)
+    const procWord = (lang.primary.PROCEDURE || 'prikaz');
+    const re = new RegExp('(?:' + procWord + '|prikaz|procedure)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)', 'giu');
+    const src = editor.getValue(); const seen = new Set(); const procs = [];
+    let mm; while ((mm = re.exec(src))) { const n = mm[1]; if (!seen.has(n)) { seen.add(n); procs.push(n); } }
+    if (procs.length) {
+      const items = document.createDocumentFragment(); let any = false;
+      procs.forEach(n => { if (addItem(items, n, 'proc')) any = true; });
+      if (any) {
+        const h = document.createElement('div');
+        h.className = 'cmd-group-hdr'; h.textContent = t('program_panel.filter_usr', '⭐ Moje príkazy');
+        cont.appendChild(h); cont.appendChild(items);
+      }
+    }
   }
 
   /* ---------- obmedzenia tlačidiel ---------- */
@@ -120,6 +154,9 @@
     renderer.render(st);
     updateNav(st);
     applyRestrictions(st);
+    // presety pohľadu vypnuté pri zamknutej kamere
+    const camLocked = !!(st.settings && st.settings.camera_locked);
+    document.querySelectorAll('.view-btn').forEach(b => { b.disabled = camLocked; });
     $('world-title').textContent = (st.meta && st.meta.title) || '';
     if (reason === 'connect' || reason === 'load') {
       // prog jazyk sveta → editor + zoznam príkazov
@@ -181,6 +218,7 @@
         m.message_html || '', null, !ok);
     });
     ws.on('direct_result', m => {
+      if (cmdMode) { if (!m.ok) logCmd(m.error || 'nevykonané', 'err'); return; }
       if (!m.ok && m.error) dialog(t('goal_condition.err_title', 'Chyba'), `<p>${m.error}</p>`, null, true);
     });
 
@@ -203,6 +241,49 @@
       const word = primaryKw[b.dataset.cmd] || b.title;
       if (word) ws.direct(word);
     });
+  });
+
+  /* A. Tlačidlá pohľadu kamery */
+  document.querySelectorAll('.view-btn').forEach(b => {
+    b.addEventListener('click', () => renderer.setViewPreset(+b.dataset.az, +b.dataset.el));
+  });
+
+  /* B. Taby ovládania (Graficky / Príkazovo) */
+  let cmdMode = false;
+  document.querySelectorAll('.ctl-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.ctl-tab').forEach(x => x.classList.toggle('active', x === tab));
+      cmdMode = tab.dataset.tab === 'command';
+      $('tab-graphic').classList.toggle('hidden', cmdMode);
+      $('tab-command').classList.toggle('hidden', !cmdMode);
+      if (cmdMode) $('cmd-input').focus();
+    });
+  });
+  function logCmd(text, cls) {
+    const d = document.createElement('div');
+    if (cls) d.className = cls;
+    d.textContent = text;
+    $('cmd-log').appendChild(d);
+    $('cmd-log').scrollTop = $('cmd-log').scrollHeight;
+  }
+  $('cmd-input').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const word = e.target.value.trim();
+    if (!word) return;
+    e.target.value = '';
+    logCmd('> ' + word, 'in');
+    ws.direct(word.split(/\s+/)[0]);   // priamy príkaz = jedno slovo (kontrakt)
+  });
+
+  /* C. Filter príkazov + refresh „Moje príkazy" pri zmene editora */
+  $('cmds-filter').addEventListener('input', () => updateCmdsList());
+  editor.cm.on('changes', () => updateCmdsList());
+
+  /* CodeMirror potrebuje refresh po zmene veľkosti okna (inak sa neprekreslí) */
+  let _rfTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_rfTimer);
+    _rfTimer = setTimeout(() => editor.refresh(), 150);
   });
 
   /* príklady */

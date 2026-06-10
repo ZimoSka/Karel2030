@@ -141,6 +141,15 @@ class KarelRenderer {
     this.controls.update();
   }
 
+  /* Preset pohľadu (tlačidlá Def/Pred/Vrch/Bok) — uhly v stupňoch,
+   * zachová aktuálnu vzdialenosť kamery od cieľa. */
+  setViewPreset(azDeg, elDeg) {
+    const t = this.controls.target;
+    const d = this.camera.position.distanceTo(t) || (Math.max(this._size[0], this._size[1]) * 2);
+    this.setCamera({ az: azDeg * Math.PI / 180, el: elDeg * Math.PI / 180, dist: d },
+                   !this.controls.enableRotate);
+  }
+
   /* Hlavný vstup: vykresli state JSON */
   render(state) {
     const w = state.width, h = state.height;
