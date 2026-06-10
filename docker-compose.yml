@@ -1,0 +1,12 @@
+services:
+  karel:
+    image: ghcr.io/zimoska/karel2030:latest
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - karel_data:/data
+    restart: unless-stopped
+
+volumes:
+  karel_data:

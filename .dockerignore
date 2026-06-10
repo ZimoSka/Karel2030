@@ -1,0 +1,17 @@
+# GUI a vývojové súbory — do image nejdú
+karel2010.py
+tests/
+docs/
+*.md
+.git/
+.github/
+.claude/
+__pycache__/
+*.pyc
+data/
+# desktop artefakty — okrem lang/ prekladov a worlds/ svetov
+*.karxml
+!worlds/*.karxml
+*.karjson
+*.prg
+karel.ini
