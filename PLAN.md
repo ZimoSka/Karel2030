@@ -55,10 +55,11 @@ dpad+5 akčných tlačidiel, CodeMirror editor + plochý zoznam príkazov, dial�
 intro/mission/budget/limit/parse_error, i18n, disabled_cmds, direct ovládanie):
 
 Chýba oproti desktopu:
-- [ ] **A. Tlačidlá pohľadu kamery** (Def/Pred/Vrch/Bok) v navigátore
-- [ ] **B. Príkazový režim** — písané príkazy + log (desktop tab „Príkazovo")
-- [ ] **C. Filter príkazov** — strom kategórií (pohyb/štruktúry/podmienky/vlastné)
-      namiesto plochého zoznamu
+- [x] **A. Tlačidlá pohľadu kamery** (Def/Pred/Vrch/Bok) — hotové, overené
+- [x] **B. Príkazový režim** — taby Graficky/Príkazovo + log, písaný príkaz cez
+      ws.direct — hotové, overené
+- [x] **C. Filter príkazov** — filter input + skupiny (pohyb/štruktúry/podmienky)
+      + „Tvoje príkazy" z editora — hotové, overené
 - [ ] **D. Nastavenia sveta (učiteľ)** — dialóg so 6 záložkami: Popis, Miestnosť
       (rozmery, štart Karela, pohybové obmedzenia), Zásoby, Príkazy (zakázať),
       Pohľad, Misia. Veľká položka.
