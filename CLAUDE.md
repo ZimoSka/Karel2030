@@ -6,9 +6,31 @@
 > neskôr Blockly). Roadmap a tasky: `PLAN.md`.
 >
 > **Všetky pracovné pravidlá nižšie platia aj tu** (prevzaté z karel2010).
-> Architektúra popísaná nižšie je stav `karel2010.py` — slúži ako referencia
-> pre extrakciu `karel_core/` (Task T1). Po extrakcii túto dokumentáciu
-> priebežne aktualizovať na novú štruktúru.
+
+## Štruktúra projektu (po T1 — core extrakcia HOTOVÁ)
+
+```
+karel_core/            ← jadro BEZ GUI závislostí (zdieľané desktop/web)
+├── base.py            Direction + výnimky (KarelError/Stop/Budget/Limit)
+├── missions.py        GoalCondition, evaluate_goals
+├── lang.py            KW, _LANG_*, .lng/.ini loadery, _T, _cmds_*, current_prog_lang()
+│                      cesta k lang/ cez env KAREL_LANG_DIR (default: ../lang)
+├── world.py           WorldSettings, World (vrátane .karxml I/O), BUILTIN_WORLD
+├── interpreter.py     tokenize, Parser, AST, KarelInterpreter (MAX_OPS, MAX_D,
+│                      setrecursionlimit+stack_size pri importe)
+└── samples.py         EXAMPLES (ukážkové programy)
+
+karel2010.py           ← desktop tkinter GUI (importuje karel_core; 2642 riadkov)
+tests/test_core.py     ← 19 regresných testov core (python tests/test_core.py)
+lang/                  ← .ini (GUI preklady) + interpreter/*.lng (kľúčové slová)
+```
+
+**Mutable modulový stav v lang.py:** `_current_prog_lang` čítať cez
+`current_prog_lang()` (import hodnoty by zamrzol na štarte); `_switch_prog_lang()`
+a `_load_ui_lang()` mutujú stav modulu — `_T`/`_cmds_*` to vidia automaticky.
+
+> Architektúra popísaná nižšie (dátový model, misie, jazykový systém, interpreter)
+> platí ďalej — len kód žije v karel_core/ moduloch namiesto jedného súboru.
 
 ---
 

@@ -24,14 +24,13 @@ Prístup na server: SSH kľúčom (treba nastaviť — užívateľ je root, kľ�
 
 ## Tasky (možné robiť čiastočne paralelne)
 
-### T1 — Core extrakcia  🔴 prerekvizita pre T2
-Z `karel2010.py` vytiahnuť **`karel_core/`** bez tkinter závislostí:
-- `world.py` — World, WorldSettings, Direction, KarelError/Stop/Budget/Limit
-- `missions.py` — GoalCondition, evaluate_goals
-- `lang.py` — KW, _LANG_PRIMARY/_DISABLED/_NAME, .lng/.ini loadery
-- `interpreter.py` — tokenize, Parser, AST, KarelInterpreter (MAX_OPS, MAX_D)
-- `karxml.py` — to_xml/from_xml (+ .karjson spätná kompatibilita)
-- Testy: identické správanie (parser, interpreter, limity, XML roundtrip)
+### T1 — Core extrakcia  ✅ HOTOVÉ
+`karel_core/` balík bez tkinter závislostí: `base.py` (Direction+výnimky),
+`missions.py`, `lang.py` (.lng+.ini, KAREL_LANG_DIR env), `world.py`
+(vrátane .karxml I/O — karxml.py netreba, XML žije pri World), `interpreter.py`,
+`samples.py`. Desktop `karel2010.py` importuje core a funguje ďalej (2642 r.).
+**19 regresných testov** v `tests/test_core.py` — parser, logické spojky,
+rozpočty, fyzické limity, loop-guard, rekurzia, XML roundtrip, misie, jazyky.
 
 ### T2 — Integračná vrstva (API)  ⏳ po T1 (potrebuje core)
 - FastAPI + uvicorn
