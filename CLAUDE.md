@@ -1,4 +1,23 @@
-# Karel 2010 – Claude pracovné pravidlá a architektúra
+# Karel 2030 – Claude pracovné pravidlá a architektúra (webová verzia)
+
+> **Tento projekt = webová verzia Karla.** Vznikol ako git klon `karel2010`
+> (desktop tkinter); celá história je zachovaná. Cieľ: Docker image (Linux),
+> Python backend (FastAPI), frontend v prehliadači (Three.js + CodeMirror,
+> neskôr Blockly). Roadmap a tasky: `PLAN.md`.
+>
+> **Všetky pracovné pravidlá nižšie platia aj tu** (prevzaté z karel2010).
+> Architektúra popísaná nižšie je stav `karel2010.py` — slúži ako referencia
+> pre extrakciu `karel_core/` (Task T1). Po extrakcii túto dokumentáciu
+> priebežne aktualizovať na novú štruktúru.
+
+---
+
+## ⚠️ Pravidlo: Vývojová rutina projektu
+
+- Plán → `PLAN.md`, technická dokumentácia → `docs/` + `CLAUDE.md`
+- **Pred commitom** aktualizovať všetku dotknutú dokumentáciu
+- Commit + **push hneď** po každom logickom celku
+- Dôležité rozhodnutia/pravidlá **okamžite do .md súborov** (compact/reset maže pamäť)
 
 ---
 

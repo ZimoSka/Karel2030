@@ -1,143 +1,93 @@
-# Karel 2010 – Plán vývoja
+# Karel 2030 – Plán vývoja (webová verzia)
+
+> Projekt vznikol ako klon `karel2010` (desktop tkinter verzia) — git história je
+> zachovaná. Desktop verzia žije ďalej v pôvodnom repe; zmeny do nej len on-demand.
 
 ---
 
-## ✅ Dokončené
+## Cieľový stav
 
-### Dátový model a renderer
-- Kvader: monolitický renderer, zelené malé tehly na vrchu
-- Max 1 kvader per tile; `check_wall()` vracia True pre kvader
-- Viacjazyčné kľúčové slová: SK `kvader`, DE `quader`, FR `bloc`, IT `blocco`, ES `bloque`
-- GUI: `zdvihni` zdvihne malú tehlu, ak niet → zdvihne kvader (smart pick)
-- Pattis režim (`en_pattis`): `putbeeper/pickbeeper` = MARK/CLEAR, `next_to_a_beeper` = SIGN
+Karel beží ako **Docker image (Linux)** na serveri. Backend = Python (core z karel2010
++ FastAPI). Frontend = webový prehliadač (Three.js 3D, CodeMirror editor, neskôr Blockly).
 
-### Systém misií
-- **GoalCondition systém** — flat trieda s check typmi:
-  - `karel_pos` — pozícia/výška Karela
-  - `cell_state` — stav políčka (značky, tehly)
-  - `sign` — značka pod Karelom *(pridané táto session)*
-  - `brick_ahead` — tehla pred Karelom *(pridané táto session)*
-  - `wall_ahead` — stena pred Karelom *(pridané táto session)*
-  - `snapshot` — snímok celej miestnosti
-- Per-podmienka: eval (success/failure), when (on_step/on_finish), op (and/or), negate
-- `evaluate_goals()` — failure skupina sa vyhodnotí prvá; sekvenčné AND/OR
-- `GoalConditionDialog` — editor podmienok s predvyplňovaním pri úprave, double-click
-- AND/OR prefix viditeľný v listboxe podmienok
-- `sign`/`brick_ahead`/`wall_ahead` dostupné v UI dialógu s info popisom *(táto session)*
+**Model používania:**
+- Default rola po otvorení = **učiteľ** — pripraví svet, zadanie, nastavenia
+- Tlačidlo **„Zdieľaj žiakom"** → unikátne **persistentné linky** pre žiakov
+- Link otvorí **žiacky mód** s automaticky natiahnutým svetom; žiak sa vie kedykoľvek vrátiť
+- Persistencia: súborové úložisko na Docker volume (`assignments/`, `workspaces/`),
+  za rozhraním `Storage` — DB výmena možná neskôr bez zmeny API
 
-### Súborový formát
-- Jednotný formát `.karxml` (JSON ukladanie odstránené, spätná kompatibilita zachovaná)
-
-### Správanie Reset / WorldSettings
-- `WorldSettingsDialog` Apply — nepúšťa `_reset_world()`, Karel zostane kde je *(táto session)*
-- Reset — Karel sa vráti na štartovaciu pozíciu z `_base`, nie na aktuálnu *(táto session)*
-- Štartovacia pozícia v dialógu predvyplnená z `_base` (nie z aktuálnej polohy) *(táto session)*
-- Hnote: `ℹ  Štart: (x,y)  ×  Karel teraz: (sx,sy)` *(táto session)*
-
-### Preklady
-- 6 jazykov (sk/en/de/fr/it/es), 179 kľúčov, všetky zhodné — overené skriptom *(táto session)*
-
-### Editor
-- Zvýraznenie komentárov — `//`, `#`, `{ }` v editore
-- `zdvihni_kvader` ako programový príkaz
-
-### Jazyk — logické spojky *(táto session)*
-- `AND`/`OR`/`NOT` + zátvorky `( )` v podmienkach `ak`/`kym`
-- Priorita NOT > AND > OR; rekurzívny parser + `_ev`
-- Kľúčové slová vo všetkých 7 jazykoch (SK `a`/`alebo` …)
-
-### Pohybové obmedzenia *(táto session)*
-- `max_steps` / `max_turns` — rozpočet krokov/otočení od resetu;
-  pri vyčerpaní zastavenie programu + `BudgetDialog` (OK/Reset)
-- `max_drop` — max zoskok nadol (-1 = ∞)
-- `max_brick_height` — max výška stohu na kladenie tehiel (kvader = 5)
-- `max_climb` (už existoval, default 1)
-- Priame ovládanie pri vyčerpaní rozpočtu: príkaz sa nevykoná + dialóg
-- Ukladá sa do `.karxml`; UI v záložke Pohyb; preklady v 6 jazykoch
-
-### Ochrana proti nekonečnu + rekurzia *(táto session)*
-- `MAX_OPS=100 000` — strop príkazov proti nekonečnému cyklu → `KarelLimit('loop')`
-- `MAX_D=1000` rekurzia (predtým 500, ale Python limit udieral skôr);
-  `sys.setrecursionlimit(12000)` + `threading.stack_size(64MB)` → reálne dosiahnuteľné
-- Oba → dialóg len s OK; `on_limit` callback (vzor ako `on_budget`)
-
-### GUI layout
-- PanedWindow štruktúra — ťahateľné deliče medzi panelmi *(táto session)*
-- Navigator + Ovládanie fixné a vždy celé viditeľné *(táto session)*
-- Príkazy + Filter zúžené, scrollovateľné *(táto session)*
-- Pravý panel zúžený (~210px), 3D svet dostane väčšinu šírky *(táto session)*
-- Tmavá ttk téma (clam) — bez bielych plôch *(táto session)*
-
-### Dokumentácia
-- `CLAUDE.md` — kompletná architektúra, pravidlá, GoalCondition, _base vs _world *(táto session)*
-- `PLAN.md` — tento súbor *(táto session)*
-- Pravidlo: `/compact` nikdy bez povolenia *(táto session)*
-- Pravidlo: dôležité info okamžite do `.md` súborov *(táto session)*
+**Deployment:** GitHub Actions → `ghcr.io/zimoska/karel2030` → linux server pulluje.
+Prístup na server: SSH kľúčom (treba nastaviť — užívateľ je root, kľúč doplníme).
 
 ---
 
-## 🚀 STRATEGICKÝ SMER: Karel ako webová aplikácia (Docker)
+## Tasky (možné robiť čiastočne paralelne)
 
-**Rozhodnutie (jún 2026):** Cieľový stav = Karel beží ako **Docker image (Linux)**,
-backend v Pythone, frontend (vykresľovanie + UI) vo **webovom prehliadači**.
-Používatelia pristupujú cez web, bez inštalácie čohokoľvek.
+### T1 — Core extrakcia  🔴 prerekvizita pre T2
+Z `karel2010.py` vytiahnuť **`karel_core/`** bez tkinter závislostí:
+- `world.py` — World, WorldSettings, Direction, KarelError/Stop/Budget/Limit
+- `missions.py` — GoalCondition, evaluate_goals
+- `lang.py` — KW, _LANG_PRIMARY/_DISABLED/_NAME, .lng/.ini loadery
+- `interpreter.py` — tokenize, Parser, AST, KarelInterpreter (MAX_OPS, MAX_D)
+- `karxml.py` — to_xml/from_xml (+ .karjson spätná kompatibilita)
+- Testy: identické správanie (parser, interpreter, limity, XML roundtrip)
 
-Blokový editor (Scratch štýl) je **pozastavený** ako samostatný desktop projekt —
-vo web frontende sa spraví natívne cez **Blockly** (žiadne pywebview mosty).
-Prieskum k Blockly je hotový: custom bloky + vlastný generátor → Karel text →
-existujúci interpreter (vzor Otto Blockly / BlocklyDuino).
+### T2 — Integračná vrstva (API)  ⏳ po T1 (potrebuje core)
+- FastAPI + uvicorn
+- **WS** `/session/{token}`: run/stop/reset/direct-cmd → server po každom kroku
+  posiela delta stavu (on_step ekvivalent); delay rieši server
+- **REST**: `/worlds`, `/assignment` (create/share), `/workspace/{token}` (load/save),
+  `/langs` (preklady pre frontend)
+- `Storage` rozhranie (file-based: JSON/karxml na volume)
+- Session model: token → World + interpreter inštancia
 
-### Task 1 — Backend do Dockera
-- Extrahovať **core** z `karel2010.py` do modulu bez tkinter závislostí:
-  World, WorldSettings, GoalCondition, evaluate_goals, tokenize/Parser/AST,
-  KarelInterpreter, .karxml I/O, jazykový systém (.lng)
-- Desktop tkinter app ďalej funguje — importuje core (žiadna stratená funkčnosť)
-- Dockerfile: python slim + web server, mount/volume pre svety
+### T3 — Web frontend  🟢 čiastočne paralelne s T2 (po dohode API kontraktu)
+- Three.js 3D scéna (mriežka, steny, tehly, kvadre, značky, Karel, kamera)
+- CodeMirror editor + Karel highlighting (z .lng kľúčových slov)
+- Panely: navigátor (inventár), ovládanie (šípky+akcie), príkazy, filter
+- Dialógy: intro, misia výsledok, budget, limit
+- i18n z lang/*.ini cez API
+- Učiteľský mód: nastavenia sveta, misie editor, „Zdieľaj žiakom"
+- Žiacky mód: zamknuté nastavenia, natiahnutý svet
 
-### Task 2 — Integračná vrstva (API)
-- Web server (návrh: FastAPI + uvicorn)
-- **WebSocket** pre beh programu: server pošle stav sveta po každom kroku
-  (ekvivalent `on_step`), klient vykresľuje; Stop/Reset ako správy
-- **REST**: zoznam svetov, load/save .karxml, validácia programu, nastavenia
-- Session model: každý pripojený žiak má vlastnú inštanciu World + interpreter
-- Bezpečnostné stropy už existujú (MAX_OPS, MAX_D, KarelBudget) — kritické pre server!
+### T4 — Docker + deploy  🟢 paralelne (kostra hneď, finalizácia po T2)
+- Dockerfile (python slim, uvicorn), docker-compose (volume pre data/)
+- GitHub Actions workflow → build → push ghcr.io
+- SSH kľúč na linux server + docker context / pull skript
+- Lokálne testovanie: Docker Desktop na Windows (engine treba zapnúť)
 
-### Task 3 — Web frontend
-- 3D vykresľovanie v prehliadači (návrh: Three.js — kamera, kvadre, tehly, značky)
-- Editor programu (CodeMirror + Karel highlighting), panel príkazov, navigátor,
-  ovládanie, dialógy (intro/misia/budget/limit)
-- i18n — znovu použiť lang/*.ini + lang/interpreter/*.lng (servírovať cez API)
-- Neskôr: **Blockly** ako druhý režim editora (prepínač Text ↔ Bloky)
-
-### Rozhodnutia (jún 2026, odsúhlasené)
-- **Model zdieľania:** default rola po otvorení = **učiteľ**. Učiteľ pripraví
-  svet + zadanie + nastavenia → tlačidlo **„Zdieľaj žiakom"** → vygenerujú sa
-  **unikátne persistentné linky** pre žiakov. Link otvorí žiacky mód
-  s automaticky natiahnutým svetom; žiak sa k nemu vie kedykoľvek vrátiť.
-- **Persistencia:** od začiatku navrhnúť úložisko (assignment = snapshot sveta
-  + nastavení; žiacky workspace = program + stav, kľúčované tokenom z linku).
-  Na začiatok súborové úložisko (JSON/karxml na disku/volume), DB až keď treba.
-- **Repo:** web verzia = **nový git projekt (klon)**, vyvíja sa oddelene.
-  Desktop verzia sa mení len on-demand („prihoď aj do desktopu").
-- **Stack:** FastAPI + uvicorn, WebSocket, Three.js, CodeMirror. Docker (linux).
+### T5 — Blockly editor  ⏸ po T3
+- Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
+- Prepínač Text ↔ Bloky; prieskum hotový (vzor Otto Blockly/BlocklyDuino)
 
 ---
 
-## 🟡 Stredná priorita (desktop)
+## Paralelizácia — odporúčaný postup
 
-| # | Úloha |
-|---|-------|
-| 1 | **`StopIfCanNotGo`** — Karel sa zastaví namiesto tichého skip pri stene |
-| 2 | **Počítadlo efektivity** (CodeHS) — v MissionResult zobraziť „vyriešené na N krokov, M otočení" |
+```
+T1 core ──────► T2 API ──────► integrácia ◄────── T3 frontend
+                   ▲                                   ▲
+                   └── API kontrakt (dohodnúť hneď) ───┘
+T4 docker kostra ──────────────────────────► T4 finalizácia + deploy
+```
 
-## 🟢 Nižšia priorita
+1. **Najprv:** T1 + návrh API kontraktu (správy WS, REST endpointy) — dokument `docs/api.md`
+2. **Potom paralelne:** T2 (server) a T3 (frontend proti mock dátam podľa kontraktu)
+3. **T4 kostra** (Dockerfile, Actions) hocikedy popri tom
 
-| # | Úloha |
-|---|-------|
-| 3 | **Live syntax validácia** — podčiarknutie chýb priebežne |
-| 4 | **Autocomplete** — dopĺňanie kľúčových slov v editore |
-| 5 | **História príkazov** — šípky nahor/dole v command boxe |
-| 6 | **Gramatika do externého súboru** |
-| 7 | **Drag & drop programovanie (Scratch štýl)** — POZASTAVENÉ pre desktop; spraví sa cez Blockly vo web frontende (viď Strategický smer) |
-| 8 | **Revalidácia 3D grafiky** — textúry na plochách, animácie pohybu Karela |
-| 9 | **Pohľad 1st person** — kamera z očí Karela, pohyb v reálnom čase |
+---
+
+## ✅ Hotové
+
+- Repo `ZimoSka/Karel2030` založené, klon s históriou karel2010, pushnuté
+- Rozhodnutia: share-link model, file storage, stack (FastAPI/Three.js/CodeMirror),
+  deploy cez ghcr.io
+
+## Zdedené z karel2010 (funkčný základ core)
+
+- Kompletný interpreter: logické spojky (a/alebo/nie + zátvorky), MAX_OPS=100k,
+  MAX_D=1000, KarelBudget (max_steps/max_turns), max_climb/max_drop/max_brick_height
+- GoalCondition misie (6 typov, and/or, on_step/on_finish)
+- 7 prog jazykov (.lng), 6 GUI jazykov (.ini, 196 kľúčov)
+- .karxml formát
