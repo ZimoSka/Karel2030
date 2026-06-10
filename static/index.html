@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karel 2030</title>
+<link rel="stylesheet" href="vendor/codemirror.min.css"
+      onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css'">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== Toolbar ===== -->
+<header id="toolbar">
+  <span id="brand">🤖 Karel</span>
+  <button id="btn-task"  class="tb" data-i18n="toolbar.task">📋 Zadanie</button>
+  <button id="btn-run"   class="tb accent" data-i18n="toolbar.run">▶ Spustiť</button>
+  <button id="btn-stop"  class="tb" disabled data-i18n="toolbar.stop">⏹ Stop</button>
+  <button id="btn-reset" class="tb" data-i18n="toolbar.reset">↺ Reset</button>
+  <label class="tb-label"><span data-i18n="toolbar.speed">Rýchlosť:</span>
+    <input id="speed" type="range" min="0" max="100" value="60">
+  </label>
+  <label class="tb-label" id="examples-wrap"><span data-i18n="toolbar.examples">Príklady:</span>
+    <select id="examples"></select>
+  </label>
+  <span id="status" data-i18n="status.ready">Pripravený</span>
+  <span id="conn-dot" title="offline"></span>
+</header>
+
+<!-- ===== Main layout ===== -->
+<div id="main">
+  <!-- 3D scéna -->
+  <div id="scene-wrap">
+    <canvas id="scene"></canvas>
+    <div id="world-title"></div>
+  </div>
+
+  <!-- Pravý stĺpec -->
+  <div id="side">
+    <section class="panel" id="navigator">
+      <h2 data-i18n="nav.title">Navigátor</h2>
+      <table id="inv-table">
+        <thead><tr>
+          <th data-i18n="nav.col_item">Predmet</th>
+          <th data-i18n="nav.col_left">Zostatok</th>
+        </tr></thead>
+        <tbody>
+          <tr><td data-i18n="nav.small_brick">Malá Tehla</td><td id="inv-bricks">∞</td></tr>
+          <tr><td data-i18n="nav.big_brick">Veľká Tehla</td><td id="inv-big">∞</td></tr>
+          <tr><td data-i18n="nav.mark">Značka</td><td id="inv-marks">∞</td></tr>
+          <tr id="row-steps" class="hidden"><td>Kroky</td><td id="inv-steps"></td></tr>
+          <tr id="row-turns" class="hidden"><td>Otočenia</td><td id="inv-turns"></td></tr>
+        </tbody>
+      </table>
+      <div id="karel-pos"></div>
+    </section>
+
+    <section class="panel" id="control">
+      <h2 data-i18n="control.title">Ovládanie Karela</h2>
+      <div id="dpad">
+        <button class="ctl" id="ctl-fwd"  data-cmd="FORWARD" title="dopredu">▲</button>
+        <button class="ctl" id="ctl-left" data-cmd="LEFT"    title="vlavo">◀</button>
+        <button class="ctl" id="ctl-right"data-cmd="RIGHT"   title="vpravo">▶</button>
+        <button class="ctl" id="ctl-back" data-cmd="BACK"    title="dozadu">▼</button>
+      </div>
+      <div id="actions">
+        <button class="act" data-cmd="DROP">Polož<br>tehlu</button>
+        <button class="act" data-cmd="DROP_BIG">Polož<br>veľkú</button>
+        <button class="act" data-cmd="PICK">Zdvihni<br>tehlu</button>
+        <button class="act" data-cmd="MARK">Označ<br>★</button>
+        <button class="act" data-cmd="CLEAR">Odznač<br>★</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ===== Editor + zoznam príkazov ===== -->
+<div id="bottom">
+  <div id="editor-wrap">
+    <h2 data-i18n="program_panel.title">Môj program...</h2>
+    <textarea id="code"></textarea>
+  </div>
+  <div class="panel" id="cmds-panel">
+    <h2 data-i18n="program_panel.cmd_list_hdr">Príkazy</h2>
+    <ul id="cmds-list"></ul>
+  </div>
+</div>
+
+<!-- ===== Modálne dialógy ===== -->
+<div id="overlay" class="hidden">
+  <div id="dialog">
+    <h3 id="dlg-title"></h3>
+    <div id="dlg-body"></div>
+    <div id="dlg-buttons"></div>
+  </div>
+</div>
+
+<!-- Vendor knižnice: lokálne (offline Docker, viď vendor/get_vendor.py),
+     s CDN fallbackom pre vývoj kým vendor súbory nie sú stiahnuté. -->
+<script>
+function loadSeq(list, done) {  // sekvenčný loader s fallback URL
+  if (!list.length) { done(); return; }
+  var item = list.shift(), urls = item.slice();
+  (function tryNext() {
+    var url = urls.shift();
+    if (!url) { console.error('Nepodarilo sa načítať', item[0]); loadSeq(list, done); return; }
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = function () { loadSeq(list, done); };
+    s.onerror = tryNext;
+    document.body.appendChild(s);
+  })();
+}
+loadSeq([
+  ['vendor/three.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'],
+  ['vendor/OrbitControls.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'],
+  ['vendor/codemirror.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js'],
+  ['vendor/simple.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js'],
+  ['js/api.js'], ['js/mock.js'], ['js/render3d.js'], ['js/editor.js'], ['js/app.js'],
+], function () {});
+</script>
+</body>
+</html>
