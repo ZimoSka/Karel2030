@@ -32,29 +32,28 @@ Prístup na server: SSH kľúčom (treba nastaviť — užívateľ je root, kľ�
 **19 regresných testov** v `tests/test_core.py` — parser, logické spojky,
 rozpočty, fyzické limity, loop-guard, rekurzia, XML roundtrip, misie, jazyky.
 
-### T2 — Integračná vrstva (API)  ⏳ po T1 (potrebuje core)
-- FastAPI + uvicorn
-- **WS** `/session/{token}`: run/stop/reset/direct-cmd → server po každom kroku
-  posiela delta stavu (on_step ekvivalent); delay rieši server
-- **REST**: `/worlds`, `/assignment` (create/share), `/workspace/{token}` (load/save),
-  `/langs` (preklady pre frontend)
-- `Storage` rozhranie (file-based: JSON/karxml na volume)
-- Session model: token → World + interpreter inštancia
+### T2 — Integračná vrstva (API)  ✅ HOTOVÉ
+`server/` balík podľa docs/api.md: `state.py` (World↔sparse JSON), `storage.py`
+(FileStorage, KAREL_DATA_DIR), `sessions.py` (interpreter na daemon vlákne →
+asyncio fronta → WS), `app.py` (všetky REST endpointy + WS /ws/{token} +
+/ws/teacher/{id} + static mount + /s/{token}). 13 server testov, spolu 32
+zelených. Diery kontraktu zdokumentované v server/NOTES.md.
 
-### T3 — Web frontend  🟢 čiastočne paralelne s T2 (po dohode API kontraktu)
-- Three.js 3D scéna (mriežka, steny, tehly, kvadre, značky, Karel, kamera)
-- CodeMirror editor + Karel highlighting (z .lng kľúčových slov)
-- Panely: navigátor (inventár), ovládanie (šípky+akcie), príkazy, filter
-- Dialógy: intro, misia výsledok, budget, limit
-- i18n z lang/*.ini cez API
-- Učiteľský mód: nastavenia sveta, misie editor, „Zdieľaj žiakom"
-- Žiacky mód: zamknuté nastavenia, natiahnutý svet
+### T3 — Web frontend  ✅ HOTOVÉ (v1)
+`static/`: Three.js 3D scéna (mriežka/steny/tehly/kvadre/značky/Karel,
+OrbitControls), CodeMirror s dynamickým Karel módom, panely podľa desktopu,
+dialógy, i18n cez data-i18n, mock mód (?mock=1), vendor knižnice lokálne.
+**Overené v prehliadači:** mock mód (beh s opakuj, parse error dialóg) AJ
+reálny server end-to-end (`kym nie stena` cez WS, Karel došiel k stene,
+0 chýb v konzole). Diery kontraktu v static/NOTES.md.
+**Zostáva (T3.2):** učiteľský mód — nastavenia sveta UI, misie editor,
+„Zdieľaj žiakom" UI; otestovať žiacky mód s reálnym tokenom.
 
-### T4 — Docker + deploy  🟢 paralelne (kostra hneď, finalizácia po T2)
-- Dockerfile (python slim, uvicorn), docker-compose (volume pre data/)
-- GitHub Actions workflow → build → push ghcr.io
-- SSH kľúč na linux server + docker context / pull skript
-- Lokálne testovanie: Docker Desktop na Windows (engine treba zapnúť)
+### T4 — Docker + deploy  🟡 kostra hotová
+✅ Dockerfile, docker-compose.yml, .dockerignore, GitHub Actions → ghcr.io,
+worlds/ so vzorovými svetmi.
+**Zostáva:** lokálny `docker build` test (zapnúť Docker Desktop), overiť
+prvý Actions beh na GitHube, SSH kľúč na linux server + nasadenie.
 
 ### T5 — Blockly editor  ⏸ po T3
 - Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
