@@ -1,1 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Delphi binárne súbory (originál) — konvertované do .karxml
+*.kar
+
+# Runtime konfig (obsahuje lokálny stav — rola, jazyk)
+karel.ini
+
+# Delphi binárne súbory (originál)
+*.dcu
+*.ddp
+
+# Dočasné súbory
+*.tmp
+*.bak
+*.swp
+.thumb/
+.claude/
 .wt/
