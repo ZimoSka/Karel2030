@@ -158,6 +158,11 @@
     const camLocked = !!(st.settings && st.settings.camera_locked);
     document.querySelectorAll('.view-btn').forEach(b => { b.disabled = camLocked; });
     $('world-title').textContent = (st.meta && st.meta.title) || '';
+    // po apply_settings (reason 'requested') premietni zakázané príkazy do editora aj zoznamu
+    if (reason === 'requested' && st.settings) {
+      editor.setDisabledCmds(st.settings.disabled_cmds || []);
+      updateCmdsList();
+    }
     if (reason === 'connect' || reason === 'load') {
       // prog jazyk sveta → editor + zoznam príkazov
       const code = (st.settings && st.settings.prog_lang) || 'sk';
@@ -278,6 +283,13 @@
   /* C. Filter príkazov + refresh „Moje príkazy" pri zmene editora */
   $('cmds-filter').addEventListener('input', () => updateCmdsList());
   editor.cm.on('changes', () => updateCmdsList());
+
+  /* D+E. Nastavenia sveta (učiteľ) */
+  KarelSettings.wire();
+  $('btn-settings').onclick = () => {
+    if (!state) return;
+    KarelSettings.open({ state, t, onApply: (payload) => ws.applySettings(payload) });
+  };
 
   /* CodeMirror potrebuje refresh po zmene veľkosti okna (inak sa neprekreslí) */
   let _rfTimer;

@@ -36,8 +36,11 @@ def world_to_state(w: World, full: bool = True) -> dict:
             'max_climb': s.max_climb, 'max_drop': s.max_drop,
             'max_steps': s.max_steps, 'max_turns': s.max_turns,
             'max_brick_height': s.max_brick_height,
+            'brick_limit': s.brick_limit, 'big_brick_limit': s.big_brick_limit,
+            'mark_limit': s.mark_limit,
             'camera_locked': s.camera_locked,
             'camera': {'az': s.camera_az, 'el': s.camera_el, 'dist': s.camera_dist},
+            'reset_on_failure': w.mission_reset_on_failure,
         }
         state['mission'] = [cond_to_dict(c) for c in w.goal_conditions]
     return state

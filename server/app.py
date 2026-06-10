@@ -308,6 +308,17 @@ def _teacher_apply_settings(session: Session, msg: dict):
                           ('dist', 'camera_dist')):
             if key in cam:
                 setattr(s, attr, float(cam[key]))
+        # rozmery miestnosti (resize zachová obsah v rámci nových rozmerov)
+        nw = int(st.get('width', w.width)); nh = int(st.get('height', w.height))
+        if (nw, nh) != (w.width, w.height) and 3 <= nw <= 50 and 3 <= nh <= 50:
+            w.resize(nw, nh)
+        # štartová pozícia + smer Karela
+        k = msg.get('karel') or {}
+        if 'x' in k: w.karel_x = max(0, min(w.width - 1, int(k['x'])))
+        if 'y' in k: w.karel_y = max(0, min(w.height - 1, int(k['y'])))
+        if 'dir' in k: w.karel_dir = kc.Direction.from_str(k['dir'])
+        if 'reset_on_failure' in msg:
+            w.mission_reset_on_failure = bool(msg['reset_on_failure'])
         if 'goal_conditions' in msg:
             w.goal_conditions = [cond_from_dict(d) for d in msg['goal_conditions']]
         for key in ('title', 'intro_html', 'success_html', 'failure_html'):
