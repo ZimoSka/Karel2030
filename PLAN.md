@@ -49,11 +49,15 @@ reálny server end-to-end (`kym nie stena` cez WS, Karel došiel k stene,
 **Zostáva (T3.2):** učiteľský mód — nastavenia sveta UI, misie editor,
 „Zdieľaj žiakom" UI; otestovať žiacky mód s reálnym tokenom.
 
-### T4 — Docker + deploy  🟡 kostra hotová
+### T4 — Docker + deploy  🟡 build overený, nasadenie zostáva
 ✅ Dockerfile, docker-compose.yml, .dockerignore, GitHub Actions → ghcr.io,
 worlds/ so vzorovými svetmi.
-**Zostáva:** lokálny `docker build` test (zapnúť Docker Desktop), overiť
-prvý Actions beh na GitHube, SSH kľúč na linux server + nasadenie.
+✅ **Lokálny build + beh overený** (Docker Desktop, image 181 MB, python:3.12-slim):
+kontajner naštartoval uvicorn, frontend na `/`, všetky REST endpointy OK,
+share-link tok (assignment→linky→workspace) zapísal do `/data`, WebSocket
+beh end-to-end (state→started→step→finished, Karel došiel k stene).
+**Zostáva:** overiť prvý Actions beh na GitHube (push image do ghcr.io),
+SSH kľúč na linux server + nasadenie (docker context / compose pull).
 
 ### T5 — Blockly editor  ⏸ po T3
 - Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
