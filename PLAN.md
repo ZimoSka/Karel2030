@@ -64,14 +64,21 @@ Chýba oproti desktopu:
       (rozmery, štart Karela, pohybové obmedzenia), Zásoby, Príkazy (zakázať),
       Pohľad, Misia. Veľká položka.
 - [ ] **E. Editor misií (GoalCondition)** — súčasť D, záložka Misia
-- [ ] **F. Otvoriť/Uložiť program a svet** — menu/tlačidlá; load svetov cez API,
-      uloženie programu (workspace), export/import .karxml
+- [ ] **F. Otvoriť/Uložiť svet a program**
+      - F1: otvoriť/uložiť svet na **lokálny disk** (.karxml) — pre učiteľa
+        (browser download + file upload)
+      - F2: úroveň **admin** — uložiť svet do **volume v kontajneri** (publikovať)
+      - F3: dropdown **„Predvyrobené svety"** — učiteľ si vyberie zo svetov
+        publikovaných pre všetkých (baked worlds/ + admin-uložené v data/worlds/)
+      - F4: otvoriť/uložiť **program** žiaka/učiteľa (.prg/text)
+      - vyžaduje backend: merge worlds/ + data/worlds/ v `/api/worlds`,
+        POST `/api/worlds` (admin) na publikovanie, rola admin na webe
 - [ ] **G. Prepínač jazyka** — UI jazyk + prog jazyk (dropdowny)
-- [ ] **H. Editácia miestnosti myšou** v 3D (klásť/brať tehly, steny, značky) —
-      učiteľská tvorba svetov; náročné, možno neskôr
 
-Poradie: rýchle výhry A+B+C (žiacky zážitok), potom veľké D+E (učiteľská tvorba),
-potom F+G, H zvážiť.
+Poradie: ✅ A+B+C (žiacky zážitok), → D+E (učiteľská tvorba), → F, → G.
+
+> **Pozn.:** editácia miestnosti myšou v 3D NIE je v pláne — nebola ani
+> v pôvodnom Karlovi. Učiteľ skladá svet priamym ovládaním (B) + uloží (F).
 
 ### T4 — Docker + deploy  🟡 build overený, nasadenie zostáva
 ✅ Dockerfile, docker-compose.yml, .dockerignore, GitHub Actions → ghcr.io,
