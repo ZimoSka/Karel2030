@@ -32,6 +32,48 @@ Prístup na server: SSH kľúčom (treba nastaviť — užívateľ je root, kľ�
 **19 regresných testov** v `tests/test_core.py` — parser, logické spojky,
 rozpočty, fyzické limity, loop-guard, rekurzia, XML roundtrip, misie, jazyky.
 
+### 🐞 Spätná väzba z testovania (jún 2026) — vyriešiť neskôr
+
+**Bugy:**
+- [ ] **B1. Default pohľad kamery zlý** — svety sú otočené inak ako v Python verzii.
+      Skontrolovať orientáciu/preset default kamery v render3d.js (mapovanie x→X, y→−Z
+      + počiatočný az/el) voči desktopu.
+- [ ] **B2. Nastavenia sveta sa nedajú otvoriť po pohybe** (len po resete). Príčina:
+      `step` správy posielajú state BEZ `settings`/`mission` (full=False), `state` sa
+      prepíše a `KarelSettings.open` číta `st.settings` = undefined → padne. Riešenie:
+      držať posledný „full" state zvlášť, alebo settings dialog otvárať z neho /
+      vyžiadať get_state pred otvorením.
+- [ ] **B3. Dialóg nastavení mení veľkosť podľa záložky** — fixovať na veľkosť
+      najväčšej záložky (stabilná výška/šírka).
+
+**UX / texty:**
+- [ ] **U1. Editor „Môj program" default** — nechať štruktúru `zaciatok … koniec`
+      + pôvodný úvodný komentár (ako desktop EXAMPLES).
+- [ ] **U2. Zoznam príkazov — celé šablóny štruktúr** — `opakuj N krat … koniec`,
+      `kym podm rob … koniec`, `ak podm potom … inak … koniec` (nie len kľúčové slovo);
+      dieťa čo nepozná syntax inak nemá šancu. (Desktop má `_cmds_structs`.)
+- [ ] **U3. Zadanie úlohy — rich text editor** namiesto HTML, s náhľadom výsledku;
+      + prejsť všetky svety a upraviť `intro_html` nech vyzerajú pekne.
+- [ ] **U4. Misia úspech/neúspech — rich text** + skonvertovať nečitateľné HTML texty.
+- [ ] **U5. Záložka Miestnosť** — „Pozícia Karla štartovacia" + „výška" je mätúce;
+      premenovať na **X** a **Y** (výška = Z).
+- [ ] **U6. Pohybové obmedzenia** — dopísať že **-1 = neobmedzené**; a spraviť to
+      checkboxom „neobmedzené" ako pri Zásobách (krajšie).
+- [ ] **U7. Záložka Príkazy — otočiť logiku**: zaškrtnuté = príkaz **viditeľný**
+      (logickejšie). *(rovnaká zmena aj v Python Karlovi — viď jeho PLAN)*
+- [ ] **U8. Texty podmienok — skloňovanie**: „Poloha Karla" → „Poloha **Karela**";
+      prejsť VŠETKY texty (Karel sa skloňuje: Karela/Karelovi…).
+- [ ] **U9. Ikona/brand** — robotia hlava vľavo hore je strašidelná; dať krajšiu;
+      text zmeniť na **„Karel 2030"**.
+
+**Funkcie:**
+- [ ] **F-prog. Programovací jazyk presunúť do Nastavení sveta** (ako Python verzia),
+      nie do toolbaru.
+- [ ] **F-admin. Úroveň admin — editovať publikované svety** v kontajneri
+      (načítať publikovaný svet, upraviť, znova publikovať/zmazať).
+
+---
+
 ### T2 — Integračná vrstva (API)  ✅ HOTOVÉ
 `server/` balík podľa docs/api.md: `state.py` (World↔sparse JSON), `storage.py`
 (FileStorage, KAREL_DATA_DIR), `sessions.py` (interpreter na daemon vlákne →
