@@ -56,8 +56,14 @@ worlds/ so vzorovými svetmi.
 kontajner naštartoval uvicorn, frontend na `/`, všetky REST endpointy OK,
 share-link tok (assignment→linky→workspace) zapísal do `/data`, WebSocket
 beh end-to-end (state→started→step→finished, Karel došiel k stene).
-**Zostáva:** overiť prvý Actions beh na GitHube (push image do ghcr.io),
-SSH kľúč na linux server + nasadenie (docker context / compose pull).
+✅ **GitHub Actions overené** — beh 27295518843 zelený: testy → buildx →
+push do `ghcr.io/zimoska/karel2030:latest` (+ :SHA), manifest potvrdený.
+(Staršie zlyhania boli prechodný Docker Hub timeout, nie chyba.)
+**Zostáva pre nasadenie:**
+- Package v ghcr.io je default **private** — pre `compose pull` na serveri buď
+  spraviť public (repo je public, jednoduché), alebo login tokenom
+- SSH kľúč na linux server + nasadenie (docker context / compose pull)
+- (drobnosť) actions bežia na Node 20 — pred sep 2026 bumpnúť verzie
 
 ### T5 — Blockly editor  ⏸ po T3
 - Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
