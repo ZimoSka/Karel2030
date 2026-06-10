@@ -10,6 +10,7 @@
   const pathTok = location.pathname.match(/^\/s\/([A-Za-z0-9_-]+)/);
   const TOKEN = (pathTok && pathTok[1]) || qs.get('token') || null;
   const STUDENT = !!TOKEN;
+  const ADMIN = !STUDENT && qs.get('role') === 'admin';   // dev: rola cez URL
 
   const api = MOCK ? MockApi : Api;
   const $ = (id) => document.getElementById(id);
@@ -226,6 +227,7 @@
       if (cmdMode) { if (!m.ok) logCmd(m.error || 'nevykonané', 'err'); return; }
       if (!m.ok && m.error) dialog(t('goal_condition.err_title', 'Chyba'), `<p>${m.error}</p>`, null, true);
     });
+    ws.on('world_export', m => { if (_pendingExport) { _pendingExport(m.karxml); _pendingExport = null; } });
 
     ws.connect();
   }
@@ -291,6 +293,51 @@
     KarelSettings.open({ state, t, onApply: (payload) => ws.applySettings(payload) });
   };
 
+  /* F. Otvoriť/Uložiť svet a program ----------------------------------- */
+  let _pendingExport = null;   // callback(karxml) po world_export správe
+  function download(name, text, mime) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain' }));
+    a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  function readFile(input, cb) {
+    const f = input.files && input.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = () => cb(r.result, f.name); r.readAsText(f);
+    input.value = '';
+  }
+  // F3: dropdown predvyrobených svetov
+  function loadWorldsDropdown() {
+    if (STUDENT) return;
+    api.worlds().then(ws_ => {
+      const sel = $('worlds');
+      sel.innerHTML = '<option value="">—</option>';
+      ws_.forEach(w => { const o = document.createElement('option'); o.value = w.id; o.textContent = w.title; sel.appendChild(o); });
+      sel.onchange = () => { if (sel.value) ws.loadWorld({ world_id: sel.value }); };
+    }).catch(() => {});
+  }
+  // F1: otvoriť svet zo súboru
+  $('btn-world-open').onclick = () => $('file-world').click();
+  $('file-world').onchange = (e) => readFile(e.target, (txt) => ws.loadWorld({ karxml: txt }));
+  // F1: uložiť svet do súboru (cez export_world)
+  $('btn-world-save').onclick = () => {
+    _pendingExport = (karxml) => download((state.meta.title || 'svet') + '.karxml', karxml, 'application/xml');
+    ws.exportWorld(editor.getValue());
+  };
+  // F2: publikovať svet (admin) do volume
+  $('btn-world-pub').onclick = () => {
+    const id = prompt(t('world_settings.frame_title', 'Názov sveta') + ' (id):', state.meta.title || 'svet');
+    if (!id) return;
+    _pendingExport = (karxml) => api.publishWorld(id, karxml)
+      .then(() => { loadWorldsDropdown(); setStatus(null, 'Publikované: ' + id); })
+      .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.detail || err.error || 'chyba') + '</p>', null, true));
+    ws.exportWorld(editor.getValue());
+  };
+  // F4: otvoriť/uložiť program
+  $('btn-prog-open').onclick = () => $('file-prog').click();
+  $('file-prog').onchange = (e) => readFile(e.target, (txt) => editor.setValue(txt));
+  $('btn-prog-save').onclick = () => download('program.karel', editor.getValue(), 'text/plain');
+
   /* CodeMirror potrebuje refresh po zmene veľkosti okna (inak sa neprekreslí) */
   let _rfTimer;
   window.addEventListener('resize', () => {
@@ -336,6 +383,8 @@
           '<p>Neplatný alebo expirovaný žiacky link.</p>', null, true);
       }
     } else {
+      if (ADMIN) document.body.classList.add('admin');
+      loadWorldsDropdown();
       // učiteľ: vlastná session — session_id generuje frontend (viď NOTES.md)
       let sid = sessionStorage.getItem('karel_session');
       if (!sid) {

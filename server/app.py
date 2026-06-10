@@ -17,6 +17,12 @@ storage = FileStorage()
 _ROOT       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _WORLDS_DIR = os.environ.get('KAREL_WORLDS_DIR', os.path.join(_ROOT, 'worlds'))
 _STATIC_DIR = os.path.join(_ROOT, 'static')
+# Publikované svety (admin) — perzistentné na volume, popri baked worlds/
+_PUBLISHED_DIR = os.path.join(os.environ.get('KAREL_DATA_DIR', './data'), 'worlds')
+os.makedirs(_PUBLISHED_DIR, exist_ok=True)
+
+import re as _re
+_SAFE_WID = _re.compile(r'^[A-Za-z0-9 _-]{1,64}$')
 
 
 def _err(status: int, code: str, detail: str = '') -> JSONResponse:
@@ -68,13 +74,34 @@ def examples():
 
 
 def _world_files() -> dict:
-    """id (stem súboru) → cesta k .karxml v worlds/."""
+    """id (stem súboru) → cesta k .karxml. Spája baked worlds/ + publikované
+    (data/worlds/); publikované pri zhode id prepíšu baked."""
     out = {}
-    if os.path.isdir(_WORLDS_DIR):
-        for fname in sorted(os.listdir(_WORLDS_DIR)):
-            if fname.lower().endswith('.karxml'):
-                out[fname[:-7]] = os.path.join(_WORLDS_DIR, fname)
+    for d in (_WORLDS_DIR, _PUBLISHED_DIR):
+        if os.path.isdir(d):
+            for fname in sorted(os.listdir(d)):
+                if fname.lower().endswith('.karxml'):
+                    out[fname[:-7]] = os.path.join(d, fname)
     return out
+
+
+@app.post('/api/worlds')
+async def publish_world(request: Request):
+    """Publikuj svet do volume (admin). Body: {id, karxml}."""
+    data = await request.json()
+    wid = (data or {}).get('id', '').strip()
+    karxml = (data or {}).get('karxml', '')
+    if not _SAFE_WID.match(wid):
+        return _err(400, 'bad_id', 'id: 1-64 znakov [A-Za-z0-9 _-]')
+    if len(karxml.encode('utf-8', 'replace')) > MAX_KARXML_BYTES:
+        return _err(400, 'too_large', 'karxml > 256 kB')
+    try:
+        kc.World.from_xml(karxml)        # validácia
+    except Exception as e:
+        return _err(400, 'invalid', str(e))
+    with open(os.path.join(_PUBLISHED_DIR, f'{wid}.karxml'), 'w', encoding='utf-8') as f:
+        f.write(karxml)
+    return {'id': wid, 'published': True}
 
 
 @app.get('/api/worlds')
@@ -265,6 +292,12 @@ async def _handle_client_msg(ws: WebSocket, session: Session, msg: dict):
     elif t == 'apply_settings' and session.teacher:
         _teacher_apply_settings(session, msg)
         await ws.send_json(session.state_msg('requested'))
+    elif t == 'export_world' and session.teacher:
+        w = session.world
+        if 'program' in msg:
+            w.program_text = msg['program']
+        await ws.send_json({'v': 1, 'type': 'world_export',
+                            'karxml': w.to_xml(), 'title': w.title})
     else:
         await ws.send_json({'v': 1, 'type': 'error',
                             'message': f'Neznámy typ správy: {t!r}'})

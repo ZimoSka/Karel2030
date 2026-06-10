@@ -257,6 +257,7 @@ class MockWS {
   }
   loadWorld() { /* mock: ignorované */ }
   applySettings() { /* mock: ignorované */ }
+  exportWorld() { this._emit('world_export', { karxml: '<world width="8" height="6"></world>', title: 'Mock' }); }
 }
 
 /* ---------- MockApi — podmnožina Api ---------- */
@@ -293,6 +294,7 @@ const MockApi = {
   ],
   worlds: async () => [],
   world: async () => { throw new Error('mock'); },
+  publishWorld: async () => ({ published: true }),
   workspace: async () => ({ assignment_id: 'mock', name: 'Mock žiak', program_text: '', state: new MockWorld().state() }),
   saveWorkspace: async () => ({}),
 };

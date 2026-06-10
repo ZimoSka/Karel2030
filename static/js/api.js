@@ -37,6 +37,7 @@ const Api = {
   examples:       ()     => Api._get('/examples'),
   worlds:         ()     => Api._get('/worlds'),
   world:          (id)   => Api._get('/worlds/' + encodeURIComponent(id)),
+  publishWorld:   (id, karxml) => Api._send('POST', '/worlds', { id, karxml }),
   parseKarxml:    (xml)  => fetch('/api/worlds/parse-karxml', { method: 'POST', body: xml })
                               .then(r => r.ok ? r.json() : Api._err(r).then(e => { throw e; })),
 
@@ -127,4 +128,5 @@ class KarelWS {
   getState()     { this.send('get_state'); }
   loadWorld(o)   { this.send('load_world', o); }   // {karxml} | {world_id}
   applySettings(o){ this.send('apply_settings', o); }
+  exportWorld(program) { this.send('export_world', program != null ? { program } : {}); }
 }

@@ -39,3 +39,6 @@ karel.ini
 .thumb/
 .claude/
 .wt/
+
+# Runtime dáta servera (assignments/links/workspaces/worlds)
+/data/

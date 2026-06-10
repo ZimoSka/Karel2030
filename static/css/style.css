@@ -26,7 +26,7 @@ h2 { font-size: 13px; margin: 0 0 6px; color: var(--accent); font-weight: 600; }
 
 /* ===== Toolbar ===== */
 #toolbar {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 6px 10px; background: var(--bg-dark);
   border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
@@ -175,8 +175,16 @@ button.act { flex: 1 1 40%; font-size: 12px; padding: 6px 4px; line-height: 1.2;
 #dlg-body { margin-bottom: 14px; }
 #dlg-buttons { display: flex; gap: 8px; justify-content: flex-end; }
 
-/* žiak nevidí učiteľské prvky */
+/* žiak nevidí učiteľské prvky; admin-only len pre admina */
 body.student .teacher-only { display: none !important; }
+.admin-only { display: none; }
+body.admin .admin-only { display: inline-flex; }
+#worlds { background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; max-width: 130px; }
+h2 .mini-btn {
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  padding: 0 3px; opacity: .7;
+}
+h2 .mini-btn:hover { opacity: 1; }
 
 /* ===== Nastavenia sveta (D+E) ===== */
 #settings-overlay {

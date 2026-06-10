@@ -24,6 +24,14 @@
   <label class="tb-label" id="examples-wrap"><span data-i18n="toolbar.examples">Príklady:</span>
     <select id="examples"></select>
   </label>
+  <label class="tb-label teacher-only"><span>Svety:</span>
+    <select id="worlds"></select>
+  </label>
+  <button class="tb teacher-only" id="btn-world-open" title="Otvoriť svet zo súboru (.karxml)">📂</button>
+  <button class="tb teacher-only" id="btn-world-save" title="Uložiť svet do súboru (.karxml)">💾</button>
+  <button class="tb admin-only" id="btn-world-pub" title="Publikovať svet pre všetkých (admin)">📤</button>
+  <input type="file" id="file-world" accept=".karxml,.xml" class="hidden">
+  <input type="file" id="file-prog" accept=".prg,.txt,.karel" class="hidden">
   <span id="status" data-i18n="status.ready">Pripravený</span>
   <span id="conn-dot" title="offline"></span>
 </header>
@@ -97,7 +105,11 @@
 <!-- ===== Editor + zoznam príkazov ===== -->
 <div id="bottom">
   <div id="editor-wrap">
-    <h2 data-i18n="program_panel.title">Môj program...</h2>
+    <h2>
+      <span data-i18n="program_panel.title">Môj program...</span>
+      <button class="mini-btn" id="btn-prog-open" title="Otvoriť program zo súboru">📂</button>
+      <button class="mini-btn" id="btn-prog-save" title="Uložiť program do súboru">💾</button>
+    </h2>
     <textarea id="code"></textarea>
   </div>
   <div class="panel" id="cmds-panel">
