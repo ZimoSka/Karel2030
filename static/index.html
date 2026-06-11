@@ -12,7 +12,7 @@
 
 <!-- ===== Toolbar ===== -->
 <header id="toolbar">
-  <span id="brand">🤖 Karel</span>
+  <span id="brand"><span class="brand-badge">K</span> Karel 2030</span>
   <button id="btn-task"  class="tb" data-i18n="toolbar.task">📋 Zadanie</button>
   <button id="btn-run"   class="tb accent" data-i18n="toolbar.run">▶ Spustiť</button>
   <button id="btn-stop"  class="tb" disabled data-i18n="toolbar.stop">⏹ Stop</button>
@@ -30,13 +30,11 @@
   <button class="tb teacher-only" id="btn-world-open" title="Otvoriť svet zo súboru (.karxml)">📂</button>
   <button class="tb teacher-only" id="btn-world-save" title="Uložiť svet do súboru (.karxml)">💾</button>
   <button class="tb admin-only" id="btn-world-pub" title="Publikovať svet pre všetkých (admin)">📤</button>
+  <button class="tb admin-only" id="btn-world-del" title="Zmazať vybraný publikovaný svet (admin)">🗑</button>
   <input type="file" id="file-world" accept=".karxml,.xml" class="hidden">
   <input type="file" id="file-prog" accept=".prg,.txt,.karel" class="hidden">
   <label class="tb-label" title="Jazyk rozhrania"><span>🌐</span>
     <select id="ui-lang"></select>
-  </label>
-  <label class="tb-label teacher-only" title="Programovací jazyk sveta"><span>⌨</span>
-    <select id="prog-lang"></select>
   </label>
   <span id="status" data-i18n="status.ready">Pripravený</span>
   <span id="conn-dot" title="offline"></span>

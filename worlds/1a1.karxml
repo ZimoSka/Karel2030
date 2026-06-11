@@ -231,19 +231,9 @@
   <bigbricks/>
   <marks/>
   <title>1a1</title>
-  <intro>&lt;p&gt;&lt;img src=&quot;aniDogToonDazed.gif&quot; align=&quot;left&quot;&gt;&lt;font face=&quot;Cooper Black&quot; color=&quot;#FFFF66&quot;&gt;Ahoj 
-Miško!&lt;/font&gt;&lt;/p&gt;
-&lt;p&gt;&lt;font face=&quot;Arial&quot; color=&quot;#FFCC00&quot;&gt;Počul som, že si sa dnes naučil niečo nové.&lt;br&gt;
-Vrabce čvirikali, že si sa naučil sčítavať 1+1.&lt;/font&gt;&lt;/p&gt;
-&lt;p&gt;&lt;font face=&quot;Arial&quot; color=&quot;#FFCC00&quot;&gt;Čo tak si to overiť... &lt;/font&gt;
-&lt;hr color=&quot;#99FF99&quot;&gt;
-&lt;img border=&quot;0&quot; src=&quot;Scitan1.gif&quot; align=&quot;right&quot;&gt;&lt;i&gt;&lt;font face=&quot;Arial&quot; color=&quot;#99FF99&quot;&gt;Miško, tovjou úlohou je vojsť s Karlom do&lt;br&gt;
-štvorca, ktorý je pri správnom výsledku sčítania.&lt;/font&gt;&lt;/i&gt;&lt;/p&gt;</intro>
-  <success>&lt;p&gt;&lt;font face=&quot;Cooper Black&quot; color=&quot;#00FF00&quot;&gt;Juchachá, ty si to zvládol!&lt;/font&gt;&lt;/p&gt;
-&lt;p&gt;
-&lt;img border=&quot;0&quot; dynsrc=&quot;Chick.avi&quot; start=&quot;fileopen&quot; width=&quot;320&quot; height=&quot;240&quot;&gt;&lt;/p&gt;</success>
-  <failure>&lt;p&gt;&lt;img src=&quot;http://teacherweb.com/images/aniPenguinSitting.gif&quot; align=&quot;left&quot;&gt;&lt;font face=&quot;Cooper Black&quot; color=&quot;#FF3300&quot;&gt;Gebulka, 
-zdá sa, ze máš v scítavaní ešte drobné medzery...&lt;/font&gt;&lt;/p&gt;</failure>
+  <intro>&lt;h3&gt;Koľko je 1 + 1?&lt;/h3&gt;&lt;p&gt;Z tehál je postavený príklad &lt;b&gt;1 + 1 = ?&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Prejdi Karelom k správnemu výsledku a &lt;b&gt;označ ho&lt;/b&gt; značkou.&lt;/p&gt;</intro>
+  <success>&lt;h3 style=&quot;color:#44ff88&quot;&gt;Juchú, ty si to zvládol! ✓&lt;/h3&gt;&lt;p&gt;1 + 1 = 2 — a ty si to vyriešil sám!&lt;/p&gt;</success>
+  <failure>&lt;h3 style=&quot;color:#ff6666&quot;&gt;Ešte nie…&lt;/h3&gt;&lt;p&gt;To nie je správny výsledok. Skús znova spočítať 1 + 1.&lt;/p&gt;</failure>
   <program>Začiatok
  
 Koniec</program>

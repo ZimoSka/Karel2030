@@ -104,6 +104,18 @@ async def publish_world(request: Request):
     return {'id': wid, 'published': True}
 
 
+@app.delete('/api/worlds/{world_id}')
+def delete_world(world_id: str):
+    """Zmaž publikovaný svet z volume (admin). Baked worlds/ sa nedajú mazať."""
+    if not _SAFE_WID.match(world_id):
+        return _err(400, 'bad_id', 'neplatné id')
+    path = os.path.join(_PUBLISHED_DIR, f'{world_id}.karxml')
+    if not os.path.exists(path):
+        return _err(404, 'not_found', 'nie je publikovaný (baked svety sa nemažú)')
+    os.remove(path)
+    return {'id': world_id, 'deleted': True}
+
+
 @app.get('/api/worlds')
 def worlds():
     out = []

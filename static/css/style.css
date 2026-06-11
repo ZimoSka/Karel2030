@@ -30,7 +30,12 @@ h2 { font-size: 13px; margin: 0 0 6px; color: var(--accent); font-weight: 600; }
   padding: 6px 10px; background: var(--bg-dark);
   border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
-#brand { font-weight: 700; color: var(--accent); margin-right: 8px; }
+#brand { font-weight: 700; color: var(--accent); margin-right: 8px; display: inline-flex; align-items: center; gap: 6px; }
+.brand-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: var(--accent); color: var(--bg-dark); font-weight: 800; font-size: 14px;
+}
 button.tb, button.ctl, button.act, #dlg-buttons button {
   background: var(--panel); color: var(--fg);
   border: 1px solid var(--border); border-radius: 6px;
@@ -241,3 +246,19 @@ input.set-num, input.set-text, select.set-text, .set-area, .set-list {
 }
 .mini-dialog h4 { margin: 0 0 6px; color: var(--accent); }
 .set-cond-edit { display: flex; flex-direction: column; gap: 6px; }
+
+/* Rich-text editor (U3/U4) */
+.rt-wrap { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.rt-toolbar { display: flex; gap: 2px; background: var(--bg-dark); padding: 3px; border-bottom: 1px solid var(--border); }
+.rt-btn {
+  background: var(--panel); color: var(--fg); border: 1px solid var(--border);
+  border-radius: 4px; min-width: 26px; padding: 2px 6px; cursor: pointer;
+  font: bold 13px serif; position: relative;
+}
+.rt-btn:hover { border-color: var(--accent); }
+.rt-area {
+  min-height: 90px; max-height: 160px; overflow-y: auto; padding: 8px;
+  background: var(--bg-dark); color: var(--fg); font: 14px "Segoe UI", sans-serif;
+}
+.rt-area:focus { outline: none; }
+.rt-area h3 { margin: 4px 0; color: var(--accent); }

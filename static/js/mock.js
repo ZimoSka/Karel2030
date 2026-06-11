@@ -295,6 +295,7 @@ const MockApi = {
   worlds: async () => [],
   world: async () => { throw new Error('mock'); },
   publishWorld: async () => ({ published: true }),
+  deleteWorld: async () => ({ deleted: true }),
   workspace: async () => ({ assignment_id: 'mock', name: 'Mock žiak', program_text: '', state: new MockWorld().state() }),
   saveWorkspace: async () => ({}),
 };

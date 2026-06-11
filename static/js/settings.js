@@ -10,6 +10,7 @@ const KarelSettings = (function () {
   let st = null;          // referencia na state JSON
   let conds = [];         // pracovná kópia misie
   let onApplyCb = null;
+  let progLangs = [];     // [{code,name}] dostupné prog jazyky
   const $ = (id) => document.getElementById(id);
 
   const CMD_TOKS = ['FORWARD', 'BACK', 'LEFT', 'RIGHT', 'DROP', 'PICK',
@@ -84,13 +85,47 @@ const KarelSettings = (function () {
 
   let get = {};   // gettery jednotlivých polí (naplnené v builderoch)
 
+  /* U3/U4: jednoduchý rich-text editor (WYSIWYG, contenteditable).
+   * Zobrazuje výsledný tvar priamo počas písania. get() vráti HTML. */
+  function richText(html) {
+    const mkBtn = (label, cmd, val) => {
+      const b = el('button', { class: 'rt-btn', text: label, type: 'button' });
+      b.onmousedown = (e) => { e.preventDefault(); document.execCommand(cmd, false, val); };
+      return b;
+    };
+    const colorWrap = el('label', { class: 'rt-btn', text: 'A' });
+    const color = el('input', { type: 'color', value: '#ffdd44' });
+    color.style.width = '0'; color.style.height = '0'; color.style.opacity = '0'; color.style.position = 'absolute';
+    color.oninput = () => document.execCommand('foreColor', false, color.value);
+    colorWrap.appendChild(color);
+    const bar = el('div', { class: 'rt-toolbar' }, [
+      mkBtn('B', 'bold'), mkBtn('I', 'italic'), mkBtn('U', 'underline'),
+      mkBtn('H', 'formatBlock', 'H3'), mkBtn('•', 'insertUnorderedList'),
+      mkBtn('↵', 'insertHTML', '<br>'), colorWrap,
+    ]);
+    bar.querySelector('.rt-btn:last-child');
+    const area = el('div', { class: 'rt-area' });
+    area.contentEditable = 'true';
+    area.innerHTML = unescapeMaybe(html || '');
+    const wrap = el('div', { class: 'rt-wrap' }, [bar, area]);
+    return { el: wrap, get: () => area.innerHTML };
+  }
+  // niektoré staré .karxml majú dvojito-escapovaný HTML (&amp;lt;…) — rozbalíme
+  function unescapeMaybe(s) {
+    if (/&(amp|lt|gt|quot);/.test(s) && !/<[a-z]/i.test(s)) {
+      const d = document.createElement('textarea'); d.innerHTML = s; return d.value;
+    }
+    return s;
+  }
+
   function buildDesc(p) {
     const title = el('input', { type: 'text', value: st.meta.title || '' }); title.className = 'set-text';
-    const intro = el('textarea', { class: 'set-area' }); intro.value = st.meta.intro_html || '';
+    const intro = richText(st.meta.intro_html || '');
     p.appendChild(field('world_settings.frame_title', 'Názov sveta', title));
-    p.appendChild(field('world_settings.frame_desc', 'Popis / zadanie (HTML)', intro));
+    p.appendChild(el('div', { class: 'set-sep', text: T('world_settings.frame_desc', 'Popis / zadanie úlohy') }));
+    p.appendChild(intro.el);
     get.title = () => title.value;
-    get.intro = () => intro.value;
+    get.intro = () => intro.get();
   }
 
   function buildRoom(p) {
@@ -100,28 +135,33 @@ const KarelSettings = (function () {
     const dir = el('select', { class: 'set-text' });
     [['N', 'dir_n', '↑ Sever'], ['E', 'dir_e', '→ Východ'], ['S', 'dir_s', '↓ Juh'], ['W', 'dir_w', '← Západ']]
       .forEach(([v, k, d]) => { const o = el('option', { value: v, text: T('world_settings.' + k, d) }); if (st.karel.dir === v) o.selected = true; dir.appendChild(o); });
+    // F-prog: programovací jazyk sveta (ako Python verzia)
+    const prog = el('select', { class: 'set-text' });
+    (progLangs.length ? progLangs : [{ code: s.prog_lang || 'sk', name: s.prog_lang || 'sk' }])
+      .forEach(l => { const o = el('option', { value: l.code, text: l.name }); if ((s.prog_lang || 'sk') === l.code) o.selected = true; prog.appendChild(o); });
+    p.appendChild(field('world_settings.lbl_prog_lang', 'Jazyk programovania:', prog));
     p.appendChild(field('world_settings.lbl_width', 'Šírka:', w));
     p.appendChild(field('world_settings.lbl_height', 'Výška:', h));
-    p.appendChild(field('world_settings.frame_pos', 'Karel X:', kx));
-    p.appendChild(field('world_settings.lbl_height', 'Karel Y:', ky));
+    // U5: jasné X / Y (výška = Z, preto nemiešať)
+    p.appendChild(field('', 'Karel X:', kx));
+    p.appendChild(field('', 'Karel Y:', ky));
     p.appendChild(field('world_settings.frame_dir', 'Smer Karela', dir));
     p.appendChild(el('div', { class: 'set-sep', text: T('world_settings.frame_move', 'Pohyb — obmedzenia') }));
+    // max_climb: 0..N (0 = nevylezie, default 1) — bez „neobmedzene"
     const climb = num(s.max_climb != null ? s.max_climb : 1, 0);
-    const drop = num(s.max_drop != null ? s.max_drop : -1, -1);
-    const steps = num(s.max_steps != null ? s.max_steps : -1, -1);
-    const turns = num(s.max_turns != null ? s.max_turns : -1, -1);
-    const bh = num(s.max_brick_height != null ? s.max_brick_height : -1, -1);
     p.appendChild(field('world_settings.lbl_max_climb', 'Max. výška výstupu:', climb));
-    p.appendChild(field('world_settings.lbl_max_drop', 'Max. zoskok:', drop));
-    p.appendChild(field('world_settings.lbl_max_steps', 'Max. krokov:', steps));
-    p.appendChild(field('world_settings.lbl_max_turns', 'Max. otočení:', turns));
-    p.appendChild(field('world_settings.lbl_max_bh', 'Max. výška tehál:', bh));
+    // U6: ostatné s checkboxom „neobmedzené" (-1) ako pri Zásobách
+    const drop = limitRow('world_settings.lbl_max_drop', 'Max. zoskok:', s.max_drop != null ? s.max_drop : -1);
+    const steps = limitRow('world_settings.lbl_max_steps', 'Max. krokov:', s.max_steps != null ? s.max_steps : -1);
+    const turns = limitRow('world_settings.lbl_max_turns', 'Max. otočení:', s.max_turns != null ? s.max_turns : -1);
+    const bh = limitRow('world_settings.lbl_max_bh', 'Max. výška tehál:', s.max_brick_height != null ? s.max_brick_height : -1);
+    [drop, steps, turns, bh].forEach(r => p.appendChild(r.row));
     get.room = () => ({
+      prog_lang: prog.value,
       width: parseInt(w.value, 10), height: parseInt(h.value, 10),
       karel: { x: parseInt(kx.value, 10), y: parseInt(ky.value, 10), dir: dir.value },
-      max_climb: parseInt(climb.value, 10), max_drop: parseInt(drop.value, 10),
-      max_steps: parseInt(steps.value, 10), max_turns: parseInt(turns.value, 10),
-      max_brick_height: parseInt(bh.value, 10),
+      max_climb: parseInt(climb.value, 10), max_drop: drop.get(),
+      max_steps: steps.get(), max_turns: turns.get(), max_brick_height: bh.get(),
     });
   }
 
@@ -138,20 +178,22 @@ const KarelSettings = (function () {
   function buildCmds(p) {
     const s = st.settings || {};
     const dis = new Set(s.disabled_cmds || []);
-    p.appendChild(el('div', { class: 'set-note', text: T('world_settings.cmds_intro', 'Zaškrtnuté príkazy sú zakázané:') }));
+    // U7: otočená logika — zaškrtnuté = príkaz VIDITEĽNÝ/povolený
+    p.appendChild(el('div', { class: 'set-note', text: 'Zaškrtnuté príkazy sú pre žiaka viditeľné a povolené. Odškrtnuté = skryté/zakázané.' }));
     const grid = el('div', { class: 'set-cmd-grid' });
     const boxes = {};
     CMD_TOKS.forEach(tok => {
-      const c = el('input', { type: 'checkbox' }); c.checked = dis.has(tok);
+      const c = el('input', { type: 'checkbox' }); c.checked = !dis.has(tok);   // checked = viditeľný
       boxes[tok] = c;
       grid.appendChild(el('label', { class: 'inline' }, [c, el('span', { text: ' ' + T('world_settings.' + CMD_LBL[tok], tok) })]));
     });
     p.appendChild(grid);
-    const proc = el('input', { type: 'checkbox' }); proc.checked = !!s.disable_procedure;
-    p.appendChild(el('label', { class: 'inline set-row' }, [proc, el('span', { text: ' ' + T('world_settings.disable_proc', 'Zakázať definovanie vlastných príkazov') })]));
+    // vlastné príkazy: zaškrtnuté = povolené (negácia disable_procedure)
+    const proc = el('input', { type: 'checkbox' }); proc.checked = !s.disable_procedure;
+    p.appendChild(el('label', { class: 'inline set-row' }, [proc, el('span', { text: ' Povoliť definovanie vlastných príkazov (prikaz … koniec)' })]));
     get.cmds = () => ({
-      disabled_cmds: CMD_TOKS.filter(tok => boxes[tok].checked),
-      disable_procedure: proc.checked,
+      disabled_cmds: CMD_TOKS.filter(tok => !boxes[tok].checked),   // ulož NEzaškrtnuté ako zakázané
+      disable_procedure: !proc.checked,
     });
   }
 
@@ -190,8 +232,8 @@ const KarelSettings = (function () {
   function buildMission(p) {
     conds = (st.mission || []).map(c => Object.assign({}, c));
     const rof = el('input', { type: 'checkbox' }); rof.checked = !!(st.settings && st.settings.reset_on_failure);
-    const succ = el('textarea', { class: 'set-area' }); succ.value = st.meta.success_html || '';
-    const fail = el('textarea', { class: 'set-area' }); fail.value = st.meta.failure_html || '';
+    const succ = richText(st.meta.success_html || '');
+    const fail = richText(st.meta.failure_html || '');
 
     const list = el('select', { class: 'set-list', size: '6' });
     function refresh() {
@@ -211,12 +253,14 @@ const KarelSettings = (function () {
     p.appendChild(list);
     p.appendChild(el('div', { class: 'set-btnrow' }, [btnAdd, btnEdit, btnDel]));
     p.appendChild(el('label', { class: 'inline set-row' }, [rof, el('span', { text: ' ' + T('world_settings.reset_on_fail', 'Pri neúspechu resetovať svet') })]));
-    p.appendChild(field('world_settings.msg_success', 'Správa pri úspechu:', succ));
-    p.appendChild(field('world_settings.msg_failure', 'Správa pri neúspechu:', fail));
+    p.appendChild(el('div', { class: 'set-sep', text: T('world_settings.msg_success', 'Správa pri úspechu:') }));
+    p.appendChild(succ.el);
+    p.appendChild(el('div', { class: 'set-sep', text: T('world_settings.msg_failure', 'Správa pri neúspechu:') }));
+    p.appendChild(fail.el);
     get.mission = () => ({
       goal_conditions: conds,
       reset_on_failure: rof.checked,
-      success_html: succ.value, failure_html: fail.value,
+      success_html: succ.get(), failure_html: fail.get(),
     });
   }
 
@@ -320,6 +364,7 @@ const KarelSettings = (function () {
     T = opts.t || T;
     st = opts.state;
     onApplyCb = opts.onApply;
+    progLangs = opts.progLangs || [];
     if (!st) return;
     buildTabs();
     $('settings-overlay').classList.remove('hidden');
@@ -330,6 +375,7 @@ const KarelSettings = (function () {
     const room = get.room(), inv = get.inv(), cmds = get.cmds(), view = get.view(), mis = get.mission();
     return {
       settings: Object.assign({}, {
+        prog_lang: room.prog_lang,
         max_climb: room.max_climb, max_drop: room.max_drop, max_steps: room.max_steps,
         max_turns: room.max_turns, max_brick_height: room.max_brick_height,
         brick_limit: inv.brick_limit, big_brick_limit: inv.big_brick_limit, mark_limit: inv.mark_limit,

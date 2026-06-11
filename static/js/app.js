@@ -50,6 +50,14 @@
     $('overlay').classList.remove('hidden');
   }
   function hideDialog() { $('overlay').classList.add('hidden'); }
+  // staré .karxml môžu mať dvojito-escapovaný HTML — rozbalíme pre čitateľné zobrazenie
+  function htmlReadable(s) {
+    s = s || '';
+    if (/&(amp|lt|gt|quot);/.test(s) && !/<[a-z]/i.test(s)) {
+      const d = document.createElement('textarea'); d.innerHTML = s; return d.value;
+    }
+    return s;
+  }
   $('overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') hideDialog(); });
 
   /* ---------- status ---------- */
@@ -90,26 +98,47 @@
     const filter = ($('cmds-filter').value || '').toLowerCase();
     const disabled = new Set([...(lang.disabled || []),
                               ...((state && state.settings && state.settings.disabled_cmds) || [])]);
+    const p = lang.primary;
+    // U2: celé šablóny štruktúr — vlož viacriadkový úryvok, nielen kľúčové slovo
+    const kw = (tk, dflt) => p[tk] || dflt;
+    const structTemplates = [];
+    if (!disabled.has('REPEAT'))
+      structTemplates.push({ label: `${kw('REPEAT','opakuj')} 3 ${kw('TIMES','krat')} … ${kw('END','koniec')}`,
+        snippet: `${kw('REPEAT','opakuj')} 3 ${kw('TIMES','krat')}\n  \n${kw('END','koniec')}\n` });
+    if (!disabled.has('WHILE'))
+      structTemplates.push({ label: `${kw('WHILE','kym')} … ${kw('DO','rob')} … ${kw('END','koniec')}`,
+        snippet: `${kw('WHILE','kym')} ${kw('NOT','nie')} ${kw('WALL','stena')} ${kw('DO','rob')}\n  \n${kw('END','koniec')}\n` });
+    structTemplates.push({ label: `${kw('IF','ak')} … ${kw('THEN','potom')} … ${kw('END','koniec')}`,
+      snippet: `${kw('IF','ak')} ${kw('WALL','stena')} ${kw('THEN','potom')}\n  \n${kw('END','koniec')}\n` });
+    structTemplates.push({ label: `${kw('IF','ak')} … ${kw('THEN','potom')} … ${kw('ELSE','inak')} … ${kw('END','koniec')}`,
+      snippet: `${kw('IF','ak')} ${kw('WALL','stena')} ${kw('THEN','potom')}\n  \n${kw('ELSE','inak')}\n  \n${kw('END','koniec')}\n` });
+    if (!disabled.has('PROCEDURE') && !(state && state.settings && state.settings.disable_procedure))
+      structTemplates.push({ label: `${kw('PROCEDURE','prikaz')} Meno … ${kw('END','koniec')}`,
+        snippet: `${kw('PROCEDURE','prikaz')} Meno\n  \n${kw('END','koniec')}\n` });
+
     const groups = [
       { key: 'program_panel.filter_mov', dflt: '🚶 Pohyb',
         toks: ['FORWARD', 'BACK', 'LEFT', 'RIGHT', 'DROP', 'PICK', 'DROP_BIG', 'MARK', 'CLEAR', 'SLOWLY', 'QUICKLY'], cls: '' },
-      { key: 'program_panel.filter_str', dflt: '🔀 Štruktúry',
-        toks: ['REPEAT', 'WHILE', 'IF', 'PROCEDURE'], cls: 'struct' },
+      { key: 'program_panel.filter_str', dflt: '🔀 Štruktúry', templates: structTemplates, cls: 'struct' },
       { key: 'program_panel.filter_cnd', dflt: '❓ Podmienky',
         toks: ['WALL', 'BRICK', 'FREE', 'SIGN', 'NOT', 'AND', 'OR', 'TRUE', 'FALSE'], cls: 'cond' },
     ];
-    const addItem = (parent, word, cls) => {
+    const addItem = (parent, word, cls, snippet) => {
       if (filter && word.toLowerCase().indexOf(filter) === -1) return false;
       const d = document.createElement('div');
       d.textContent = word; d.className = 'cmd-item ' + cls;
-      d.onclick = () => editor.insert(word + ' ');
+      d.onclick = () => editor.insert(snippet != null ? snippet : word + ' ');
       parent.appendChild(d); return true;
     };
     groups.forEach(g => {
-      const words = g.toks.filter(tk => !disabled.has(tk)).map(tk => lang.primary[tk]).filter(Boolean);
       const items = document.createDocumentFragment();
       let any = false;
-      words.forEach(w => { if (addItem(items, w, g.cls)) any = true; });
+      if (g.templates) {
+        g.templates.forEach(tpl => { if (addItem(items, tpl.label, g.cls, tpl.snippet)) any = true; });
+      } else {
+        g.toks.filter(tk => !disabled.has(tk)).map(tk => p[tk]).filter(Boolean)
+          .forEach(w => { if (addItem(items, w, g.cls)) any = true; });
+      }
       if (any) {
         const h = document.createElement('div');
         h.className = 'cmd-group-hdr'; h.textContent = t(g.key, g.dflt);
@@ -151,6 +180,19 @@
   const editor = new KarelEditor($('code'));
   let ws;
 
+  let _curProgLang = null;          // posledný načítaný prog jazyk editora
+  function reloadProgLang(code, disabled) {
+    if (code === _curProgLang) { editor.setDisabledCmds(disabled || []); updateCmdsList(); return; }
+    _curProgLang = code;
+    api.progLang(code).then(lang => {
+      primaryKw = lang.primary || {};
+      editor.setLang(lang);
+      editor.setDisabledCmds(disabled || []);
+      updateCmdsList(lang);
+      rebuildActionTitles();
+    }).catch(() => {});
+  }
+
   function onState(st, reason) {
     // zlúč s predošlým (full state vždy obsahuje settings/mission, takže ich obnoví)
     state = Object.assign({}, state, st);
@@ -162,30 +204,29 @@
     const camLocked = !!(st.settings && st.settings.camera_locked);
     document.querySelectorAll('.view-btn').forEach(b => { b.disabled = camLocked; });
     $('world-title').textContent = (st.meta && st.meta.title) || '';
-    // po apply_settings (reason 'requested') premietni zakázané príkazy do editora aj zoznamu
-    if (reason === 'requested' && st.settings) {
-      editor.setDisabledCmds(st.settings.disabled_cmds || []);
-      updateCmdsList();
+    // prog jazyk sveta → editor + zoznam (prelaď len ak sa zmenil)
+    if (st.settings) {
+      reloadProgLang(st.settings.prog_lang || 'sk', st.settings.disabled_cmds || []);
     }
     if (reason === 'connect' || reason === 'load') {
-      // prog jazyk sveta → editor + zoznam príkazov
-      const code = (st.settings && st.settings.prog_lang) || 'sk';
-      const psel = $('prog-lang'); if (psel && psel.value !== code) psel.value = code;
-      api.progLang(code).then(lang => {
-        primaryKw = lang.primary || {};
-        editor.setLang(lang);
-        editor.setDisabledCmds((st.settings && st.settings.disabled_cmds) || []);
-        updateCmdsList(lang);
-      }).catch(() => {});
       // intro dialóg pri prvom pripojení
       if (reason === 'connect' && st.meta && st.meta.intro_html) {
-        dialog(t('toolbar.task', 'Zadanie'), st.meta.intro_html);
+        dialog(t("toolbar.task","Zadanie"), htmlReadable(st.meta.intro_html));
       }
       // program zo sveta (učiteľ) — žiakovi ho prepíše workspace nižšie
-      if (!STUDENT && st.program_text && !editor.getValue()) {
-        editor.setValue(st.program_text);
+      if (!STUDENT) {
+        editor.setValue(st.program_text || defaultProgram());
       }
     }
+  }
+
+  // U1: default program — štruktúra zaciatok…koniec + úvodný komentár
+  function defaultProgram() {
+    const p = primaryKw;
+    const b = p.BEGIN || 'zaciatok', e = p.END || 'koniec';
+    return `# Karel 2030 — napíš svoj program medzi ${b} a ${e}\n` +
+           `# Príkazy: ${p.FORWARD||'dopredu'}, ${p.LEFT||'vlavo'}, ${p.RIGHT||'vpravo'}, ${p.DROP||'poloz'}, ${p.PICK||'zdvihni'}\n` +
+           `${b}\n  \n${e}\n`;
   }
 
   function wireWs() {
@@ -230,7 +271,7 @@
     ws.on('mission', m => {
       const ok = m.result === 'success';
       dialog(ok ? '✓ ' + t('goal_condition.eval_success', 'Úspech') : '✗ ' + t('goal_condition.eval_failure', 'Neúspech'),
-        m.message_html || '', null, !ok);
+        htmlReadable(m.message_html) || '', null, !ok);
     });
     ws.on('direct_result', m => {
       if (cmdMode) { if (!m.ok) logCmd(m.error || 'nevykonané', 'err'); return; }
@@ -246,7 +287,7 @@
   $('btn-stop').onclick = () => ws.stop();
   $('btn-reset').onclick = () => { ws.reset(); setStatus('status.reset_done', 'Reset.'); };
   $('btn-task').onclick = () => {
-    const html = (state && state.meta && state.meta.intro_html) || '';
+    const html = htmlReadable((state && state.meta && state.meta.intro_html) || '');
     dialog(t('toolbar.task', 'Zadanie'), html || t('status.no_task', 'Tento svet nemá žiadne zadanie.'));
   };
   $('speed').oninput = (e) => ws.speed(sliderToDelay(+e.target.value));
@@ -297,9 +338,11 @@
 
   /* D+E. Nastavenia sveta (učiteľ) */
   KarelSettings.wire();
+  let _progLangsList = [];
+  api.progLangs().then(ls => { _progLangsList = ls; }).catch(() => {});
   $('btn-settings').onclick = () => {
     if (!state) return;
-    KarelSettings.open({ state, t, onApply: (payload) => ws.applySettings(payload) });
+    KarelSettings.open({ state, t, progLangs: _progLangsList, onApply: (payload) => ws.applySettings(payload) });
   };
 
   /* G. Prepínač jazyka (UI + prog) ------------------------------------- */
@@ -313,19 +356,6 @@
       $('ui-lang').onchange = (e) => {
         uiLang = e.target.value; localStorage.setItem('karel_ui_lang', uiLang);
         api.uiStrings(uiLang).then(s => { T = s; applyI18n(); updateCmdsList(); }).catch(() => {});
-      };
-    }).catch(() => {});
-    if (!STUDENT) api.progLangs().then(ls => {
-      const cur = (state && state.settings && state.settings.prog_lang) || 'sk';
-      fillSelect($('prog-lang'), ls, cur);
-      $('prog-lang').onchange = (e) => {
-        const code = e.target.value;
-        ws.applySettings({ settings: { prog_lang: code } });   // ulož do sveta
-        api.progLang(code).then(lang => {                       // okamžite prelaď editor + zoznam
-          primaryKw = lang.primary || {};
-          editor.setLang(lang); updateCmdsList(lang);
-          rebuildActionTitles();
-        }).catch(() => {});
       };
     }).catch(() => {});
   }
@@ -375,6 +405,16 @@
       .then(() => { loadWorldsDropdown(); setStatus(null, 'Publikované: ' + id); })
       .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.detail || err.error || 'chyba') + '</p>', null, true));
     ws.exportWorld(editor.getValue());
+  };
+  // F-admin: zmazať vybraný publikovaný svet
+  $('btn-world-del').onclick = () => {
+    const id = $('worlds').value;
+    if (!id) { dialog(t('goal_condition.err_title', 'Chyba'), '<p>Vyber svet z dropdownu „Svety".</p>', null, true); return; }
+    dialog(t('world_settings.title', 'Nastavenia'), `<p>Zmazať publikovaný svet <b>${id}</b>?</p>`,
+      [{ label: t('world_settings.btn_cancel', 'Zrušiť') },
+       { label: 'Zmazať', action: () => api.deleteWorld(id)
+           .then(() => loadWorldsDropdown())
+           .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true)) }]);
   };
   // F4: otvoriť/uložiť program
   $('btn-prog-open').onclick = () => $('file-prog').click();

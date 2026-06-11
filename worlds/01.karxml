@@ -77,21 +77,9 @@
     <mark x="3" y="1"/>
   </marks>
   <title>01</title>
-  <intro>&amp;lt;font color=yellow size=6 face=&amp;quot;Arial&amp;quot;&amp;gt;
-&amp;lt;b&amp;gt;&amp;lt;center&amp;gt;
-Karel stoji na muriku,&amp;lt;br&amp;gt; napisite program, aby presiel cely murik a nespadol!
-&amp;lt;/b&amp;gt;&amp;lt;/center
-&amp;lt;/font&amp;gt;</intro>
-  <success>&amp;lt;font color=yellow size=6 face=&amp;quot;Arial&amp;quot;&amp;gt;
-&amp;lt;b&amp;gt;&amp;lt;center&amp;gt;
-Vyborne,&amp;lt;br&amp;gt; zvladol si to.
-&amp;lt;/b&amp;gt;&amp;lt;/center
-&amp;lt;/font&amp;gt;</success>
-  <failure>&amp;lt;font color=yellow size=6 face=&amp;quot;Arial&amp;quot;&amp;gt;
-&amp;lt;b&amp;gt;&amp;lt;center&amp;gt;
-Auuuu,&amp;lt;br&amp;gt; spadol si z murika...
-&amp;lt;/b&amp;gt;&amp;lt;/center
-&amp;lt;/font&amp;gt;</failure>
+  <intro>&lt;h3&gt;Karel na muriku&lt;/h3&gt;&lt;p&gt;Karel stojí na &lt;b&gt;muriku z tehál&lt;/b&gt;. Napíš program, aby &lt;b&gt;prešiel celý murik&lt;/b&gt; a nespadol dole!&lt;/p&gt;&lt;p&gt;Pohni ho príkazom &lt;code&gt;dopredu&lt;/code&gt;, na konci sa otoč.&lt;/p&gt;</intro>
+  <success>&lt;h3 style=&quot;color:#44ff88&quot;&gt;Výborne! 🎉&lt;/h3&gt;&lt;p&gt;Zvládol si prejsť celý murik. Skvelá práca!&lt;/p&gt;</success>
+  <failure>&lt;h3 style=&quot;color:#ff6666&quot;&gt;Auuu…&lt;/h3&gt;&lt;p&gt;Karel spadol z murika. Skús to znova — pozor na okraj!&lt;/p&gt;</failure>
   <program>Zacatok
  
 Koniec</program>
