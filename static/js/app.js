@@ -152,7 +152,9 @@
   let ws;
 
   function onState(st, reason) {
-    state = st;
+    // zlúč s predošlým (full state vždy obsahuje settings/mission, takže ich obnoví)
+    state = Object.assign({}, state, st);
+    st = state;
     renderer.render(st);
     updateNav(st);
     applyRestrictions(st);
@@ -191,7 +193,12 @@
     ws.on('_close', () => { $('conn-dot').classList.remove('on'); setRunning(false); });
 
     ws.on('state', m => onState(m.state, m.reason));
-    ws.on('step', m => { state = m.state; renderer.render(m.state); updateNav(m.state); });
+    // step správy neposielajú settings/mission (full=False) — zlúčime, aby ostali
+    // zachované (inak by sa po pohybe nedali otvoriť Nastavenia, B2)
+    ws.on('step', m => {
+      state = Object.assign({}, state, m.state);
+      renderer.render(state); updateNav(state);
+    });
 
     ws.on('started', () => { setRunning(true); setStatus('status.running', 'Beží...'); });
     ws.on('finished', m => {

@@ -35,16 +35,14 @@ rozpočty, fyzické limity, loop-guard, rekurzia, XML roundtrip, misie, jazyky.
 ### 🐞 Spätná väzba z testovania (jún 2026) — vyriešiť neskôr
 
 **Bugy:**
-- [ ] **B1. Default pohľad kamery zlý** — svety sú otočené inak ako v Python verzii.
-      Skontrolovať orientáciu/preset default kamery v render3d.js (mapovanie x→X, y→−Z
-      + počiatočný az/el) voči desktopu.
-- [ ] **B2. Nastavenia sveta sa nedajú otvoriť po pohybe** (len po resete). Príčina:
-      `step` správy posielajú state BEZ `settings`/`mission` (full=False), `state` sa
-      prepíše a `KarelSettings.open` číta `st.settings` = undefined → padne. Riešenie:
-      držať posledný „full" state zvlášť, alebo settings dialog otvárať z neho /
-      vyžiadať get_state pred otvorením.
-- [ ] **B3. Dialóg nastavení mení veľkosť podľa záložky** — fixovať na veľkosť
-      najväčšej záložky (stabilná výška/šírka).
+- [x] **B1. Default pohľad kamery zlý** — opravené: render3d mapoval worldY→−Z
+      (zrkadlilo voči pythonu); zmenené na worldY→+Z (zhodné s Python desktopom),
+      vrátane podlahy/mriežky/stien/cieľa kamery a smeru Karela. az/el sedí 1:1.
+- [x] **B2. Nastavenia sveta sa nedali otvoriť po pohybe** — opravené: `step` aj
+      `state` sa teraz zlučujú do `state` (Object.assign), takže settings/mission
+      prežijú step správy (full=False). Overené: dialóg sa otvorí po pohybe.
+- [x] **B3. Dialóg nastavení menil veľkosť podľa záložky** — opravené: `#set-body`
+      pevná výška 380px → dialóg konštantný (523px na všetkých 6 záložkách).
 
 **UX / texty:**
 - [ ] **U1. Editor „Môj program" default** — nechať štruktúru `zaciatok … koniec`

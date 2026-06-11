@@ -1,5 +1,7 @@
 /* Karel 2030 — Three.js renderer stavu sveta (state JSON §4).
- * Súradnice: x=0 vľavo, y=0 dole (core) → Three: X = x, Z = -y, Y = výška.
+ * Súradnice: x=0 vľavo, y=0 dole (core) → Three: X = x, Z = +y, Y = výška.
+ * Mapovanie zhodné s Python desktopom (worldX,worldY horizontálne, Z hore →
+ * three X,Z horizontálne, Y hore) — kamera az/el sedí 1:1 s .karxml z Pythonu.
  * Kvader = 5 jednotiek výšky, malé tehly sa stohujú NA kvadri.
  */
 'use strict';
@@ -89,9 +91,9 @@ class KarelRenderer {
     return g;
   }
 
-  /* Mapovanie core→Three (stred políčka) */
+  /* Mapovanie core→Three (stred políčka); worldY → +Z (ako Python) */
   _px(x) { return x + 0.5; }
-  _pz(y) { return -(y + 0.5); }
+  _pz(y) { return y + 0.5; }
 
   /* Statická časť: podlaha (modrá mriežka ako desktop) + okrajové steny (žlté) */
   _buildStatic(w, h) {
@@ -100,13 +102,13 @@ class KarelRenderer {
       new THREE.PlaneGeometry(w, h),
       new THREE.MeshLambertMaterial({ color: 0x101038 }));
     floor.rotation.x = -Math.PI / 2;
-    floor.position.set(w / 2, -0.005, -h / 2);
+    floor.position.set(w / 2, -0.005, h / 2);
     this._static.add(floor);
 
     // mriežka — modré čiary
     const pts = [];
-    for (let x = 0; x <= w; x++) pts.push(x, 0, 0, x, 0, -h);
-    for (let y = 0; y <= h; y++) pts.push(0, 0, -y, w, 0, -y);
+    for (let x = 0; x <= w; x++) pts.push(x, 0, 0, x, 0, h);
+    for (let y = 0; y <= h; y++) pts.push(0, 0, y, w, 0, y);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     this._static.add(new THREE.LineSegments(geo,
@@ -119,12 +121,12 @@ class KarelRenderer {
       m.position.set(px, wallH / 2, pz);
       this._static.add(m);
     };
-    mk(w + 2 * t, t, w / 2, t / 2);            // juh (y=0 → z=0)
-    mk(w + 2 * t, t, w / 2, -h - t / 2);       // sever
-    mk(t, h, -t / 2, -h / 2);                  // západ
-    mk(t, h, w + t / 2, -h / 2);               // východ
+    mk(w + 2 * t, t, w / 2, t / 2);            // juh (y=0 → z≈0)
+    mk(w + 2 * t, t, w / 2, h + t / 2);        // sever (z≈h)
+    mk(t, h, -t / 2, h / 2);                   // západ
+    mk(t, h, w + t / 2, h / 2);                // východ
 
-    this.controls.target.set(w / 2, 0, -h / 2);
+    this.controls.target.set(w / 2, 0, h / 2);
   }
 
   /* Kamera zo settings.camera (az/el/dist — sférické okolo stredu sveta) */
@@ -201,8 +203,8 @@ class KarelRenderer {
       if ((side === 'S' && y === 0) || (side === 'N' && y === h - 1) ||
           (side === 'W' && x === 0) || (side === 'E' && x === w - 1)) return;
       let sx = 1 + t, sz = t, px = this._px(x), pz = this._pz(y);
-      if (side === 'N') pz -= 0.5;
-      else if (side === 'S') pz += 0.5;
+      if (side === 'N') pz += 0.5;          // sever = +worldY = +Z
+      else if (side === 'S') pz -= 0.5;
       else { sx = t; sz = 1 + t; px += (side === 'E' ? 0.5 : -0.5); }
       const m = new THREE.Mesh(new THREE.BoxGeometry(sx, wallH, sz), this._mats.wall);
       m.position.set(px, wallH / 2, pz);
@@ -216,8 +218,8 @@ class KarelRenderer {
     (state.big_bricks || []).forEach(([x, y]) => { if (x === k.x && y === k.y) base += BIG_H; });
     (state.bricks || []).forEach(([x, y, n]) => { if (x === k.x && y === k.y) base += n * BRICK_H; });
     this._karel.position.set(this._px(k.x), base, this._pz(k.y));
-    // dir: N=+y → -Z; postavička má "nos" po +Z pri rotácii 0… otoč:
-    const rot = { S: 0, E: Math.PI / 2, N: Math.PI, W: -Math.PI / 2 }[k.dir] || 0;
+    // nos smeruje +Z lokálne; +Z = sever (+worldY). rotácia.y otáča +Z→smer:
+    const rot = { N: 0, E: Math.PI / 2, S: Math.PI, W: -Math.PI / 2 }[k.dir] || 0;
     this._karel.rotation.y = rot;
   }
 }

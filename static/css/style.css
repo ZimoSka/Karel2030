@@ -203,7 +203,8 @@ h2 .mini-btn:hover { opacity: 1; }
   border-bottom: none; border-radius: 6px 6px 0 0; padding: 6px 12px; cursor: pointer; font: inherit;
 }
 .set-tab.active { background: var(--panel); color: var(--accent); }
-#set-body { flex: 1 1 auto; overflow-y: auto; padding: 12px 2px; min-height: 200px; }
+/* pevná výška tela → dialóg nemení veľkosť podľa záložky (B3) */
+#set-body { height: 380px; overflow-y: auto; padding: 12px 2px; }
 .set-pane { display: flex; flex-direction: column; gap: 8px; }
 .set-row { display: flex; align-items: center; gap: 8px; }
 .set-lbl { flex: 0 0 200px; color: var(--fg-dim); }
