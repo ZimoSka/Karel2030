@@ -161,9 +161,17 @@
     }
   }
 
+  /* efektívne zakázané = svet (disabled_cmds) ∪ jazyk (napr. Pattis DISABLED) */
+  function effectiveDisabled(st) {
+    return new Set([
+      ...((st && st.settings && st.settings.disabled_cmds) || []),
+      ...((_lastLang && _lastLang.disabled) || []),
+    ]);
+  }
+
   /* ---------- obmedzenia tlačidiel ---------- */
   function applyRestrictions(st) {
-    const dis = new Set((st.settings && st.settings.disabled_cmds) || []);
+    const dis = effectiveDisabled(st);
     document.querySelectorAll('[data-cmd]').forEach(b => {
       b.disabled = dis.has(b.dataset.cmd);
     });
@@ -190,6 +198,7 @@
       editor.setDisabledCmds(disabled || []);
       updateCmdsList(lang);
       rebuildActionTitles();
+      applyRestrictions(state);   // jazykové obmedzenia (Pattis) → sivé tlačidlá
     }).catch(() => {});
   }
 
@@ -209,8 +218,8 @@
       reloadProgLang(st.settings.prog_lang || 'sk', st.settings.disabled_cmds || []);
     }
     if (reason === 'connect' || reason === 'load') {
-      // intro dialóg pri prvom pripojení
-      if (reason === 'connect' && st.meta && st.meta.intro_html) {
+      // zadanie sa zobrazí pri pripojení AJ pri načítaní sveta z dropdownu (bug fix)
+      if (st.meta && st.meta.intro_html) {
         dialog(t("toolbar.task","Zadanie"), htmlReadable(st.meta.intro_html));
       }
       // program zo sveta (učiteľ) — žiakovi ho prepíše workspace nižšie

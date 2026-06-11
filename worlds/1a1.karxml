@@ -231,10 +231,13 @@
   <bigbricks/>
   <marks/>
   <title>1a1</title>
-  <intro>&lt;h3&gt;Koľko je 1 + 1?&lt;/h3&gt;&lt;p&gt;Z tehál je postavený príklad &lt;b&gt;1 + 1 = ?&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Prejdi Karelom k správnemu výsledku a &lt;b&gt;označ ho&lt;/b&gt; značkou.&lt;/p&gt;</intro>
+  <intro>&lt;h3&gt;Koľko je 1 + 1?&lt;/h3&gt;&lt;p&gt;Z tehál je postavený príklad &lt;b&gt;1 + 1 = ?&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Prejdi Karelom na miesto výsledku a &lt;b&gt;označ ho&lt;/b&gt; značkou (príkaz &lt;code&gt;oznac&lt;/code&gt;).&lt;/p&gt;</intro>
   <success>&lt;h3 style=&quot;color:#44ff88&quot;&gt;Juchú, ty si to zvládol! ✓&lt;/h3&gt;&lt;p&gt;1 + 1 = 2 — a ty si to vyriešil sám!&lt;/p&gt;</success>
   <failure>&lt;h3 style=&quot;color:#ff6666&quot;&gt;Ešte nie…&lt;/h3&gt;&lt;p&gt;To nie je správny výsledok. Skús znova spočítať 1 + 1.&lt;/p&gt;</failure>
   <program>Začiatok
  
 Koniec</program>
+  <mission>
+    <condition check="sign" eval="success" when="on_finish" op="or"/>
+  </mission>
 </world>

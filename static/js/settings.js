@@ -145,7 +145,7 @@ const KarelSettings = (function () {
     // U5: jasné X / Y (výška = Z, preto nemiešať)
     p.appendChild(field('', 'Karel X:', kx));
     p.appendChild(field('', 'Karel Y:', ky));
-    p.appendChild(field('world_settings.frame_dir', 'Smer Karela', dir));
+    p.appendChild(field('world_settings.frame_dir', 'Smer Karla', dir));
     p.appendChild(el('div', { class: 'set-sep', text: T('world_settings.frame_move', 'Pohyb — obmedzenia') }));
     // max_climb: 0..N (0 = nevylezie, default 1) — bez „neobmedzene"
     const climb = num(s.max_climb != null ? s.max_climb : 1, 0);
@@ -222,9 +222,9 @@ const KarelSettings = (function () {
     let d = c.check;
     if (c.check === 'karel_pos') d = `Karel @ (${c.x ?? '?'},${c.y ?? '?'})` + (c.z != null ? ` v=${c.z}` : '');
     else if (c.check === 'cell_state') d = `bunka (${c.x},${c.y})`;
-    else if (c.check === 'sign') d = 'značka pod Karelom';
-    else if (c.check === 'brick_ahead') d = 'tehla pred Karelom';
-    else if (c.check === 'wall_ahead') d = 'stena pred Karelom';
+    else if (c.check === 'sign') d = 'značka pod Karlom';
+    else if (c.check === 'brick_ahead') d = 'tehla pred Karlom';
+    else if (c.check === 'wall_ahead') d = 'stena pred Karlom';
     else if (c.check === 'snapshot') d = 'snímok miestnosti';
     return `${prefix}${ev}${wh} ${neg}${d}`;
   }
@@ -269,8 +269,8 @@ const KarelSettings = (function () {
     const c = existing || { check: 'karel_pos', eval: 'success', when: 'on_finish', op: 'or', negate: false };
     const wrap = el('div', { class: 'set-cond-edit' });
     const typeSel = el('select', { class: 'set-text' });
-    [['karel_pos', 'Poloha Karela'], ['cell_state', 'Stav políčka'], ['sign', 'Značka pod Karelom'],
-     ['brick_ahead', 'Tehla pred Karelom'], ['wall_ahead', 'Stena pred Karelom'], ['snapshot', 'Snímok miestnosti']]
+    [['karel_pos', 'Poloha Karla'], ['cell_state', 'Stav políčka'], ['sign', 'Značka pod Karlom'],
+     ['brick_ahead', 'Tehla pred Karlom'], ['wall_ahead', 'Stena pred Karlom'], ['snapshot', 'Snímok miestnosti']]
       .forEach(([v, d]) => { const o = el('option', { value: v, text: T('goal_condition.type_' + v, d) }); if (c.check === v) o.selected = true; typeSel.appendChild(o); });
     const params = el('div', {});
     function optNum(label, val) {

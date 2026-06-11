@@ -26,6 +26,7 @@ class Session:
         self.loop = asyncio.get_running_loop()
         self._thread: threading.Thread | None = None
         self.delay = 0.25
+        self._pending_reset = False
         self.load(world)
 
     # --- svet ---------------------------------------------------------------
@@ -78,11 +79,21 @@ class Session:
             result = evaluate_goals(self.world, on_step=False)
             if result:
                 self._mission(result)
+        # reset sveta pri neúspechu (ak svet vyžaduje) — až po skončení behu
+        if self._pending_reset:
+            self._pending_reset = False
+            self.world = self.base.copy()
+            self.world.reset_inventory()
+            self.itp = self._new_itp()
+            self._emit({'type': 'state', 'reason': 'reset',
+                        'state': world_to_state(self.world, full=self.teacher)})
 
     def _mission(self, result: str):
         html = (self.world.success_html if result == 'success'
                 else self.world.failure_html)
         self._emit({'type': 'mission', 'result': result, 'message_html': html})
+        if result == 'failure' and self.world.mission_reset_on_failure:
+            self._pending_reset = True   # reset spraví _on_finish po zastavení
 
     # --- beh programu --------------------------------------------------------
     @property
