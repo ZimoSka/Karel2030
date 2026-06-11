@@ -52,6 +52,7 @@ button.tb.accent { background: var(--accent-dim); border-color: var(--accent); }
   border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px;
 }
 #status { margin-left: auto; color: var(--fg-dim); }
+#version { color: var(--fg-dim); font-size: 11px; font-family: Consolas, monospace; }
 #conn-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--err); }
 #conn-dot.on { background: var(--accent); }
 

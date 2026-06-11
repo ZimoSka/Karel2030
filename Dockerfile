@@ -7,12 +7,19 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Aplikácia: core + server + frontend + jazykové súbory + svety
+# Aplikácia: core + server + frontend + jazykové súbory + svety + verzia
 COPY karel_core/ karel_core/
 COPY server/     server/
 COPY static/     static/
 COPY lang/       lang/
 COPY worlds/     worlds/
+COPY VERSION     VERSION
+
+# Verzia buildu — odovzdané cez --build-arg (git SHA, čas)
+ARG GIT_SHA=dev
+ARG BUILD_TIME=
+ENV KAREL_GIT_SHA=${GIT_SHA}
+ENV KAREL_BUILD_TIME=${BUILD_TIME}
 
 # Persistentné dáta (assignments, links, workspaces) — mountovať volume
 ENV KAREL_DATA_DIR=/data

@@ -262,6 +262,7 @@ class MockWS {
 
 /* ---------- MockApi — podmnožina Api ---------- */
 const MockApi = {
+  version: async () => ({ version: 'mock', git_sha: 'mock', build_time: '' }),
   uiLangs: async () => [{ code: 'sk', name: 'Slovenčina' }],
   uiStrings: async () => ({}),   // app.js nechá HTML defaulty (slovenské)
   progLangs: async () => [{ code: 'sk', name: 'Slovenčina' }],

@@ -27,6 +27,7 @@ const Api = {
     return e;
   },
 
+  version:        ()     => Api._get('/version'),
   // jazyky
   uiLangs:        ()     => Api._get('/langs/ui'),
   uiStrings:      (code) => Api._get('/langs/ui/' + code),

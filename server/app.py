@@ -17,6 +17,33 @@ storage = FileStorage()
 _ROOT       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _WORLDS_DIR = os.environ.get('KAREL_WORLDS_DIR', os.path.join(_ROOT, 'worlds'))
 _STATIC_DIR = os.path.join(_ROOT, 'static')
+
+
+def _read_version() -> str:
+    try:
+        with open(os.path.join(_ROOT, 'VERSION'), encoding='utf-8') as f:
+            return f.read().strip()
+    except OSError:
+        return '0.0.0'
+
+VERSION    = _read_version()
+GIT_SHA    = os.environ.get('KAREL_GIT_SHA', 'dev')
+BUILD_TIME = os.environ.get('KAREL_BUILD_TIME', '')
+
+
+@app.get('/api/version')
+def version():
+    return {'version': VERSION, 'git_sha': GIT_SHA, 'build_time': BUILD_TIME}
+
+
+@app.middleware('http')
+async def _no_cache_static(request, call_next):
+    """Statika (index.html, JS, CSS) sa nesmie cachovať — inak učiteľ vidí
+    staré súbory po rebuilde. ETag/Last-Modified zostávajú (304 ak nezmenené)."""
+    resp = await call_next(request)
+    if request.method == 'GET' and not request.url.path.startswith('/api'):
+        resp.headers['Cache-Control'] = 'no-cache'
+    return resp
 # Publikované svety (admin) — perzistentné na volume, popri baked worlds/
 _PUBLISHED_DIR = os.path.join(os.environ.get('KAREL_DATA_DIR', './data'), 'worlds')
 os.makedirs(_PUBLISHED_DIR, exist_ok=True)

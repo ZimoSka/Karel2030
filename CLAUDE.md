@@ -7,6 +7,25 @@
 >
 > **Všetky pracovné pravidlá nižšie platia aj tu** (prevzaté z karel2010).
 
+## ⚠️ Pravidlo: Verzionovanie (semantic)
+
+Jeden zdroj verzie: súbor **`VERSION`** (`MAJOR.MINOR.PATCH`). **Bumpovať pri každej
+zmene** pred commitom:
+- **PATCH** (0.3.0→0.3.1) — oprava bugu, drobnosť
+- **MINOR** (0.3.0→0.4.0) — nová funkcia
+- **MAJOR** (0.x→1.0.0) — breaking zmena / míľnik
+
+Verzia sa zobrazuje na webe (badge pri brande) + cez `GET /api/version`
+(`{version, git_sha, build_time}`). Git SHA a čas sa bakujú do image cez
+`--build-arg GIT_SHA=… BUILD_TIME=…` (Actions to robí automaticky). Statika beží
+s `Cache-Control: no-cache` → po rebuilde nikdy staré súbory.
+
+**Lokálny build s verziou:**
+```bash
+docker build --build-arg GIT_SHA=$(git rev-parse --short HEAD) \
+  --build-arg BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ) -t karel2030:test .
+```
+
 ## Štruktúra projektu (po T1 — core extrakcia HOTOVÁ)
 
 ```
