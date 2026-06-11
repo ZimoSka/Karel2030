@@ -45,29 +45,29 @@ rozpočty, fyzické limity, loop-guard, rekurzia, XML roundtrip, misie, jazyky.
       pevná výška 380px → dialóg konštantný (523px na všetkých 6 záložkách).
 
 **UX / texty:**
-- [ ] **U1. Editor „Môj program" default** — nechať štruktúru `zaciatok … koniec`
+- [x] **U1. Editor „Môj program" default** — nechať štruktúru `zaciatok … koniec`
       + pôvodný úvodný komentár (ako desktop EXAMPLES).
-- [ ] **U2. Zoznam príkazov — celé šablóny štruktúr** — `opakuj N krat … koniec`,
+- [x] **U2. Zoznam príkazov — celé šablóny štruktúr** — `opakuj N krat … koniec`,
       `kym podm rob … koniec`, `ak podm potom … inak … koniec` (nie len kľúčové slovo);
       dieťa čo nepozná syntax inak nemá šancu. (Desktop má `_cmds_structs`.)
-- [ ] **U3. Zadanie úlohy — rich text editor** namiesto HTML, s náhľadom výsledku;
+- [x] **U3. Zadanie úlohy — rich text editor** namiesto HTML, s náhľadom výsledku;
       + prejsť všetky svety a upraviť `intro_html` nech vyzerajú pekne.
-- [ ] **U4. Misia úspech/neúspech — rich text** + skonvertovať nečitateľné HTML texty.
-- [ ] **U5. Záložka Miestnosť** — „Pozícia Karla štartovacia" + „výška" je mätúce;
+- [x] **U4. Misia úspech/neúspech — rich text** + skonvertovať nečitateľné HTML texty.
+- [x] **U5. Záložka Miestnosť** — „Pozícia Karla štartovacia" + „výška" je mätúce;
       premenovať na **X** a **Y** (výška = Z).
-- [ ] **U6. Pohybové obmedzenia** — dopísať že **-1 = neobmedzené**; a spraviť to
+- [x] **U6. Pohybové obmedzenia** — dopísať že **-1 = neobmedzené**; a spraviť to
       checkboxom „neobmedzené" ako pri Zásobách (krajšie).
-- [ ] **U7. Záložka Príkazy — otočiť logiku**: zaškrtnuté = príkaz **viditeľný**
+- [x] **U7. Záložka Príkazy — otočiť logiku**: zaškrtnuté = príkaz **viditeľný**
       (logickejšie). *(rovnaká zmena aj v Python Karlovi — viď jeho PLAN)*
-- [ ] **U8. Texty podmienok — skloňovanie**: „Poloha Karla" → „Poloha **Karela**";
+- [x] **U8. Texty podmienok — skloňovanie**: „Poloha Karla" → „Poloha **Karela**";
       prejsť VŠETKY texty (Karel sa skloňuje: Karela/Karelovi…).
-- [ ] **U9. Ikona/brand** — robotia hlava vľavo hore je strašidelná; dať krajšiu;
+- [x] **U9. Ikona/brand** — robotia hlava vľavo hore je strašidelná; dať krajšiu;
       text zmeniť na **„Karel 2030"**.
 
 **Funkcie:**
-- [ ] **F-prog. Programovací jazyk presunúť do Nastavení sveta** (ako Python verzia),
+- [x] **F-prog. Programovací jazyk presunúť do Nastavení sveta** (ako Python verzia),
       nie do toolbaru.
-- [ ] **F-admin. Úroveň admin — editovať publikované svety** v kontajneri
+- [x] **F-admin. Úroveň admin — editovať publikované svety** v kontajneri
       (načítať publikovaný svet, upraviť, znova publikovať/zmazať).
 
 ---
