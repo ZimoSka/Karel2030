@@ -135,9 +135,10 @@ push do `ghcr.io/zimoska/karel2030:latest` (+ :SHA), manifest potvrdený.
 - **Nasadenie na linux server** — SSH kľúč (root) + `docker context`/`compose pull`;
   package v ghcr.io spraviť public alebo login tokenom; Node 20 → bump verzií actions.
   CI/CD (build+push do ghcr.io) je hotové a overené, chýba len krok na serveri.
-- **Perzistentné zdieľanie žiackych liniek (UI)** — backend tok hotový a otestovaný
-  (assignment→linky→workspace, zápis do /data). Chýba učiteľské UI „Zdieľaj žiakom"
-  + žiacky link flow v prehliadači. Spraví sa po D (nastavenia sveta).
+- ✅ **Perzistentné zdieľanie žiackych liniek — HOTOVÉ (v0.5.0)**. Učiteľ „👥 Zdieľaj"
+  (mená/počet → linky s kopírovaním), žiak `/s/{token}` → žiacky mód, program auto-save
+  na volume, prežíva reload. Fix `<base href="/">` pre assety na /s/{token}.
+  Overené end-to-end v kontajneri (assignment→link→workspace→reload).
 
 ### T5 — Blockly editor  ⏸ po T3
 - Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
