@@ -388,30 +388,34 @@
     const r = new FileReader(); r.onload = () => cb(r.result, f.name); r.readAsText(f);
     input.value = '';
   }
+  let _curWorldId = null;     // id práve načítaného/publikovaného sveta (pre overwrite)
   // F3: dropdown predvyrobených svetov
-  function loadWorldsDropdown() {
+  function loadWorldsDropdown(selectId) {
     if (STUDENT) return;
     api.worlds().then(ws_ => {
       const sel = $('worlds');
       sel.innerHTML = '<option value="">—</option>';
       ws_.forEach(w => { const o = document.createElement('option'); o.value = w.id; o.textContent = w.title; sel.appendChild(o); });
-      sel.onchange = () => { if (sel.value) ws.loadWorld({ world_id: sel.value }); };
+      if (selectId) sel.value = selectId;
+      sel.onchange = () => { if (sel.value) { _curWorldId = sel.value; ws.loadWorld({ world_id: sel.value }); } };
     }).catch(() => {});
   }
   // F1: otvoriť svet zo súboru
   $('btn-world-open').onclick = () => $('file-world').click();
-  $('file-world').onchange = (e) => readFile(e.target, (txt) => ws.loadWorld({ karxml: txt }));
+  $('file-world').onchange = (e) => readFile(e.target, (txt) => { _curWorldId = null; ws.loadWorld({ karxml: txt }); });
   // F1: uložiť svet do súboru (cez export_world)
   $('btn-world-save').onclick = () => {
     _pendingExport = (karxml) => download((state.meta.title || 'svet') + '.karxml', karxml, 'application/xml');
     ws.exportWorld(editor.getValue());
   };
-  // F2: publikovať svet (admin) do volume
+  // F2: publikovať / uložiť zdieľaný svet (admin) do volume.
+  // Default id = práve editovaný svet → uloženie prepíše (= editovanie zdieľaného sveta).
   $('btn-world-pub').onclick = () => {
-    const id = prompt(t('world_settings.frame_title', 'Názov sveta') + ' (id):', state.meta.title || 'svet');
+    const id = prompt('Uložiť zdieľaný svet pod menom (existujúce meno = prepíše):',
+                      _curWorldId || state.meta.title || 'svet');
     if (!id) return;
     _pendingExport = (karxml) => api.publishWorld(id, karxml)
-      .then(() => { loadWorldsDropdown(); setStatus(null, 'Publikované: ' + id); })
+      .then(() => { _curWorldId = id; loadWorldsDropdown(id); setStatus(null, '✓ Uložené: ' + id); })
       .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.detail || err.error || 'chyba') + '</p>', null, true));
     ws.exportWorld(editor.getValue());
   };
