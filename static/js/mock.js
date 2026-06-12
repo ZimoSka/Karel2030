@@ -297,6 +297,9 @@ const MockApi = {
   world: async () => { throw new Error('mock'); },
   publishWorld: async () => ({ published: true }),
   deleteWorld: async () => ({ deleted: true }),
+  createAssignment: async () => ({ assignment_id: 'mockA' }),
+  share: async (id, opts) => ({ links: (opts.names || Array(opts.count || 1).fill(''))
+    .map((n, i) => ({ token: 'mocktok' + i, name: n, url: '/s/mocktok' + i })) }),
   workspace: async () => ({ assignment_id: 'mock', name: 'Mock žiak', program_text: '', state: new MockWorld().state() }),
   saveWorkspace: async () => ({}),
 };

@@ -182,6 +182,14 @@ button.act { flex: 1 1 40%; font-size: 12px; padding: 6px 4px; line-height: 1.2;
 #dlg-body { margin-bottom: 14px; }
 #dlg-buttons { display: flex; gap: 8px; justify-content: flex-end; }
 
+/* Žiacke linky (zdieľanie) */
+#share-links { max-height: 320px; overflow-y: auto; }
+.share-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.share-name { flex: 0 0 110px; color: var(--accent); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-url { flex: 1 1 auto; background: var(--bg-dark); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; font: 12px Consolas, monospace; }
+.share-copy { background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.share-copy:hover { border-color: var(--accent); }
+
 /* žiak nevidí učiteľské prvky; admin-only len pre admina */
 body.student .teacher-only { display: none !important; }
 .admin-only { display: none; }

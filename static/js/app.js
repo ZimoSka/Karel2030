@@ -434,6 +434,48 @@
   $('file-prog').onchange = (e) => readFile(e.target, (txt) => editor.setValue(txt));
   $('btn-prog-save').onclick = () => download('program.karel', editor.getValue(), 'text/plain');
 
+  /* ---------- Zdieľanie žiakom (assignment + linky) ---------- */
+  $('btn-share').onclick = () => {
+    if (!state) return;
+    dialog('👥 Zdieľaj žiakom',
+      '<p>Zadaj <b>mená žiakov</b> (jeden na riadok) — pre každého vznikne vlastný link:</p>' +
+      '<textarea id="share-names" rows="6" style="width:100%;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px;font:13px Consolas,monospace" placeholder="Janko\nEva\nPeter"></textarea>' +
+      '<p style="color:var(--fg-dim)">…alebo počet anonymných linkov: ' +
+      '<input id="share-count" type="number" min="0" value="0" style="width:70px;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:3px"></p>',
+      [{ label: t('world_settings.btn_cancel', 'Zrušiť') },
+       { label: '🔗 Vytvoriť linky', action: doShare }]);
+  };
+  function doShare() {
+    const namesRaw = ($('share-names') && $('share-names').value || '').trim();
+    const count = parseInt($('share-count') && $('share-count').value, 10) || 0;
+    const names = namesRaw ? namesRaw.split('\n').map(s => s.trim()).filter(Boolean) : null;
+    if (!names && count <= 0) { dialog('👥 Zdieľaj žiakom', '<p>Zadaj aspoň jedno meno alebo počet linkov.</p>'); return; }
+    setStatus(null, 'Vytváram linky…');
+    // export aktuálneho sveta (karxml) → assignment → share → zobraz linky
+    _pendingExport = (karxml) => {
+      api.createAssignment(karxml, (state.meta && state.meta.title) || 'Úloha')
+        .then(r => api.share(r.assignment_id, names ? { names } : { count }))
+        .then(res => showLinks(res.links))
+        .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
+    };
+    ws.exportWorld(editor.getValue());
+  }
+  function showLinks(links) {
+    const origin = location.origin;
+    const rows = (links || []).map((l, i) => {
+      const url = origin + l.url;
+      return `<div class="share-row"><span class="share-name">${l.name || ('žiak ' + (i + 1))}</span>` +
+             `<input class="share-url" readonly value="${url}">` +
+             `<button class="share-copy" data-url="${url}">📋</button></div>`;
+    }).join('');
+    dialog('🔗 Žiacke linky', '<p>Pošli každému žiakovi jeho link (sú trvalé — žiak sa môže vrátiť):</p>' +
+      '<div id="share-links">' + rows + '</div>', [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+    setStatus('status.ready', 'Pripravený');
+    document.querySelectorAll('.share-copy').forEach(b => {
+      b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(b.dataset.url); b.textContent = '✓'; setTimeout(() => b.textContent = '📋', 1200); };
+    });
+  }
+
   /* CodeMirror potrebuje refresh po zmene veľkosti okna (inak sa neprekreslí) */
   let _rfTimer;
   window.addEventListener('resize', () => {
