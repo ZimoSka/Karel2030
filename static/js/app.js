@@ -476,6 +476,43 @@
     });
   }
 
+  /* ---------- Moje úlohy: znovu nájdi linky + pokrok žiakov ---------- */
+  const _fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleString('sk-SK', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  $('btn-assignments').onclick = () => {
+    api.assignments().then(list => {
+      if (!list.length) { dialog('📋 Moje úlohy', '<p>Zatiaľ žiadne zdieľané úlohy.</p>'); return; }
+      const rows = list.map(a =>
+        `<div class="share-row"><span class="share-name" title="${a.title || a.id}">${a.title || a.id}</span>` +
+        `<span style="flex:1;color:var(--fg-dim);font-size:12px">${_fmtDate(a.created)}</span>` +
+        `<button class="asg-links" data-id="${a.id}">🔗 Linky</button>` +
+        `<button class="asg-prog" data-id="${a.id}">👀 Pokrok</button></div>`).join('');
+      dialog('📋 Moje úlohy', '<div id="share-links">' + rows + '</div>', [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+      document.querySelectorAll('.asg-links').forEach(b => b.onclick = () =>
+        api.links(b.dataset.id).then(r => showLinks(r.links)).catch(() => {}));
+      document.querySelectorAll('.asg-prog').forEach(b => b.onclick = () => showProgress(b.dataset.id));
+    }).catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
+  };
+  function showProgress(aid) {
+    api.progress(aid).then(rows => {
+      const body = (rows || []).map((r, i) => {
+        const st = r.has_work ? `✏️ pracoval · ${_fmtDate(r.updated)}` : '— nezačal';
+        const view = r.has_work ? `<button class="prog-view" data-i="${i}">Zobraziť program</button>` : '';
+        return `<div class="share-row"><span class="share-name">${r.name || ('žiak ' + (i + 1))}</span>` +
+               `<span style="flex:1;color:var(--fg-dim);font-size:12px">${st}</span>${view}</div>`;
+      }).join('');
+      dialog('👀 Pokrok žiakov', '<div id="share-links">' + (body || '<p>Žiadni žiaci.</p>') + '</div>',
+        [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+      document.querySelectorAll('.prog-view').forEach(b => b.onclick = () => {
+        const r = rows[+b.dataset.i];
+        dialog('Program — ' + (r.name || 'žiak'),
+          '<pre style="background:var(--bg-dark);border:1px solid var(--border);border-radius:6px;padding:8px;max-height:300px;overflow:auto;white-space:pre-wrap;color:var(--fg)">' +
+          (r.program_text || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</pre>',
+          [{ label: 'Zavrieť' },
+           { label: '↧ Načítať do editora', action: () => { editor.setValue(r.program_text || ''); } }]);
+      });
+    }).catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
+  }
+
   /* CodeMirror potrebuje refresh po zmene veľkosti okna (inak sa neprekreslí) */
   let _rfTimer;
   window.addEventListener('resize', () => {

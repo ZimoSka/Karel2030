@@ -239,11 +239,32 @@ async def share_assignment(aid: str, request: Request):
     return {'links': links}
 
 
+@app.get('/api/assignments')
+def list_assignments():
+    """Zoznam úloh — učiteľ sa vie vrátiť k linkom. (Bez auth: vidno všetky.)"""
+    return storage.list_assignments()
+
+
 @app.get('/api/assignments/{aid}/links')
 def assignment_links(aid: str):
     if storage.load_assignment(aid) is None:
         return _err(404, 'not_found', f'assignment {aid!r}')
     return {'links': storage.list_links(aid)}
+
+
+@app.get('/api/assignments/{aid}/progress')
+def assignment_progress(aid: str):
+    """Pre každý link: meno žiaka + jeho uložený program (čo žiak spravil)."""
+    if storage.load_assignment(aid) is None:
+        return _err(404, 'not_found', f'assignment {aid!r}')
+    out = []
+    for link in storage.list_links(aid):
+        wsp = storage.load_workspace(link['token']) or {}
+        prog = wsp.get('program_text', '')
+        out.append({'token': link['token'], 'name': link['name'], 'url': link['url'],
+                    'has_work': bool(prog.strip()), 'program_text': prog,
+                    'updated': wsp.get('updated')})
+    return out
 
 
 # =========================================================================

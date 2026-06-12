@@ -48,6 +48,8 @@ const Api = {
   assignment:       (id)            => Api._get('/assignments/' + id),
   share:            (id, opts)      => Api._send('POST', `/assignments/${id}/share`, opts),
   links:            (id)            => Api._get('/assignments/' + id + '/links'),
+  assignments:      ()             => Api._get('/assignments'),
+  progress:         (id)            => Api._get('/assignments/' + id + '/progress'),
 
   // workspace (žiak)
   workspace:     (token)       => Api._get('/workspace/' + token),

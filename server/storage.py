@@ -60,6 +60,21 @@ class FileStorage:
     def load_assignment(self, id: str) -> dict | None:
         return self._read('assignments', id)
 
+    def list_assignments(self) -> list:
+        """Zoznam všetkých úloh (najnovšie prvé). Bez auth — vidno všetky."""
+        out = []
+        d = os.path.join(self.root, 'assignments')
+        for fname in os.listdir(d):
+            if not fname.endswith('.json'):
+                continue
+            aid = fname[:-5]
+            data = self._read('assignments', aid)
+            if data:
+                out.append({'id': aid, 'title': data.get('title', ''),
+                            'created': data.get('created')})
+        out.sort(key=lambda a: a.get('created') or 0, reverse=True)
+        return out
+
     # --- links ---------------------------------------------------------------
     def create_links(self, assignment_id, names_or_count) -> list:
         if isinstance(names_or_count, int):

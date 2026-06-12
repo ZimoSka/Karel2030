@@ -300,6 +300,9 @@ const MockApi = {
   createAssignment: async () => ({ assignment_id: 'mockA' }),
   share: async (id, opts) => ({ links: (opts.names || Array(opts.count || 1).fill(''))
     .map((n, i) => ({ token: 'mocktok' + i, name: n, url: '/s/mocktok' + i })) }),
+  assignments: async () => [{ id: 'mockA', title: 'Mock úloha', created: Date.now() / 1000 }],
+  links: async () => ({ links: [{ token: 'mocktok0', name: 'Janko', url: '/s/mocktok0' }] }),
+  progress: async () => [{ token: 'mocktok0', name: 'Janko', url: '/s/mocktok0', has_work: true, program_text: 'zaciatok\n  dopredu\nkoniec', updated: Date.now() / 1000 }],
   workspace: async () => ({ assignment_id: 'mock', name: 'Mock žiak', program_text: '', state: new MockWorld().state() }),
   saveWorkspace: async () => ({}),
 };
