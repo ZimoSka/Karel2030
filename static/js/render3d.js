@@ -187,11 +187,16 @@ class KarelRenderer {
       }
     });
 
-    // značky — žlté krúžky na podlahe
+    // výška stohu na políčku (kvader + malé tehly) — pre umiestnenie značky navrch
+    const heightAt = {};
+    (state.big_bricks || []).forEach(([x, y]) => { heightAt[x + ',' + y] = BIG_H; });
+    (state.bricks || []).forEach(([x, y, n]) => { heightAt[x + ',' + y] = (heightAt[x + ',' + y] || 0) + n * BRICK_H; });
+
+    // značky — žlté krúžky NA vrchu stohu (aby boli vidno aj na tehlách)
     (state.marks || []).forEach(([x, y]) => {
       const m = new THREE.Mesh(this._markGeo, this._mats.mark);
       m.rotation.x = -Math.PI / 2;
-      m.position.set(this._px(x), 0.01, this._pz(y));
+      m.position.set(this._px(x), (heightAt[x + ',' + y] || 0) + 0.02, this._pz(y));
       this._dynamic.add(m);
     });
 
