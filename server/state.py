@@ -33,6 +33,8 @@ def world_to_state(w: World, full: bool = True) -> dict:
             'prog_lang': s.prog_lang,
             'disabled_cmds': sorted(s.disabled_cmds),
             'disable_procedure': s.disable_procedure,
+            'disable_graphic': s.disable_graphic,
+            'disable_command': s.disable_command,
             'max_climb': s.max_climb, 'max_drop': s.max_drop,
             'max_steps': s.max_steps, 'max_turns': s.max_turns,
             'max_brick_height': s.max_brick_height,

@@ -41,6 +41,50 @@ def _collect(ws, terminal=('finished', 'budget', 'limit', 'parse_error', 'error'
     return msgs
 
 
+def test_ensure_add_delete_link_and_completion():
+    """Jedno-okno zdieľanie: ensure (get-or-create podľa sveta), pridaj/zmaž žiaka,
+    a zaznamenanie vyriešenia (solved) v pokroku."""
+    karxml = _karxml()
+    a1 = client.post('/api/assignments/ensure',
+                     json={'world_key': 'wk1', 'karxml': karxml, 'title': 'WK'}
+                     ).json()['assignment_id']
+    a2 = client.post('/api/assignments/ensure',
+                     json={'world_key': 'wk1', 'karxml': karxml, 'title': 'WK'}
+                     ).json()['assignment_id']
+    assert a1 == a2                       # rovnaký svet → ten istý assignment
+    # pridaj dvoch žiakov
+    t1 = client.post(f'/api/assignments/{a1}/links', json={'name': 'Janko'}
+                     ).json()['link']['token']
+    t2 = client.post(f'/api/assignments/{a1}/links', json={'name': 'Eva'}
+                     ).json()['link']['token']
+    # Janko napíše program, Eva vyrieši (mark_completed cez storage)
+    client.put(f'/api/workspace/{t1}', json={'program_text': 'zaciatok dopredu koniec'})
+    from server.app import storage
+    storage.mark_completed(t2)
+    prog = {p['name']: p for p in client.get(f'/api/assignments/{a1}/progress').json()}
+    assert prog['Janko']['has_work'] and not prog['Janko']['solved']
+    assert prog['Eva']['has_work'] and prog['Eva']['solved']
+    # zmaž Janka
+    assert client.delete(f'/api/links/{t1}').json()['ok'] is True
+    assert client.delete(f'/api/links/{t1}').status_code == 404   # už neexistuje
+    names = [p['name'] for p in client.get(f'/api/assignments/{a1}/progress').json()]
+    assert names == ['Eva']
+
+
+def test_disable_controls_roundtrip():
+    """disable_graphic / disable_command prejdú .karxml aj state JSON."""
+    w = kc.World.from_json(kc.BUILTIN_WORLD)
+    w.settings.disable_graphic = True
+    w.settings.disable_command = True
+    w2 = kc.World.from_xml(w.to_xml())
+    assert w2.settings.disable_graphic and w2.settings.disable_command
+    aid = client.post('/api/assignments',
+                      json={'karxml': w.to_xml(), 'title': 'D'}).json()['assignment_id']
+    st = client.get(f'/api/assignments/{aid}').json()['state']
+    assert st['settings']['disable_graphic'] is True
+    assert st['settings']['disable_command'] is True
+
+
 # ---------------- REST: jazyky ----------------
 
 def test_langs_ui():

@@ -175,6 +175,23 @@
     document.querySelectorAll('[data-cmd]').forEach(b => {
       b.disabled = dis.has(b.dataset.cmd);
     });
+    // zákaz grafického / príkazového ovládania Karla (per-svet nastavenie)
+    const s = (st && st.settings) || {};
+    const gOff = !!s.disable_graphic, cOff = !!s.disable_command;
+    const gTab = document.querySelector('.ctl-tab[data-tab="graphic"]');
+    const cTab = document.querySelector('.ctl-tab[data-tab="command"]');
+    if (gTab) gTab.classList.toggle('hidden', gOff);
+    if (cTab) cTab.classList.toggle('hidden', cOff);
+    // ak je aktívny tab zakázaný, prepni na ten povolený
+    let active = document.querySelector('.ctl-tab.active');
+    if (active && ((active.dataset.tab === 'graphic' && gOff) ||
+                   (active.dataset.tab === 'command' && cOff))) {
+      const alt = gOff ? cTab : gTab;
+      if (alt && !alt.classList.contains('hidden')) alt.click();
+    }
+    // celý panel ovládania skry, ak sú zakázané oba spôsoby
+    const ctl = document.getElementById('control');
+    if (ctl) ctl.classList.toggle('hidden', gOff && cOff);
   }
 
   /* ---------- speed slider → delay (0.02–3.0 s, logaritmicky) ---------- */
@@ -434,80 +451,73 @@
   $('file-prog').onchange = (e) => readFile(e.target, (txt) => editor.setValue(txt));
   $('btn-prog-save').onclick = () => download('program.karel', editor.getValue(), 'text/plain');
 
-  /* ---------- Zdieľanie žiakom (assignment + linky) ---------- */
+  /* ---------- Zdieľanie žiakom — jedno okno: pridaj žiaka, link, pokrok, zmaž ---------- */
+  const _fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleString('sk-SK', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  const _esc = (s) => (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // svet identifikujeme jeho id (ak je publikovaný) alebo názvom → opätovné
+  // otvorenie nájde ten istý zoznam žiakov (assignment naviazaný na svet).
+  function _shareWorldKey() {
+    return _curWorldId || ('t:' + ((state.meta && state.meta.title) || ''));
+  }
   $('btn-share').onclick = () => {
     if (!state) return;
-    dialog('👥 Zdieľaj žiakom',
-      '<p>Zadaj <b>mená žiakov</b> (jeden na riadok) — pre každého vznikne vlastný link:</p>' +
-      '<textarea id="share-names" rows="6" style="width:100%;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px;font:13px Consolas,monospace" placeholder="Janko\nEva\nPeter"></textarea>' +
-      '<p style="color:var(--fg-dim)">…alebo počet anonymných linkov: ' +
-      '<input id="share-count" type="number" min="0" value="0" style="width:70px;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:3px"></p>',
-      [{ label: t('world_settings.btn_cancel', 'Zrušiť') },
-       { label: '🔗 Vytvoriť linky', action: doShare }]);
-  };
-  function doShare() {
-    const namesRaw = ($('share-names') && $('share-names').value || '').trim();
-    const count = parseInt($('share-count') && $('share-count').value, 10) || 0;
-    const names = namesRaw ? namesRaw.split('\n').map(s => s.trim()).filter(Boolean) : null;
-    if (!names && count <= 0) { dialog('👥 Zdieľaj žiakom', '<p>Zadaj aspoň jedno meno alebo počet linkov.</p>'); return; }
-    setStatus(null, 'Vytváram linky…');
-    // export aktuálneho sveta (karxml) → assignment → share → zobraz linky
+    setStatus(null, 'Pripravujem zdieľanie…');
     _pendingExport = (karxml) => {
-      api.createAssignment(karxml, (state.meta && state.meta.title) || 'Úloha')
-        .then(r => api.share(r.assignment_id, names ? { names } : { count }))
-        .then(res => showLinks(res.links))
+      api.ensureAssignment(_shareWorldKey(), karxml, (state.meta && state.meta.title) || 'Úloha')
+        .then(r => { setStatus('status.ready', 'Pripravený'); renderShare(r.assignment_id); })
         .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
     };
     ws.exportWorld(editor.getValue());
-  }
-  function showLinks(links) {
-    const origin = location.origin;
-    const rows = (links || []).map((l, i) => {
-      const url = origin + l.url;
-      return `<div class="share-row"><span class="share-name">${l.name || ('žiak ' + (i + 1))}</span>` +
-             `<input class="share-url" readonly value="${url}">` +
-             `<button class="share-copy" data-url="${url}">📋</button></div>`;
-    }).join('');
-    dialog('🔗 Žiacke linky', '<p>Pošli každému žiakovi jeho link (sú trvalé — žiak sa môže vrátiť):</p>' +
-      '<div id="share-links">' + rows + '</div>', [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
-    setStatus('status.ready', 'Pripravený');
-    document.querySelectorAll('.share-copy').forEach(b => {
-      b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(b.dataset.url); b.textContent = '✓'; setTimeout(() => b.textContent = '📋', 1200); };
-    });
-  }
-
-  /* ---------- Moje úlohy: znovu nájdi linky + pokrok žiakov ---------- */
-  const _fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleString('sk-SK', { dateStyle: 'short', timeStyle: 'short' }) : '';
-  $('btn-assignments').onclick = () => {
-    api.assignments().then(list => {
-      if (!list.length) { dialog('📋 Moje úlohy', '<p>Zatiaľ žiadne zdieľané úlohy.</p>'); return; }
-      const rows = list.map(a =>
-        `<div class="share-row"><span class="share-name" title="${a.title || a.id}">${a.title || a.id}</span>` +
-        `<span style="flex:1;color:var(--fg-dim);font-size:12px">${_fmtDate(a.created)}</span>` +
-        `<button class="asg-links" data-id="${a.id}">🔗 Linky</button>` +
-        `<button class="asg-prog" data-id="${a.id}">👀 Pokrok</button></div>`).join('');
-      dialog('📋 Moje úlohy', '<div id="share-links">' + rows + '</div>', [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
-      document.querySelectorAll('.asg-links').forEach(b => b.onclick = () =>
-        api.links(b.dataset.id).then(r => showLinks(r.links)).catch(() => {}));
-      document.querySelectorAll('.asg-prog').forEach(b => b.onclick = () => showProgress(b.dataset.id));
-    }).catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
   };
-  function showProgress(aid) {
+  function renderShare(aid) {
     api.progress(aid).then(rows => {
-      const body = (rows || []).map((r, i) => {
-        const st = r.has_work ? `✏️ pracoval · ${_fmtDate(r.updated)}` : '— nezačal';
-        const view = r.has_work ? `<button class="prog-view" data-i="${i}">Zobraziť program</button>` : '';
-        return `<div class="share-row"><span class="share-name">${r.name || ('žiak ' + (i + 1))}</span>` +
-               `<span style="flex:1;color:var(--fg-dim);font-size:12px">${st}</span>${view}</div>`;
+      const origin = location.origin;
+      const list = (rows || []).map((r, i) => {
+        const url = origin + r.url;
+        const stat = r.solved ? `✅ vyriešil · ${_fmtDate(r.completed_at || r.updated)}`
+                   : r.has_work ? `✏️ ${_fmtDate(r.updated)}` : '— nezačal';
+        const view = r.has_work ? `<button class="prog-view" data-i="${i}" title="Zobraziť program žiaka">👁</button>` : '';
+        return `<div class="share-row" data-tok="${r.token}">` +
+               `<span class="share-name" title="${_esc(r.name)}">${_esc(r.name) || ('žiak ' + (i + 1))}</span>` +
+               `<input class="share-url" readonly value="${url}">` +
+               `<button class="share-copy" data-url="${url}" title="Kopíruj link">📋</button>` +
+               `<span style="min-width:130px;color:var(--fg-dim);font-size:12px">${stat}</span>` +
+               view +
+               `<button class="share-del" data-tok="${r.token}" title="Zmazať žiaka">🗑</button></div>`;
       }).join('');
-      dialog('👀 Pokrok žiakov', '<div id="share-links">' + (body || '<p>Žiadni žiaci.</p>') + '</div>',
-        [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+      const body =
+        '<p>Žiaci tohto sveta — každý má vlastný trvalý link. Pridaj žiaka, sleduj pokrok, alebo zmaž.</p>' +
+        '<div class="share-add" style="display:flex;gap:6px;margin-bottom:8px">' +
+        '<input id="share-newname" placeholder="Meno žiaka" autocomplete="off" ' +
+        'style="flex:1;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px">' +
+        '<button id="share-addbtn" class="accent">➕ Pridať žiaka</button></div>' +
+        '<div id="share-links">' + (list || '<p style="color:var(--fg-dim)">Zatiaľ žiadni žiaci.</p>') + '</div>';
+      dialog('👥 Zdieľanie žiakom', body, [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+      const add = () => {
+        const nm = ($('share-newname').value || '').trim();
+        api.addLink(aid, nm).then(() => renderShare(aid)).catch(err =>
+          dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
+      };
+      $('share-addbtn').onclick = add;
+      $('share-newname').onkeydown = (e) => { if (e.key === 'Enter') add(); };
+      $('share-newname').focus();
+      document.querySelectorAll('.share-copy').forEach(b => {
+        b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(b.dataset.url); b.textContent = '✓'; setTimeout(() => b.textContent = '📋', 1200); };
+      });
+      document.querySelectorAll('.share-del').forEach(b => {
+        b.onclick = () => {
+          const row = b.closest('.share-row');
+          const nm = row && row.querySelector('.share-name').textContent;
+          if (!confirm('Zmazať žiaka „' + nm + '" a jeho prácu?')) return;
+          api.deleteLink(b.dataset.tok).then(() => renderShare(aid)).catch(() => {});
+        };
+      });
       document.querySelectorAll('.prog-view').forEach(b => b.onclick = () => {
         const r = rows[+b.dataset.i];
         dialog('Program — ' + (r.name || 'žiak'),
           '<pre style="background:var(--bg-dark);border:1px solid var(--border);border-radius:6px;padding:8px;max-height:300px;overflow:auto;white-space:pre-wrap;color:var(--fg)">' +
-          (r.program_text || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</pre>',
-          [{ label: 'Zavrieť' },
+          _esc(r.program_text) + '</pre>',
+          [{ label: '← Späť', action: () => renderShare(aid) },
            { label: '↧ Načítať do editora', action: () => { editor.setValue(r.program_text || ''); } }]);
       });
     }).catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));

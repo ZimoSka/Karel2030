@@ -31,6 +31,10 @@ class WorldSettings:
         self.max_brick_height = -1
         # Jazyk programovania pre tento svet ('sk' alebo 'en')
         self.prog_lang        = 'sk'
+        # Zakázať grafické ovládanie Karla (D-pad + akčné tlačidlá)
+        self.disable_graphic  = False
+        # Zakázať príkazové ovládanie Karla (textový riadok priamych príkazov)
+        self.disable_command  = False
         # Zamknúť pohľad kamery
         self.camera_locked    = False
         self.camera_az        = math.radians(225)
@@ -313,6 +317,7 @@ class World:
         s = self.settings
         has_settings = (s.brick_limit!=-1 or s.big_brick_limit!=-1 or s.mark_limit!=-1
                         or s.disabled_cmds or s.disable_procedure or s.camera_locked
+                        or s.disable_graphic or s.disable_command
                         or s.max_climb != 1 or s.prog_lang != 'sk'
                         or s.max_drop != -1 or s.max_steps != -1 or s.max_turns != -1
                         or s.max_brick_height != -1)
@@ -336,6 +341,10 @@ class World:
                 ET.SubElement(st,'disabled_cmds').text = ','.join(sorted(s.disabled_cmds))
             if s.disable_procedure:
                 ET.SubElement(st,'disable_procedure').text = 'true'
+            if s.disable_graphic:
+                ET.SubElement(st,'disable_graphic').text = 'true'
+            if s.disable_command:
+                ET.SubElement(st,'disable_command').text = 'true'
             if s.camera_locked:
                 ET.SubElement(st,'camera_locked').text = 'true'
                 ET.SubElement(st,'camera_az').text    = str(s.camera_az)
@@ -418,6 +427,8 @@ class World:
             if dc is not None and dc.text:
                 w.settings.disabled_cmds = set(dc.text.strip().split(','))
             w.settings.disable_procedure = _gb('disable_procedure')
+            w.settings.disable_graphic   = _gb('disable_graphic')
+            w.settings.disable_command   = _gb('disable_command')
             w.settings.camera_locked     = _gb('camera_locked')
             if w.settings.camera_locked:
                 w.settings.camera_az   = _gf('camera_az',  math.radians(225))

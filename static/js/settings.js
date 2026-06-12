@@ -191,9 +191,16 @@ const KarelSettings = (function () {
     // vlastné príkazy: zaškrtnuté = povolené (negácia disable_procedure)
     const proc = el('input', { type: 'checkbox' }); proc.checked = !s.disable_procedure;
     p.appendChild(el('label', { class: 'inline set-row' }, [proc, el('span', { text: ' Povoliť definovanie vlastných príkazov (prikaz … koniec)' })]));
+    // Zákaz manuálneho ovládania Karla (zaškrtnuté = povolené)
+    const gfx = el('input', { type: 'checkbox' }); gfx.checked = !s.disable_graphic;
+    p.appendChild(el('label', { class: 'inline set-row' }, [gfx, el('span', { text: ' Povoliť grafické ovládanie Karla (šípky + akčné tlačidlá)' })]));
+    const cmd = el('input', { type: 'checkbox' }); cmd.checked = !s.disable_command;
+    p.appendChild(el('label', { class: 'inline set-row' }, [cmd, el('span', { text: ' Povoliť príkazové ovládanie Karla (textový riadok)' })]));
     get.cmds = () => ({
       disabled_cmds: CMD_TOKS.filter(tok => !boxes[tok].checked),   // ulož NEzaškrtnuté ako zakázané
       disable_procedure: !proc.checked,
+      disable_graphic: !gfx.checked,
+      disable_command: !cmd.checked,
     });
   }
 
@@ -380,6 +387,7 @@ const KarelSettings = (function () {
         max_turns: room.max_turns, max_brick_height: room.max_brick_height,
         brick_limit: inv.brick_limit, big_brick_limit: inv.big_brick_limit, mark_limit: inv.mark_limit,
         disabled_cmds: cmds.disabled_cmds, disable_procedure: cmds.disable_procedure,
+        disable_graphic: cmds.disable_graphic, disable_command: cmds.disable_command,
         camera_locked: view.camera_locked, camera: view.camera,
         width: room.width, height: room.height,
       }),

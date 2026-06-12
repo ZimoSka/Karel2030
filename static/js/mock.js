@@ -98,6 +98,7 @@ class MockWorld {
       counters: { steps_used: 0, turns_used: 0 },
       settings: {
         prog_lang: 'sk', disabled_cmds: [], disable_procedure: false,
+        disable_graphic: false, disable_command: false,
         max_climb: 1, max_drop: -1, max_steps: -1, max_turns: -1,
         max_brick_height: -1, camera_locked: false,
         camera: { az: 3.93, el: 0.49, dist: 16.0 },
@@ -302,7 +303,10 @@ const MockApi = {
     .map((n, i) => ({ token: 'mocktok' + i, name: n, url: '/s/mocktok' + i })) }),
   assignments: async () => [{ id: 'mockA', title: 'Mock úloha', created: Date.now() / 1000 }],
   links: async () => ({ links: [{ token: 'mocktok0', name: 'Janko', url: '/s/mocktok0' }] }),
-  progress: async () => [{ token: 'mocktok0', name: 'Janko', url: '/s/mocktok0', has_work: true, program_text: 'zaciatok\n  dopredu\nkoniec', updated: Date.now() / 1000 }],
+  progress: async () => [{ token: 'mocktok0', name: 'Janko', url: '/s/mocktok0', has_work: true, solved: true, completed_at: Date.now() / 1000, program_text: 'zaciatok\n  dopredu\nkoniec', updated: Date.now() / 1000 }],
+  ensureAssignment: async () => ({ assignment_id: 'mockA' }),
+  addLink: async (id, name) => ({ link: { token: 'mocktokN', name, url: '/s/mocktokN' } }),
+  deleteLink: async () => ({ ok: true }),
   workspace: async () => ({ assignment_id: 'mock', name: 'Mock žiak', program_text: '', state: new MockWorld().state() }),
   saveWorkspace: async () => ({}),
 };

@@ -205,6 +205,55 @@ async def create_assignment(request: Request):
     return {'assignment_id': aid}
 
 
+@app.post('/api/assignments/ensure')
+async def ensure_assignment(request: Request):
+    """Get-or-create assignment naviazaný na svet (world_key).
+    Vždy aktualizuje karxml/title → žiaci dostanú najnovšiu verziu sveta.
+    Jedno okno zdieľania na svet: opätovné otvorenie nájde ten istý assignment."""
+    try:
+        body = await request.json()
+    except Exception:
+        return _err(400, 'bad_json', 'expected JSON body')
+    karxml = body.get('karxml', '')
+    if not karxml:
+        return _err(400, 'missing_karxml', 'field "karxml" required')
+    try:
+        w = karxml_to_world(karxml)
+    except Exception as e:
+        return _err(400, 'bad_karxml', str(e))
+    title = body.get('title') or w.title
+    world_key = (body.get('world_key') or '').strip()
+    aid = storage.assignment_for_world(world_key) if world_key else None
+    if aid:
+        storage.update_assignment(aid, {'karxml': karxml, 'title': title})
+    else:
+        aid = storage.save_assignment({'karxml': karxml, 'title': title,
+                                       'world_key': world_key})
+    return {'assignment_id': aid}
+
+
+@app.post('/api/assignments/{aid}/links')
+async def add_link(aid: str, request: Request):
+    """Pridá jedného žiaka (meno) → vráti jeho link."""
+    if storage.load_assignment(aid) is None:
+        return _err(404, 'not_found', f'assignment {aid!r}')
+    try:
+        body = await request.json()
+    except Exception:
+        return _err(400, 'bad_json', 'expected JSON body')
+    name = (body.get('name') or '').strip()
+    links = storage.create_links(aid, [name])
+    return {'link': links[0]}
+
+
+@app.delete('/api/links/{token}')
+def delete_link(token: str):
+    """Zmaže žiakov link aj jeho prácu."""
+    if not storage.delete_link(token):
+        return _err(404, 'not_found', f'token {token!r}')
+    return {'ok': True}
+
+
 @app.get('/api/assignments/{aid}')
 def get_assignment(aid: str):
     data = storage.load_assignment(aid)
@@ -261,9 +310,11 @@ def assignment_progress(aid: str):
     for link in storage.list_links(aid):
         wsp = storage.load_workspace(link['token']) or {}
         prog = wsp.get('program_text', '')
+        solved = bool(wsp.get('completed'))
         out.append({'token': link['token'], 'name': link['name'], 'url': link['url'],
-                    'has_work': bool(prog.strip()), 'program_text': prog,
-                    'updated': wsp.get('updated')})
+                    'has_work': bool(prog.strip()) or solved, 'program_text': prog,
+                    'solved': solved, 'completed_at': wsp.get('completed_at'),
+                    'updated': wsp.get('updated') or wsp.get('completed_at')})
     return out
 
 
@@ -309,13 +360,16 @@ async def put_workspace(token: str, request: Request):
 # WebSocket — spoločná slučka pre žiaka aj učiteľa
 # =========================================================================
 
-async def _ws_loop(ws: WebSocket, session: Session):
-    """Dve úlohy: sender vyprázdňuje frontu, receiver spracúva klienta."""
+async def _ws_loop(ws: WebSocket, session: Session, token: str | None = None):
+    """Dve úlohy: sender vyprázdňuje frontu, receiver spracúva klienta.
+    Pri žiakovi (token) zaznamená vyriešenie misie aj keď ju vyriešil graficky."""
     await ws.send_json(session.state_msg('connect'))
 
     async def sender():
         while True:
             msg = await session.queue.get()
+            if token and msg.get('type') == 'mission' and msg.get('result') == 'success':
+                storage.mark_completed(token)   # žiak vyriešil svet → ulož pokrok
             await ws.send_json(msg)
 
     send_task = asyncio.create_task(sender())
@@ -388,7 +442,8 @@ def _teacher_apply_settings(session: Session, msg: dict):
     for w in (session.world, session.base):
         st = msg.get('settings') or {}
         s = w.settings
-        for key in ('prog_lang', 'disable_procedure', 'max_climb', 'max_drop',
+        for key in ('prog_lang', 'disable_procedure', 'disable_graphic',
+                    'disable_command', 'max_climb', 'max_drop',
                     'max_steps', 'max_turns', 'max_brick_height',
                     'camera_locked', 'brick_limit', 'big_brick_limit',
                     'mark_limit'):
@@ -428,7 +483,7 @@ async def ws_student(ws: WebSocket, token: str):
         return
     await ws.accept()
     session = Session(kc.World.from_xml(assignment['karxml']), teacher=False)
-    await _ws_loop(ws, session)
+    await _ws_loop(ws, session, token=token)
 
 
 @app.websocket('/ws/teacher/{session_id}')

@@ -50,6 +50,9 @@ const Api = {
   links:            (id)            => Api._get('/assignments/' + id + '/links'),
   assignments:      ()             => Api._get('/assignments'),
   progress:         (id)            => Api._get('/assignments/' + id + '/progress'),
+  ensureAssignment: (world_key, karxml, title) => Api._send('POST', '/assignments/ensure', { world_key, karxml, title }),
+  addLink:          (id, name)     => Api._send('POST', '/assignments/' + id + '/links', { name }),
+  deleteLink:       (token)        => Api._send('DELETE', '/links/' + token),
 
   // workspace (žiak)
   workspace:     (token)       => Api._get('/workspace/' + token),

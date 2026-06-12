@@ -60,6 +60,32 @@ class FileStorage:
     def load_assignment(self, id: str) -> dict | None:
         return self._read('assignments', id)
 
+    def update_assignment(self, id: str, patch: dict) -> bool:
+        """Zlúči patch do existujúceho assignmentu (napr. nový karxml/title)."""
+        data = self._read('assignments', id)
+        if data is None:
+            return False
+        data.update(patch)
+        self._write('assignments', id, data)
+        return True
+
+    def assignment_for_world(self, world_key: str) -> str | None:
+        """Nájde assignment naviazaný na svet (world_key) — najnovší ak je viac."""
+        if not world_key:
+            return None
+        d = os.path.join(self.root, 'assignments')
+        best, best_t = None, -1
+        for fname in os.listdir(d):
+            if not fname.endswith('.json'):
+                continue
+            aid = fname[:-5]
+            data = self._read('assignments', aid)
+            if data and data.get('world_key') == world_key:
+                t = data.get('created') or 0
+                if t > best_t:
+                    best, best_t = aid, t
+        return best
+
     def list_assignments(self) -> list:
         """Zoznam všetkých úloh (najnovšie prvé). Bez auth — vidno všetky."""
         out = []
@@ -105,6 +131,17 @@ class FileStorage:
     def resolve_token(self, token: str) -> dict | None:
         return self._read('links', token)
 
+    def delete_link(self, token: str) -> bool:
+        """Zmaže link aj jeho workspace (žiakovu prácu)."""
+        p = self._path('links', token)
+        if not p or not os.path.exists(p):
+            return False
+        os.remove(p)
+        wp = self._path('workspaces', token)
+        if wp and os.path.exists(wp):
+            os.remove(wp)
+        return True
+
     # --- workspaces ----------------------------------------------------------
     def save_workspace(self, token: str, data: dict) -> None:
         data = dict(data); data['updated'] = time.time()
@@ -112,3 +149,11 @@ class FileStorage:
 
     def load_workspace(self, token: str) -> dict | None:
         return self._read('workspaces', token)
+
+    def mark_completed(self, token: str) -> None:
+        """Zaznamená že žiak vyriešil svet (aj graficky, bez programu).
+        Zlúči do existujúceho workspace — nezmaže uložený program."""
+        data = self._read('workspaces', token) or {}
+        data['completed'] = True
+        data['completed_at'] = time.time()
+        self._write('workspaces', token, data)
