@@ -388,21 +388,110 @@
       $('ui-lang').onchange = (e) => setUiLang(e.target.value);
     }).catch(() => {});
   }
-  /* ---------- Nastavenia aplikácie (jazyk + vzhľad Karla) ---------- */
+  /* ---------- Nastavenia aplikácie (jazyk + vzhľad Karla + vizuál) ---------- */
   $('btn-app-settings').onclick = () => {
     const langOpts = [...$('ui-lang').options]
       .map(o => `<option value="${o.value}"${o.value === uiLang ? ' selected' : ''}>${o.textContent}</option>`).join('');
-    const curSkin = localStorage.getItem('karel_skin') || 'grogu';
-    const skins = [['grogu', '🟢 Grogu'], ['robot', '🤖 Robot (klasický)']];
-    const skinOpts = skins.map(([v, l]) => `<option value="${v}"${v === curSkin ? ' selected' : ''}>${l}</option>`).join('');
+    const curSkin = localStorage.getItem('karel_skin') || 'grogu_small';
+    const skinOpts = KarelRenderer.skinList()
+      .map(s => `<option value="${s.id}"${s.id === curSkin ? ' selected' : ''}>${s.label}</option>`).join('');
+
+    // Vizuálne nastavenia
+    const vis = renderer.getVisualSettings();
+    const visRows = [
+      { key: 'wall',      label: 'Murik',        hasVis: true,  hasTex: true  },
+      { key: 'floor',     label: 'Podlaha',       hasVis: true,  hasTex: true  },
+      { key: 'grid',      label: 'Grid podlahy',  hasVis: true,  hasTex: false },
+      { key: 'sky',       label: 'Okolie',        hasVis: true,  hasTex: true  },
+      { key: 'brick',     label: 'Tehla',         hasVis: false, hasTex: true  },
+      { key: 'big_brick', label: 'Kvader',        hasVis: false, hasTex: true  },
+      { key: 'mark',      label: 'Značka',        hasVis: false, hasTex: true  },
+    ];
+    const visTableRows = visRows.map(r => {
+      const v = vis[r.key] || {};
+      const checked = (r.hasVis && v.visible !== false) ? ' checked' : '';
+      const visCell = r.hasVis
+        ? `<input type="checkbox" class="vis-cb" data-key="${r.key}"${checked}>`
+        : `<span style="color:var(--fg2);font-size:.75em">vždy</span>`;
+      const color = v.color || '#ffffff';
+      const texName = (v.mode === 'texture' && v.textureUrl) ? '📄' : '';
+      const texBtn = r.hasTex
+        ? `<button class="vis-tex-btn mini-btn" data-key="${r.key}" title="Vybrať textúru zo súboru">📁</button>` +
+          `<span class="vis-tex-name" id="vis-tn-${r.key}">${texName}</span>` +
+          `<button class="vis-tex-clr mini-btn" data-key="${r.key}" title="Odstrániť textúru" style="${texName ? '' : 'display:none'}">✕</button>`
+        : '';
+      return `<tr>
+        <td>${r.label}</td>
+        <td>${visCell}</td>
+        <td><input type="color" class="vis-col" data-key="${r.key}" value="${color}"></td>
+        <td>${texBtn}</td>
+      </tr>`;
+    }).join('');
+
     dialog('⚙ ' + t('menu.settings', 'Nastavenia'),
-      '<div class="app-set">' +
-      `<label class="app-set-row"><span>🌐 ${t('app_settings.language', 'Jazyk rozhrania')}</span><select id="opt-lang">${langOpts}</select></label>` +
-      `<label class="app-set-row"><span>👤 ${t('app_settings.skin', 'Vzhľad Karla')}</span><select id="opt-skin">${skinOpts}</select></label>` +
-      '</div>',
+      `<div class="app-set">
+        <label class="app-set-row"><span>🌐 ${t('app_settings.language', 'Jazyk rozhrania')}</span><select id="opt-lang">${langOpts}</select></label>
+        <label class="app-set-row"><span>👤 ${t('app_settings.skin', 'Vzhľad Karla')}</span><select id="opt-skin">${skinOpts}</select></label>
+        <div class="app-set-hdr">🎨 Vzhľad sveta</div>
+        <table class="vis-table">
+          <thead><tr><th>Prvok</th><th>Vidieť</th><th>Farba</th><th>Textura</th></tr></thead>
+          <tbody>${visTableRows}</tbody>
+        </table>
+        <input type="file" id="vis-file-input" accept="image/*" class="hidden">
+        <p id="vis-tex-note" class="vis-note hidden">⚠ Obrázok > 1 MB — textura aktívna len do obnovenia stránky.</p>
+      </div>`,
       [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+
     $('opt-lang').onchange = (e) => setUiLang(e.target.value);
     $('opt-skin').onchange = (e) => renderer.setSkin(e.target.value);
+
+    // Live-apply vizuálnych nastavení
+    let _texTargetKey = null;
+    function _applyVis() {
+      renderer.applyVisualSettings(renderer.getVisualSettings());
+    }
+    document.querySelectorAll('.vis-cb').forEach(cb => {
+      cb.onchange = () => {
+        const v = renderer.getVisualSettings();
+        v[cb.dataset.key].visible = cb.checked;
+        renderer.applyVisualSettings(v);
+      };
+    });
+    document.querySelectorAll('.vis-col').forEach(inp => {
+      inp.oninput = () => {
+        const v = renderer.getVisualSettings();
+        const k = inp.dataset.key; v[k].color = inp.value;
+        if (v[k].mode !== 'texture') renderer.applyVisualSettings(v);
+      };
+    });
+    document.querySelectorAll('.vis-tex-btn').forEach(btn => {
+      btn.onclick = () => { _texTargetKey = btn.dataset.key; $('vis-file-input').value = ''; $('vis-file-input').click(); };
+    });
+    document.querySelectorAll('.vis-tex-clr').forEach(btn => {
+      btn.onclick = () => {
+        const v = renderer.getVisualSettings(); const k = btn.dataset.key;
+        v[k].mode = 'color'; v[k].textureUrl = null;
+        renderer.applyVisualSettings(v);
+        const tn = $('vis-tn-' + k); if (tn) tn.textContent = '';
+        btn.style.display = 'none';
+        $('vis-tex-note').classList.add('hidden');
+      };
+    });
+    $('vis-file-input').onchange = (e) => {
+      const f = e.target.files && e.target.files[0]; if (!f || !_texTargetKey) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        const v = renderer.getVisualSettings(); const k = _texTargetKey;
+        v[k].mode = 'texture'; v[k].textureUrl = dataUrl;
+        renderer.applyVisualSettings(v);
+        const tn = $('vis-tn-' + k); if (tn) tn.textContent = '📄 ' + f.name.slice(0, 16);
+        const clrBtn = document.querySelector(`.vis-tex-clr[data-key="${k}"]`);
+        if (clrBtn) clrBtn.style.display = '';
+        if (dataUrl.length > 1_000_000) $('vis-tex-note').classList.remove('hidden');
+      };
+      reader.readAsDataURL(f);
+    };
   };
   // tlačidlá priameho ovládania majú title = primárne slovo (pre ws.direct)
   function rebuildActionTitles() {

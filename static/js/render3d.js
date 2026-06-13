@@ -10,16 +10,57 @@ const BIG_H = 5 * BRICK_H;       // kvader = 5 malých (= 1.35)
 /* Vzhľad Karla ("skin"). 'robot' = kvádrová postavička (žiadny model).
  * Ostatné skiny majú GLB model — renderer ho normalizuje (vycentruje, postaví
  * na podlahu, zmenší do políčka). Ak GLB chýba/zlyhá, padne späť na robota.
- *   yaw    — pootočenie, aby model pozeral na +X (Karelovo "dopredu")
+ *   yaw    — pootočenie (rad), aby model pozeral na +X (Karelovo "dopredu")
+ *             GLB štandard = +Z dopredu → yaw = -π/2 otočí na +X
+ *             Ak model pozerá opačne (+X), yaw = 0; ak -Z, yaw = +π/2.
  *   height — výška modelu v jednotkách políčka */
 const KAREL_SKINS = {
-  grogu: { label: 'Grogu', url: 'models/grogu.glb', yaw: 0, height: 1.3 },
-  robot: { label: 'Robot', url: null },
+  grogu_small: { label: 'Grogu',    url: 'models/grogu_small.glb', yaw: -Math.PI / 2, height: 1.3 },
+  grogu:       { label: 'Grogu HD', url: 'models/grogu.glb',       yaw: -Math.PI / 2, height: 1.3 },
+  robot:       { label: 'Robot',    url: null },
 };
-const DEFAULT_SKIN = 'grogu';
+const DEFAULT_SKIN = 'grogu_small';
+
 function _currentSkinId() {
   const s = (typeof localStorage !== 'undefined') && localStorage.getItem('karel_skin');
   return (s && KAREL_SKINS[s]) ? s : DEFAULT_SKIN;
+}
+
+/* Predvolené vizuálne nastavenia sveta (farby/textúry/viditeľnosť).
+ * brick/big_brick/mark nemajú 'visible' — sú vždy viditeľné. */
+const VISUAL_DEFAULTS = {
+  wall:      { visible: true, mode: 'color', color: '#dddd00', textureUrl: null },
+  floor:     { visible: true, mode: 'color', color: '#0000bb', textureUrl: null },
+  grid:      { visible: true, mode: 'color', color: '#3344dd', textureUrl: null },
+  sky:       { visible: true, mode: 'color', color: '#060610', textureUrl: null },
+  brick:     {                mode: 'color', color: '#44cc22', textureUrl: null },
+  big_brick: {                mode: 'color', color: '#993311', textureUrl: null },
+  mark:      {                mode: 'color', color: '#ffff44', textureUrl: null },
+};
+
+function _loadVisualSettings() {
+  try {
+    const s = (typeof localStorage !== 'undefined') && localStorage.getItem('karel_visual');
+    if (s) {
+      const saved = JSON.parse(s);
+      // hlboké zlúčenie — nezmazať kľúče čo nie sú v localStorage
+      const result = JSON.parse(JSON.stringify(VISUAL_DEFAULTS));
+      Object.keys(result).forEach(k => { if (saved[k]) Object.assign(result[k], saved[k]); });
+      return result;
+    }
+  } catch (e) { /* ignore */ }
+  return JSON.parse(JSON.stringify(VISUAL_DEFAULTS));
+}
+
+function _saveVisualSettings(vs) {
+  try {
+    // Neukladaj veľké textúry do localStorage (limit ~5 MB) — iba dataURL < 1 MB
+    const safe = JSON.parse(JSON.stringify(vs));
+    Object.values(safe).forEach(v => {
+      if (v.textureUrl && v.textureUrl.length > 1_000_000) v.textureUrl = null;
+    });
+    localStorage.setItem('karel_visual', JSON.stringify(safe));
+  } catch (e) { /* ignore quota */ }
 }
 
 class KarelRenderer {
@@ -47,24 +88,34 @@ class KarelRenderer {
     this._dynamic = new THREE.Group();  // tehly, značky, steny
     this.scene.add(this._static, this._dynamic);
 
+    // Materiály udržiavané ako polia — applyVisualSettings ich mení za behu
+    this._floorMat = new THREE.MeshBasicMaterial({ color: 0x0000bb });
+    this._gridMat  = new THREE.LineBasicMaterial({ color: 0x3344dd });
+    this._mats = {
+      brick: new THREE.MeshLambertMaterial({ color: 0x44cc22 }),
+      big:   new THREE.MeshLambertMaterial({ color: 0x993311 }),
+      mark:  new THREE.MeshBasicMaterial({ color: 0xffff44 }),
+      wall:  new THREE.MeshLambertMaterial({ color: 0xdddd00 }),
+    };
+    this._boxGeo  = new THREE.BoxGeometry(0.92, BRICK_H, 0.92);
+    this._bigGeo  = new THREE.BoxGeometry(0.96, BIG_H, 0.96);
+    this._markGeo = new THREE.CircleGeometry(0.32, 24);
+
+    // Referencie na statické objekty (pre toggleovanie viditeľnosti)
+    this._floorMesh = null;
+    this._gridLines = null;
+    this._outerWallGroup = null;
+
+    this._size = null;
+    this._camInit = false;
+
     this._karel = this._makeKarel();
     this.scene.add(this._karel);
     this._skin = _currentSkinId();
     this._applySkin(this._skin);
 
-    // farby zhodné s Python paletou (FC)
-    this._mats = {
-      brick: new THREE.MeshLambertMaterial({ color: 0x44cc22 }),   // FC brick_top
-      big:   new THREE.MeshLambertMaterial({ color: 0x993311 }),   // FC bbrick_top (hnedá)
-      mark:  new THREE.MeshBasicMaterial({ color: 0xffff44 }),     // FC mark2 (žltá)
-      wall:  new THREE.MeshLambertMaterial({ color: 0xdddd00 }),   // FC wall
-    };
-    this._boxGeo = new THREE.BoxGeometry(0.92, BRICK_H, 0.92);
-    this._bigGeo = new THREE.BoxGeometry(0.96, BIG_H, 0.96);
-    this._markGeo = new THREE.CircleGeometry(0.32, 24);
-
-    this._size = null;     // [w,h] aktuálneho sveta
-    this._camInit = false;
+    // Vizuálne nastavenia z localStorage — aplikujú sa v _buildStatic
+    this._vis = _loadVisualSettings();
 
     window.addEventListener('resize', () => this._resize());
     this._resize();
@@ -95,21 +146,20 @@ class KarelRenderer {
     const boxFig = new THREE.Group();   // kvádrová postavička v podskupine (vymeniteľná za model)
     g.add(boxFig);
     g._boxFig = boxFig;
-    const tan      = new THREE.MeshLambertMaterial({ color: 0xc8a870 });  // SK
-    const tanLight = new THREE.MeshLambertMaterial({ color: 0xd8b880 });  // FC2 (čelo)
+    const tan      = new THREE.MeshLambertMaterial({ color: 0xc8a870 });
+    const tanLight = new THREE.MeshLambertMaterial({ color: 0xd8b880 });
     const box = (fx0, ry0, z0, fx1, ry1, z1, mat) => {
       const m = new THREE.Mesh(
         new THREE.BoxGeometry(fx1 - fx0, z1 - z0, ry1 - ry0), mat || tan);
       m.position.set((fx0 + fx1) / 2, (z0 + z1) / 2, (ry0 + ry1) / 2);
       boxFig.add(m);
     };
-    box(-0.12, -0.17, 0,    0.12, -0.03, 0.38);             // noha L
-    box(-0.12,  0.03, 0,    0.12,  0.17, 0.38);             // noha R
-    box(-0.16, -0.20, 0.38, 0.16,  0.20, 0.86, tanLight);   // trup
-    box(-0.10, -0.25, 0.64, 0.10, -0.20, 0.82);             // rameno L
-    box(-0.10,  0.20, 0.64, 0.10,  0.25, 0.82);             // rameno R
-    box(-0.14, -0.16, 0.86, 0.14,  0.16, 1.26, tanLight);   // hlava
-    // oči — biele s tmavou zrenicou, na čele (+X)
+    box(-0.12, -0.17, 0,    0.12, -0.03, 0.38);
+    box(-0.12,  0.03, 0,    0.12,  0.17, 0.38);
+    box(-0.16, -0.20, 0.38, 0.16,  0.20, 0.86, tanLight);
+    box(-0.10, -0.25, 0.64, 0.10, -0.20, 0.82);
+    box(-0.10,  0.20, 0.64, 0.10,  0.25, 0.82);
+    box(-0.14, -0.16, 0.86, 0.14,  0.16, 1.26, tanLight);
     const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const pup   = new THREE.MeshBasicMaterial({ color: 0x003300 });
     [-0.08, 0.08].forEach(ry => {
@@ -132,7 +182,6 @@ class KarelRenderer {
   /* Aplikuje skin: 'robot' = kvádre; inak načíta GLB model. Pri chybe → robot. */
   _applySkin(id) {
     const skin = KAREL_SKINS[id] || KAREL_SKINS[DEFAULT_SKIN];
-    // odstráň predošlý načítaný model
     if (this._modelGroup) { this._karel.remove(this._modelGroup); this._modelGroup = null; }
     this._modelToken = (this._modelToken || 0) + 1;
     const token = this._modelToken;
@@ -141,7 +190,7 @@ class KarelRenderer {
       return;
     }
     new THREE.GLTFLoader().load(skin.url, (gltf) => {
-      if (token !== this._modelToken) return;     // medzitým sa skin zmenil
+      if (token !== this._modelToken) return;
       const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
       if (!model) return;
       const bbox = new THREE.Box3().setFromObject(model);
@@ -150,17 +199,17 @@ class KarelRenderer {
       if (!(size.y > 0)) return;
       let scale = (skin.height || 1.25) / size.y;
       const horiz = Math.max(size.x, size.z) * scale;
-      if (horiz > 0.9) scale *= 0.9 / horiz;       // zmestí sa do políčka
+      if (horiz > 0.9) scale *= 0.9 / horiz;
       model.scale.setScalar(scale);
       model.position.set(-center.x * scale, -bbox.min.y * scale, -center.z * scale);
-      const wrap = new THREE.Group();              // yaw okolo stredu políčka
+      const wrap = new THREE.Group();
       wrap.rotation.y = skin.yaw || 0;
       wrap.add(model);
       if (this._karel._boxFig) this._karel._boxFig.visible = false;
       this._modelGroup = wrap;
       this._karel.add(wrap);
-      if (this._lastState) this.render(this._lastState);   // reposícia na aktuálny stav
-    }, undefined, () => {                            // 404/chyba → kvádrový robot
+      if (this._lastState) this.render(this._lastState);
+    }, undefined, () => {
       if (token !== this._modelToken) return;
       if (this._karel._boxFig) this._karel._boxFig.visible = true;
     });
@@ -170,45 +219,112 @@ class KarelRenderer {
   _px(x) { return x + 0.5; }
   _pz(y) { return -(y + 0.5); }
 
-  /* Statická časť: podlaha (modrá mriežka ako desktop) + okrajové steny (žlté) */
+  /* Aplikuje farbu alebo textúru na MeshLambertMaterial / MeshBasicMaterial.
+   * 'grid' používa LineBasicMaterial — podporuje iba farbu. */
+  _applyMat(mat, vs) {
+    if (!mat || !vs) return;
+    if (vs.mode === 'texture' && vs.textureUrl) {
+      new THREE.TextureLoader().load(vs.textureUrl, (tex) => {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        mat.map = tex; mat.color.set(0xffffff); mat.needsUpdate = true;
+      }, undefined, () => {
+        // chyba → použij farbu
+        mat.map = null; mat.color.set(vs.color || '#ffffff'); mat.needsUpdate = true;
+      });
+    } else {
+      mat.map = null;
+      mat.color.set(vs.color || '#ffffff');
+      mat.needsUpdate = true;
+    }
+  }
+
+  /* Aplikuje vizuálne nastavenia na renderer (farby, textúry, viditeľnosť).
+   * Volá sa z nastavení aplikácie. Uloží aj do localStorage. */
+  applyVisualSettings(vs) {
+    this._vis = vs;
+    _saveVisualSettings(vs);
+
+    // Pozadie (sky)
+    if (vs.sky && vs.sky.mode === 'texture' && vs.sky.textureUrl) {
+      new THREE.TextureLoader().load(vs.sky.textureUrl, (tex) => {
+        this.scene.background = tex;
+      }, undefined, () => {
+        this.scene.background = new THREE.Color(vs.sky.color || '#060610');
+      });
+    } else {
+      this.scene.background = new THREE.Color((vs.sky && vs.sky.color) || '#060610');
+    }
+
+    // Podlaha
+    if (this._floorMesh) {
+      this._floorMesh.visible = vs.floor ? vs.floor.visible !== false : true;
+      this._applyMat(this._floorMat, vs.floor);
+    }
+
+    // Mriežka
+    if (this._gridLines) {
+      this._gridLines.visible = vs.grid ? vs.grid.visible !== false : true;
+      if (vs.grid && vs.grid.mode !== 'texture') {
+        this._gridMat.color.set(vs.grid.color || '#3344dd');
+        this._gridMat.needsUpdate = true;
+      }
+    }
+
+    // Vonkajšie ohraničovacie steny
+    if (this._outerWallGroup) {
+      this._outerWallGroup.visible = vs.wall ? vs.wall.visible !== false : true;
+    }
+
+    // Murik (materiál zdieľaný s internými stenami aj vonkajšími)
+    this._applyMat(this._mats.wall, vs.wall);
+
+    // Tehly / kvader / značka
+    this._applyMat(this._mats.brick, vs.brick);
+    this._applyMat(this._mats.big, vs.big_brick);
+    this._applyMat(this._mats.mark, vs.mark);
+  }
+
+  /* Statická časť: podlaha + mriežka + vonkajšie ohraničenie.
+   * Referencie na objekty sa ukladajú pre applyVisualSettings. */
   _buildStatic(w, h) {
     this._static.clear();
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, h),
-      new THREE.MeshBasicMaterial({ color: 0x0000bb }));   // FC floor_a (modrá ako desktop)
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.set(w / 2, -0.005, -h / 2);
-    this._static.add(floor);
 
-    // mriežka — modré čiary (FC grid)
+    this._floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), this._floorMat);
+    this._floorMesh.rotation.x = -Math.PI / 2;
+    this._floorMesh.position.set(w / 2, -0.005, -h / 2);
+    this._static.add(this._floorMesh);
+
     const pts = [];
     for (let x = 0; x <= w; x++) pts.push(x, 0, 0, x, 0, -h);
     for (let y = 0; y <= h; y++) pts.push(0, 0, -y, w, 0, -y);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-    this._static.add(new THREE.LineSegments(geo,
-      new THREE.LineBasicMaterial({ color: 0x3344dd })));
+    this._gridLines = new THREE.LineSegments(geo, this._gridMat);
+    this._static.add(this._gridLines);
 
-    // okrajové steny — nízke žlté pásy okolo celej miestnosti
+    // Vonkajšie ohraničovacie steny — vlastná skupina pre toggle viditeľnosti
+    this._outerWallGroup = new THREE.Group();
     const wallH = 0.5, t = 0.08;
     const mk = (sx, sz, px, pz) => {
       const m = new THREE.Mesh(new THREE.BoxGeometry(sx, wallH, sz), this._mats.wall);
       m.position.set(px, wallH / 2, pz);
-      this._static.add(m);
+      this._outerWallGroup.add(m);
     };
-    mk(w + 2 * t, t, w / 2, t / 2);            // juh (y=0 → z=0)
-    mk(w + 2 * t, t, w / 2, -h - t / 2);       // sever
-    mk(t, h, -t / 2, -h / 2);                  // západ
-    mk(t, h, w + t / 2, -h / 2);               // východ
+    mk(w + 2 * t, t, w / 2, t / 2);
+    mk(w + 2 * t, t, w / 2, -h - t / 2);
+    mk(t, h, -t / 2, -h / 2);
+    mk(t, h, w + t / 2, -h / 2);
+    this._static.add(this._outerWallGroup);
 
     this.controls.target.set(w / 2, 0, -h / 2);
+
+    // Aplikuj uložené vizuálne nastavenia na nový statický obsah
+    this.applyVisualSettings(this._vis);
   }
 
   /* Kamera zo settings.camera (az/el/dist — sférické okolo stredu sveta) */
   setCamera(cam, locked) {
     const t = this.controls.target;
-    // worldY → −threeZ (handedness-správne), preto azimut meriame opačne než
-    // Python (negácia), aby uložené camera_az z .karxml dalo rovnaký pohľad.
     const az = -cam.az, el = cam.el, d = cam.dist;
     this.camera.position.set(
       t.x + d * Math.cos(el) * Math.cos(az),
@@ -226,12 +342,11 @@ class KarelRenderer {
     const dx = p.x - t.x, dy = p.y - t.y, dz = p.z - t.z;
     const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 16;
     const el = Math.asin(Math.max(-1, Math.min(1, dy / d)));
-    const az = -Math.atan2(dz, dx);   // setCamera používa az_three = -cam.az
+    const az = -Math.atan2(dz, dx);
     return { az, el, dist: d };
   }
 
-  /* Preset pohľadu (tlačidlá Def/Pred/Vrch/Bok) — uhly v stupňoch,
-   * zachová aktuálnu vzdialenosť kamery od cieľa. */
+  /* Preset pohľadu (tlačidlá Def/Pred/Vrch/Bok) */
   setViewPreset(azDeg, elDeg) {
     const t = this.controls.target;
     const d = this.camera.position.distanceTo(t) || (Math.max(this._size[0], this._size[1]) * 2);
@@ -241,7 +356,7 @@ class KarelRenderer {
 
   /* Hlavný vstup: vykresli state JSON */
   render(state) {
-    this._lastState = state;            // pre reposíciu Karla po zmene skinu
+    this._lastState = state;
     const w = state.width, h = state.height;
     if (!this._size || this._size[0] !== w || this._size[1] !== h) {
       this._size = [w, h];
@@ -265,7 +380,6 @@ class KarelRenderer {
       this._dynamic.add(m);
     });
 
-    // malé tehly — stohované, NA kvadri ak je
     (state.bricks || []).forEach(([x, y, n]) => {
       const base = (bigAt[x + ',' + y] ? BIG_H : 0);
       for (let i = 0; i < n; i++) {
@@ -275,12 +389,10 @@ class KarelRenderer {
       }
     });
 
-    // výška stohu na políčku (kvader + malé tehly) — pre umiestnenie značky navrch
     const heightAt = {};
     (state.big_bricks || []).forEach(([x, y]) => { heightAt[x + ',' + y] = BIG_H; });
     (state.bricks || []).forEach(([x, y, n]) => { heightAt[x + ',' + y] = (heightAt[x + ',' + y] || 0) + n * BRICK_H; });
 
-    // značky — žlté krúžky NA vrchu stohu (aby boli vidno aj na tehlách)
     (state.marks || []).forEach(([x, y]) => {
       const m = new THREE.Mesh(this._markGeo, this._mats.mark);
       m.rotation.x = -Math.PI / 2;
@@ -288,11 +400,9 @@ class KarelRenderer {
       this._dynamic.add(m);
     });
 
-    // interné steny — [x, y, side]; okraje už kreslí _buildStatic, ale
-    // duplicitné okrajové steny zo state neprekážajú (rovnaké miesto)
-    const wallH = 1.2, t = 0.08;   // Python WALL_H
+    const wallH = 1.2, t = 0.08;
+    const wallVisible = !this._vis || this._vis.wall === undefined || this._vis.wall.visible !== false;
     (state.walls || []).forEach(([x, y, side]) => {
-      // preskoč steny na vonkajšom okraji (kreslí ich _buildStatic)
       if ((side === 'S' && y === 0) || (side === 'N' && y === h - 1) ||
           (side === 'W' && x === 0) || (side === 'E' && x === w - 1)) return;
       let sx = 1 + t, sz = t, px = this._px(x), pz = this._pz(y);
@@ -301,19 +411,28 @@ class KarelRenderer {
       else { sx = t; sz = 1 + t; px += (side === 'E' ? 0.5 : -0.5); }
       const m = new THREE.Mesh(new THREE.BoxGeometry(sx, wallH, sz), this._mats.wall);
       m.position.set(px, wallH / 2, pz);
+      m.visible = wallVisible;
       this._dynamic.add(m);
     });
 
     // Karel — na vrchu stohu, otočený podľa dir
     const k = state.karel;
-    const kk = k.x + ',' + k.y;
     let base = 0;
     (state.big_bricks || []).forEach(([x, y]) => { if (x === k.x && y === k.y) base += BIG_H; });
     (state.bricks || []).forEach(([x, y, n]) => { if (x === k.x && y === k.y) base += n * BRICK_H; });
     this._karel.position.set(this._px(k.x), base, this._pz(k.y));
-    // čelo postavy = +X lokálne; mapovanie worldY→−Z:
-    //  E(+worldX=+threeX):0  N(+worldY=−threeZ):π/2  W:π  S(+threeZ):−π/2
+    // čelo postavy = +X lokálne; E(+worldX=+threeX):0  N(+worldY=−threeZ):π/2  W:π  S(+threeZ):−π/2
     const rot = { E: 0, N: Math.PI / 2, W: Math.PI, S: -Math.PI / 2 }[k.dir] || 0;
     this._karel.rotation.y = rot;
+  }
+
+  /* Vráti zoznam skinov pre nastavenia (label + id) */
+  static skinList() {
+    return Object.entries(KAREL_SKINS).map(([id, s]) => ({ id, label: s.label }));
+  }
+
+  /* Vráti aktuálne vizuálne nastavenia (kópia) */
+  getVisualSettings() {
+    return JSON.parse(JSON.stringify(this._vis));
   }
 }
