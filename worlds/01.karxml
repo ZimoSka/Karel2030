@@ -85,6 +85,6 @@
 Koniec</program>
   <mission>
     <condition check="karel_pos" eval="failure" when="on_step" op="or" negate="true" z="1"/>
-    <condition check="karel_pos" eval="success" when="on_finish" op="or" z="1"/>
+    <condition check="sign" eval="success" when="on_finish" op="or"/>
   </mission>
 </world>

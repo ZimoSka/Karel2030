@@ -83,6 +83,28 @@ def test_run_to_wall():
     assert wd.karel_x == 9   # pri východnej stene
 
 
+def test_world01_success_requires_mark():
+    """Svet 01: úspech = dôjsť na značku (3,1), nie len skončiť na muriku.
+    Strážca proti regresii falošného úspechu pri prejdení len časti muriku."""
+    def run(src):
+        wd = k.World.from_xml('worlds/01.karxml'); wd.reset_inventory()
+        itp = k.KarelInterpreter(wd); itp.delay = 0; res = {'r': None}
+        def on_step():
+            r = k.evaluate_goals(wd, on_step=True)
+            if r: res['r'] = r; itp.stop()
+        def fin(_):
+            if res['r'] is None: res['r'] = k.evaluate_goals(wd, on_step=False)
+        itp.on_step = on_step; itp.on_finish = fin
+        itp.run(k.parse(src)); return res['r']
+    # len časť muriku → NIE úspech (predtým to falošne prešlo)
+    partial = 'zaciatok opakuj 3 krat kym tehla rob dopredu koniec vlavo koniec koniec'
+    assert run(partial) != 'success'
+    # celý okruh + dôjdi na značku → úspech
+    full = ('zaciatok opakuj 4 krat kym tehla rob dopredu koniec vlavo koniec '
+            'kym tehla rob dopredu koniec koniec')
+    assert run(full) == 'success'
+
+
 # ---------------- pohybové rozpočty ----------------
 
 def test_step_budget():
