@@ -45,6 +45,8 @@ const Api = {
   publishWorld:   (id, karxml) => Api._send('POST', '/worlds', { id, karxml }),
   deleteWorld:    (id)         => Api._send('DELETE', '/worlds/' + encodeURIComponent(id)),
   saveWorldVisual: (id, vis)  => Api._send('PUT', '/worlds/' + encodeURIComponent(id) + '/visual', vis),
+  getGlobalVisual: ()        => Api._get('/settings/visual'),
+  saveGlobalVisual: (vis)    => Api._send('PUT', '/settings/visual', vis),
   parseKarxml:    (xml)  => fetch('/api/worlds/parse-karxml', { method: 'POST', body: xml })
                               .then(r => r.ok ? r.json() : Api._err(r).then(e => { throw e; })),
 

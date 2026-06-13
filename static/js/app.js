@@ -501,12 +501,11 @@
     let _visSaveTimer = null;
     function _applyAndSave(v) {
       renderer.applyVisualSettings(v);
-      if (_curWorldId) {
-        clearTimeout(_visSaveTimer);
-        _visSaveTimer = setTimeout(() => {
-          api.saveWorldVisual(_curWorldId, v).catch(() => {});
-        }, 800);
-      }
+      clearTimeout(_visSaveTimer);
+      _visSaveTimer = setTimeout(() => {
+        api.saveGlobalVisual(v).catch(() => {});
+        if (_curWorldId) api.saveWorldVisual(_curWorldId, v).catch(() => {});
+      }, 800);
     }
     document.querySelectorAll('.vis-cb').forEach(cb => {
       cb.onchange = () => {
@@ -833,6 +832,8 @@
     } else {
       // admin režim sa obnoví z platnej server cookie (po refreshi zostáva)
       api.adminStatus().then(s => { if (s && s.admin) setAdmin(true); }).catch(() => {});
+      // načítaj globálne vizuálne nastavenia (textúry, farby) zo servera
+      api.getGlobalVisual().then(v => { if (v && Object.keys(v).length) renderer.applyVisualSettings(v); }).catch(() => {});
       loadWorldsDropdown(localStorage.getItem('karel_last_world') || null);
       // učiteľ: vlastná session — session_id generuje frontend (viď NOTES.md)
       let sid = sessionStorage.getItem('karel_session');

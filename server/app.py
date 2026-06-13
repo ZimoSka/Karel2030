@@ -190,20 +190,35 @@ def examples():
     return [{'name': n, 'program': p} for n, p in kc.EXAMPLES.items()]
 
 
+_GLOBAL_VISUAL_PATH = os.path.join(_DATA_DIR, 'visual.json')
+
+
+def _load_global_visual() -> dict:
+    if os.path.exists(_GLOBAL_VISUAL_PATH):
+        try:
+            with open(_GLOBAL_VISUAL_PATH, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
 def _visual_path(world_id: str) -> str:
     """Cesta k sidecar vizuálnych nastavení (vždy v _PUBLISHED_DIR)."""
     return os.path.join(_PUBLISHED_DIR, f'{world_id}_visual.json')
 
 
 def _load_visual(world_id: str) -> dict:
+    """Globálne nastavenia ako základ, per-svet ich môžu prepísať."""
+    vis = _load_global_visual()
     p = _visual_path(world_id)
     if os.path.exists(p):
         try:
             with open(p, encoding='utf-8') as f:
-                return json.load(f)
+                vis.update(json.load(f))
         except Exception:
             pass
-    return {}
+    return vis
 
 
 def _world_files() -> dict:
@@ -294,6 +309,22 @@ async def put_world_visual(world_id: str, request: Request):
     data = await request.json()
     os.makedirs(_PUBLISHED_DIR, exist_ok=True)
     with open(_visual_path(world_id), 'w', encoding='utf-8') as f:
+        json.dump(data, f)
+    return {'ok': True}
+
+
+@app.get('/api/settings/visual')
+def get_global_visual():
+    return _load_global_visual()
+
+
+@app.put('/api/settings/visual')
+async def put_global_visual(request: Request):
+    if not _is_admin(request):
+        return _err(401, 'unauthorized', 'len admin')
+    data = await request.json()
+    os.makedirs(_DATA_DIR, exist_ok=True)
+    with open(_GLOBAL_VISUAL_PATH, 'w', encoding='utf-8') as f:
         json.dump(data, f)
     return {'ok': True}
 
