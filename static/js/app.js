@@ -377,15 +377,33 @@
     sel.innerHTML = '';
     items.forEach(it => { const o = document.createElement('option'); o.value = it.code; o.textContent = it.name; if (it.code === current) o.selected = true; sel.appendChild(o); });
   }
+  function setUiLang(code) {
+    uiLang = code; localStorage.setItem('karel_ui_lang', uiLang);
+    if ($('ui-lang')) $('ui-lang').value = code;
+    return api.uiStrings(uiLang).then(s => { T = s; applyI18n(); updateCmdsList(); }).catch(() => {});
+  }
   function loadLangDropdowns() {
     api.uiLangs().then(ls => {
       fillSelect($('ui-lang'), ls, uiLang);
-      $('ui-lang').onchange = (e) => {
-        uiLang = e.target.value; localStorage.setItem('karel_ui_lang', uiLang);
-        api.uiStrings(uiLang).then(s => { T = s; applyI18n(); updateCmdsList(); }).catch(() => {});
-      };
+      $('ui-lang').onchange = (e) => setUiLang(e.target.value);
     }).catch(() => {});
   }
+  /* ---------- Nastavenia aplikácie (jazyk + vzhľad Karla) ---------- */
+  $('btn-app-settings').onclick = () => {
+    const langOpts = [...$('ui-lang').options]
+      .map(o => `<option value="${o.value}"${o.value === uiLang ? ' selected' : ''}>${o.textContent}</option>`).join('');
+    const curSkin = localStorage.getItem('karel_skin') || 'grogu';
+    const skins = [['grogu', '🟢 Grogu'], ['robot', '🤖 Robot (klasický)']];
+    const skinOpts = skins.map(([v, l]) => `<option value="${v}"${v === curSkin ? ' selected' : ''}>${l}</option>`).join('');
+    dialog('⚙ ' + t('menu.settings', 'Nastavenia'),
+      '<div class="app-set">' +
+      `<label class="app-set-row"><span>🌐 ${t('app_settings.language', 'Jazyk rozhrania')}</span><select id="opt-lang">${langOpts}</select></label>` +
+      `<label class="app-set-row"><span>👤 ${t('app_settings.skin', 'Vzhľad Karla')}</span><select id="opt-skin">${skinOpts}</select></label>` +
+      '</div>',
+      [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+    $('opt-lang').onchange = (e) => setUiLang(e.target.value);
+    $('opt-skin').onchange = (e) => renderer.setSkin(e.target.value);
+  };
   // tlačidlá priameho ovládania majú title = primárne slovo (pre ws.direct)
   function rebuildActionTitles() {
     document.querySelectorAll('#dpad [data-cmd]').forEach(b => {

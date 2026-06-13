@@ -7,15 +7,20 @@
 const BRICK_H = 0.27;            // výška malej tehly — zhodné s Python desktopom
 const BIG_H = 5 * BRICK_H;       // kvader = 5 malých (= 1.35)
 
-/* Vymeniteľný 3D model Karla ("skin"). Ak existuje súbor static/models/karel.glb,
- * renderer ho použije namiesto kvádrovej postavičky. Inak ostane default robot.
- * KAREL_MODEL_YAW: o koľko radiánov pootočiť model, aby jeho tvár smerovala na
- *   +X (Karelovo "dopredu"). Väčšina modelov pozerá na +Z alebo -Z → skús
- *   -Math.PI/2 alebo Math.PI/2 ak je otočený dozadu/dopredu nesprávne.
- * KAREL_MODEL_HEIGHT: výška modelu v jednotkách políčka (default ~1.2 ako robot). */
-const KAREL_MODEL_URL = 'models/karel.glb';
-const KAREL_MODEL_YAW = -Math.PI / 2;
-const KAREL_MODEL_HEIGHT = 1.25;
+/* Vzhľad Karla ("skin"). 'robot' = kvádrová postavička (žiadny model).
+ * Ostatné skiny majú GLB model — renderer ho normalizuje (vycentruje, postaví
+ * na podlahu, zmenší do políčka). Ak GLB chýba/zlyhá, padne späť na robota.
+ *   yaw    — pootočenie, aby model pozeral na +X (Karelovo "dopredu")
+ *   height — výška modelu v jednotkách políčka */
+const KAREL_SKINS = {
+  grogu: { label: 'Grogu', url: 'models/grogu.glb', yaw: 0, height: 1.3 },
+  robot: { label: 'Robot', url: null },
+};
+const DEFAULT_SKIN = 'grogu';
+function _currentSkinId() {
+  const s = (typeof localStorage !== 'undefined') && localStorage.getItem('karel_skin');
+  return (s && KAREL_SKINS[s]) ? s : DEFAULT_SKIN;
+}
 
 class KarelRenderer {
   constructor(canvas) {
@@ -44,6 +49,8 @@ class KarelRenderer {
 
     this._karel = this._makeKarel();
     this.scene.add(this._karel);
+    this._skin = _currentSkinId();
+    this._applySkin(this._skin);
 
     // farby zhodné s Python paletou (FC)
     this._mats = {
@@ -111,38 +118,52 @@ class KarelRenderer {
       const p = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.04), pup);
       p.position.set(0.16, 1.10, ry); boxFig.add(p);
     });
-    // skús načítať vymeniteľný GLB model; pri úspechu skryje kvádrovú postavičku
-    this._tryLoadModel(g);
     return g;
   }
 
-  /* Voliteľný GLB model Karla. Ak GLTFLoader nie je k dispozícii alebo súbor
-   * neexistuje (404), ticho ostane kvádrová postavička. Model sa normalizuje:
-   * vycentruje v X/Z, postaví na podlahu (minY=0), zmenší na KAREL_MODEL_HEIGHT
-   * (a max ~0.9 šírky políčka), otočí o KAREL_MODEL_YAW aby pozeral na +X. */
-  _tryLoadModel(g) {
-    if (typeof THREE.GLTFLoader !== 'function') return;
-    new THREE.GLTFLoader().load(KAREL_MODEL_URL, (gltf) => {
+  /* Prepne vzhľad Karla za behu (z nastavení). Uloží voľbu a prekreslí. */
+  setSkin(id) {
+    if (!KAREL_SKINS[id]) return;
+    this._skin = id;
+    try { localStorage.setItem('karel_skin', id); } catch (e) { /* ignore */ }
+    this._applySkin(id);
+  }
+
+  /* Aplikuje skin: 'robot' = kvádre; inak načíta GLB model. Pri chybe → robot. */
+  _applySkin(id) {
+    const skin = KAREL_SKINS[id] || KAREL_SKINS[DEFAULT_SKIN];
+    // odstráň predošlý načítaný model
+    if (this._modelGroup) { this._karel.remove(this._modelGroup); this._modelGroup = null; }
+    this._modelToken = (this._modelToken || 0) + 1;
+    const token = this._modelToken;
+    if (!skin.url || typeof THREE.GLTFLoader !== 'function') {
+      if (this._karel._boxFig) this._karel._boxFig.visible = true;
+      return;
+    }
+    new THREE.GLTFLoader().load(skin.url, (gltf) => {
+      if (token !== this._modelToken) return;     // medzitým sa skin zmenil
       const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
       if (!model) return;
       const bbox = new THREE.Box3().setFromObject(model);
       const size = bbox.getSize(new THREE.Vector3());
       const center = bbox.getCenter(new THREE.Vector3());
       if (!(size.y > 0)) return;
-      let scale = KAREL_MODEL_HEIGHT / size.y;
+      let scale = (skin.height || 1.25) / size.y;
       const horiz = Math.max(size.x, size.z) * scale;
-      if (horiz > 0.9) scale *= 0.9 / horiz;     // nech sa zmestí do políčka
+      if (horiz > 0.9) scale *= 0.9 / horiz;       // zmestí sa do políčka
       model.scale.setScalar(scale);
-      // vycentruj X/Z a postav na podlahu
-      model.position.set(-center.x * scale,
-                         -bbox.min.y * scale,
-                         -center.z * scale);
-      const wrap = new THREE.Group();            // yaw okolo stredu políčka
-      wrap.rotation.y = KAREL_MODEL_YAW;
+      model.position.set(-center.x * scale, -bbox.min.y * scale, -center.z * scale);
+      const wrap = new THREE.Group();              // yaw okolo stredu políčka
+      wrap.rotation.y = skin.yaw || 0;
       wrap.add(model);
-      if (g._boxFig) g._boxFig.visible = false;  // skry kvádrového Karla
-      g.add(wrap);
-    }, undefined, () => { /* 404 / chyba → ostane kvádrový robot */ });
+      if (this._karel._boxFig) this._karel._boxFig.visible = false;
+      this._modelGroup = wrap;
+      this._karel.add(wrap);
+      if (this._lastState) this.render(this._lastState);   // reposícia na aktuálny stav
+    }, undefined, () => {                            // 404/chyba → kvádrový robot
+      if (token !== this._modelToken) return;
+      if (this._karel._boxFig) this._karel._boxFig.visible = true;
+    });
   }
 
   /* Mapovanie core→Three (stred políčka) */
@@ -220,6 +241,7 @@ class KarelRenderer {
 
   /* Hlavný vstup: vykresli state JSON */
   render(state) {
+    this._lastState = state;            // pre reposíciu Karla po zmene skinu
     const w = state.width, h = state.height;
     if (!this._size || this._size[0] !== w || this._size[1] !== h) {
       this._size = [w, h];

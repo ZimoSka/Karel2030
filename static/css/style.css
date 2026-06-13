@@ -182,6 +182,13 @@ button.act { flex: 1 1 40%; font-size: 12px; padding: 6px 4px; line-height: 1.2;
 #dlg-body { margin-bottom: 14px; }
 #dlg-buttons { display: flex; gap: 8px; justify-content: flex-end; }
 
+/* Nastavenia aplikácie (jazyk + skin) */
+.app-set { display: flex; flex-direction: column; gap: 12px; min-width: 320px; }
+.app-set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.app-set-row span { color: var(--fg); font-size: 14px; }
+.app-set-row select { flex: 0 0 auto; min-width: 160px; background: var(--bg-dark); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 14px; }
+
 /* Žiacke linky (zdieľanie) */
 #dialog.dlg-wide { max-width: 640px; }
 #share-links { max-height: 340px; overflow-y: auto; overflow-x: hidden; }

@@ -8,6 +8,17 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 1.2.0 — Okno nastavení + výber skinu (Grogu default)
+
+- Nové **⚙ Nastavenia** (ikona v lište, pre všetkých): jazyk rozhrania +
+  vzhľad Karla. Výber jazyka **presunutý** z lišty do tohto okna.
+- **Skiny Karla** vymeniteľné za behu cez `KAREL_SKINS` (Grogu / Robot).
+  Default **Grogu** (`models/grogu.glb`); voľba sa pamätá v localStorage,
+  prepnutie naživo prekreslí Karla. Robota (kvádre) možno kedykoľvek zvoliť.
+- `renderer.setSkin(id)` + reposícia na aktuálny stav po načítaní modelu.
+- `grogu.glb` (~20 MB, Disney IP) je v `.gitignore` — v repe/CI nie je;
+  do lokálneho image sa zabalí (`.dockerignore` ho nevylučuje).
+
 ## 1.1.0 — Vymeniteľný 3D model Karla (skin)
 
 - Ak existuje `static/models/karel.glb`, renderer ho použije namiesto kvádrovej

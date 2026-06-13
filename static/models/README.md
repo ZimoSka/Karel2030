@@ -1,24 +1,40 @@
-# Vymeniteľný 3D model Karla (skin)
+# Vymeniteľné 3D modely Karla (skiny)
 
-Sem vlož súbor **`karel.glb`** a renderer ho použije namiesto predvolenej
-kvádrovej postavičky. Ak súbor chýba, ostáva default robot (žiadna chyba).
+Vzhľad Karla sa vyberá v okne **⚙ Nastavenia → Vzhľad Karla**. Skiny sú
+definované v `static/js/render3d.js` v objekte **`KAREL_SKINS`**:
 
+```js
+const KAREL_SKINS = {
+  grogu: { label: 'Grogu', url: 'models/grogu.glb', yaw: 0, height: 1.3 },
+  robot: { label: 'Robot', url: null },   // null = kvádrová postavička
+};
+const DEFAULT_SKIN = 'grogu';
 ```
-static/models/karel.glb     ← tu
-```
 
-## Ladenie vzhľadu
+GLB súbory dávaj sem do `static/models/`. Ak súbor chýba alebo sa nenačíta,
+renderer ticho padne späť na kvádrového robota (žiadna chyba).
 
-V `static/js/render3d.js` (hore) sú tri konštanty:
+## Pridanie / ladenie skinu
 
-| Konštanta | Význam |
-|-----------|--------|
-| `KAREL_MODEL_URL` | cesta k modelu (default `models/karel.glb`) |
-| `KAREL_MODEL_YAW` | pootočenie, aby model pozeral na +X (Karelovo „dopredu"). Skús `0`, `±Math.PI/2`, `Math.PI` |
-| `KAREL_MODEL_HEIGHT` | výška modelu v jednotkách políčka (default `1.25`) |
+1. Polož `*.glb` do `static/models/`.
+2. Pridaj záznam do `KAREL_SKINS` (`url`, `yaw`, `height`) a do výberu v
+   `static/js/app.js` (`btn-app-settings` → pole `skins`).
+3. Ladenie:
+   - `yaw` — pootočenie (rad), aby model pozeral na +X (Karelovo „dopredu"):
+     skús `0`, `±Math.PI/2`, `Math.PI`.
+   - `height` — výška v jednotkách políčka (~1.2–1.3).
 
 Renderer model automaticky **vycentruje** (X/Z), **postaví na podlahu** a
 **zmenší**, aby sa zmestil do políčka — netreba ho ručne mierkovať.
+
+## Veľkosť / výkon
+
+`grogu.glb` má ~20 MB (textúry + hi-poly). Funguje, ale na pomalej sieti sa
+načítava dlho. Pre lepší výkon odporúčam zmenšiť:
+```
+npx @gltf-transform/cli optimize models/grogu.glb models/grogu.glb \
+    --texture-size 1024 --compress draco
+```
 
 ## Export z Blenderu (`.blend` → `.glb`)
 
