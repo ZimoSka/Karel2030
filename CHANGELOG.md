@@ -8,6 +8,19 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 1.4.0 — Vizuálne nastavenia uložené na serveri (pre všetkých používateľov)
+
+- Vizuálne nastavenia (farby, textúry, viditeľnosť) sa ukladajú na server ako
+  sidecar `{world_id}_visual.json` — platia pre učiteľa aj všetkých žiakov.
+- Nové endpointy: `GET /api/worlds/{id}/visual`, `PUT /api/worlds/{id}/visual` (admin).
+- Visual settings sú súčasťou WS state (`reason: load/connect`) — žiaci ich
+  dostanú automaticky pri načítaní sveta.
+- Admin dialóg auto-ukladá zmeny na server (debounce 800 ms) ak je otvorený svet.
+- Posledný otvorený svet sa pamätá cez refresh (localStorage `karel_last_world`).
+- Admin-only nastavenia: skin, vizuálne nastavenia a vlastný GLB model skryté
+  pre žiakov (vidí len výber jazyka).
+- Tlačidlo v nastaveniach zmenené z „Zavrieť" na „OK".
+
 ## 1.3.0 — Vizuálne nastavenia sveta + Grogu malý + oprava orientácie
 
 - **Vizuálne nastavenia sveta** v ⚙ Nastavenia: farba/textúra + viditeľnosť pre
