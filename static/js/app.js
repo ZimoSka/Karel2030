@@ -244,6 +244,10 @@
       if (!STUDENT) {
         editor.setValue(st.program_text || defaultProgram());
       }
+      // vizuálne nastavenia zo servera (platia pre všetkých vrátane žiakov)
+      if (st.visual && Object.keys(st.visual).length > 0) {
+        renderer.applyVisualSettings(st.visual);
+      }
     }
   }
 
@@ -488,20 +492,30 @@
 
     $('opt-skin').onchange = (e) => renderer.setSkin(e.target.value);
 
-    // Live-apply vizuálnych nastavení
+    // Live-apply vizuálnych nastavení + server-save ak je otvorený svet
     let _texTargetKey = null;
+    let _visSaveTimer = null;
+    function _applyAndSave(v) {
+      renderer.applyVisualSettings(v);
+      if (_curWorldId) {
+        clearTimeout(_visSaveTimer);
+        _visSaveTimer = setTimeout(() => {
+          api.saveWorldVisual(_curWorldId, v).catch(() => {});
+        }, 800);
+      }
+    }
     document.querySelectorAll('.vis-cb').forEach(cb => {
       cb.onchange = () => {
         const v = renderer.getVisualSettings();
         v[cb.dataset.key].visible = cb.checked;
-        renderer.applyVisualSettings(v);
+        _applyAndSave(v);
       };
     });
     document.querySelectorAll('.vis-col').forEach(inp => {
       inp.oninput = () => {
         const v = renderer.getVisualSettings();
         const k = inp.dataset.key; v[k].color = inp.value;
-        if (v[k].mode !== 'texture') renderer.applyVisualSettings(v);
+        if (v[k].mode !== 'texture') _applyAndSave(v);
       };
     });
     document.querySelectorAll('.vis-tex-btn').forEach(btn => {
@@ -511,7 +525,7 @@
       btn.onclick = () => {
         const v = renderer.getVisualSettings(); const k = btn.dataset.key;
         v[k].mode = 'color'; v[k].textureUrl = null;
-        renderer.applyVisualSettings(v);
+        _applyAndSave(v);
         const tn = $('vis-tn-' + k); if (tn) tn.textContent = '';
         btn.style.display = 'none';
       };
@@ -523,7 +537,7 @@
         const dataUrl = ev.target.result;
         const v = renderer.getVisualSettings(); const k = _texTargetKey;
         v[k].mode = 'texture'; v[k].textureUrl = dataUrl;
-        renderer.applyVisualSettings(v);
+        _applyAndSave(v);
         const tn = $('vis-tn-' + k); if (tn) tn.textContent = '📄 ' + f.name.slice(0, 16);
         const clrBtn = document.querySelector(`.vis-tex-clr[data-key="${k}"]`);
         if (clrBtn) clrBtn.style.display = '';

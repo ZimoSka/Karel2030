@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Karel 2030 — FastAPI server podľa docs/api.md (REST §2, WS §3)."""
-import os, asyncio, configparser, time, secrets
+import os, json, asyncio, configparser, time, secrets
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -190,6 +190,22 @@ def examples():
     return [{'name': n, 'program': p} for n, p in kc.EXAMPLES.items()]
 
 
+def _visual_path(world_id: str) -> str:
+    """Cesta k sidecar vizuálnych nastavení (vždy v _PUBLISHED_DIR)."""
+    return os.path.join(_PUBLISHED_DIR, f'{world_id}_visual.json')
+
+
+def _load_visual(world_id: str) -> dict:
+    p = _visual_path(world_id)
+    if os.path.exists(p):
+        try:
+            with open(p, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
 def _world_files() -> dict:
     """id (stem súboru) → cesta k .karxml. Spája baked worlds/ + publikované
     (data/worlds/); publikované pri zhode id prepíšu baked."""
@@ -258,7 +274,28 @@ def world_one(world_id: str):
     w.reset_inventory()
     state = world_to_state(w, full=True)
     state['program_text'] = w.program_text
+    state['visual'] = _load_visual(world_id)
     return state
+
+
+@app.get('/api/worlds/{world_id}/visual')
+def get_world_visual(world_id: str):
+    if not _SAFE_WID.match(world_id):
+        return _err(400, 'bad_id', 'neplatné id')
+    return _load_visual(world_id)
+
+
+@app.put('/api/worlds/{world_id}/visual')
+async def put_world_visual(world_id: str, request: Request):
+    if not _is_admin(request):
+        return _err(401, 'unauthorized', 'len admin')
+    if not _SAFE_WID.match(world_id):
+        return _err(400, 'bad_id', 'neplatné id')
+    data = await request.json()
+    os.makedirs(_PUBLISHED_DIR, exist_ok=True)
+    with open(_visual_path(world_id), 'w', encoding='utf-8') as f:
+        json.dump(data, f)
+    return {'ok': True}
 
 
 @app.post('/api/worlds/parse-karxml')
@@ -523,10 +560,12 @@ async def _teacher_load_world(ws: WebSocket, session: Session, msg: dict):
         if msg.get('karxml'):
             w = karxml_to_world(msg['karxml'])
         elif msg.get('world_id'):
-            path = _world_files().get(msg['world_id'])
+            wid = msg['world_id']
+            path = _world_files().get(wid)
             if not path:
-                raise ValueError(f"world {msg['world_id']!r} not found")
+                raise ValueError(f"world {wid!r} not found")
             w = kc.World.from_xml(path)
+            session.visual = _load_visual(wid)
         else:
             raise ValueError('expected "karxml" or "world_id"')
     except Exception as e:
@@ -583,7 +622,9 @@ async def ws_student(ws: WebSocket, token: str):
         await ws.close(code=4404)
         return
     await ws.accept()
-    session = Session(kc.World.from_xml(assignment['karxml']), teacher=False)
+    world_key = assignment.get('world_key', '')
+    visual = _load_visual(world_key) if world_key else {}
+    session = Session(kc.World.from_xml(assignment['karxml']), teacher=False, visual=visual)
     await _ws_loop(ws, session, token=token)
 
 

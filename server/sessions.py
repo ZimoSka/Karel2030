@@ -20,8 +20,9 @@ def _v1(msg: dict) -> dict:
 class Session:
     """Jedna živá WS session: vlastný World (+ _base) a interpreter."""
 
-    def __init__(self, world: World, teacher: bool = False):
+    def __init__(self, world: World, teacher: bool = False, visual: dict | None = None):
         self.teacher = teacher
+        self.visual: dict = visual or {}
         self.queue: asyncio.Queue = asyncio.Queue()
         self.loop = asyncio.get_running_loop()
         self._thread: threading.Thread | None = None
@@ -61,8 +62,10 @@ class Session:
     def state_msg(self, reason: str) -> dict:
         # settings + mission len pre učiteľa a pri connect/load (kontrakt §4)
         full = self.teacher or reason in ('connect', 'load')
-        return _v1({'type': 'state', 'reason': reason,
-                    'state': world_to_state(self.world, full=full)})
+        state = world_to_state(self.world, full=full)
+        if full and self.visual:
+            state['visual'] = self.visual
+        return _v1({'type': 'state', 'reason': reason, 'state': state})
 
     # --- interpreter callbacky (bežia v run vlákne) ------------------------
     def _on_step(self):
