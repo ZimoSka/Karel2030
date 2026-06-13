@@ -589,8 +589,18 @@
       const sel = $('worlds');
       sel.innerHTML = '<option value="">—</option>';
       ws_.forEach(w => { const o = document.createElement('option'); o.value = w.id; o.textContent = w.title; sel.appendChild(o); });
-      if (selectId) sel.value = selectId;
-      sel.onchange = () => { if (sel.value) { _curWorldId = sel.value; ws.loadWorld({ world_id: sel.value }); } };
+      if (selectId && [...sel.options].some(o => o.value === selectId)) {
+        sel.value = selectId;
+        _curWorldId = selectId;
+        ws.loadWorld({ world_id: selectId });
+      }
+      sel.onchange = () => {
+        if (sel.value) {
+          _curWorldId = sel.value;
+          localStorage.setItem('karel_last_world', sel.value);
+          ws.loadWorld({ world_id: sel.value });
+        }
+      };
     }).catch(() => {});
   }
   // F1: otvoriť svet zo súboru
@@ -804,7 +814,7 @@
     } else {
       // admin režim sa obnoví z platnej server cookie (po refreshi zostáva)
       api.adminStatus().then(s => { if (s && s.admin) setAdmin(true); }).catch(() => {});
-      loadWorldsDropdown();
+      loadWorldsDropdown(localStorage.getItem('karel_last_world') || null);
       // učiteľ: vlastná session — session_id generuje frontend (viď NOTES.md)
       let sid = sessionStorage.getItem('karel_session');
       if (!sid) {
