@@ -15,10 +15,19 @@ const BIG_H = 5 * BRICK_H;       // kvader = 5 malých (= 1.35)
  *             Ak model pozerá opačne (+X), yaw = 0; ak -Z, yaw = +π/2.
  *   height — výška modelu v jednotkách políčka */
 const KAREL_SKINS = {
-  grogu_small: { label: 'Grogu',    url: 'models/grogu_small.glb', yaw: Math.PI / 2, height: 1.3 },
-  grogu:       { label: 'Grogu HD', url: 'models/grogu.glb',       yaw: Math.PI / 2, height: 1.3 },
-  robot:       { label: 'Robot',    url: null },
+  grogu_small: { label: 'Grogu',         url: 'models/grogu_small.glb', yaw: Math.PI / 2, height: 1.3 },
+  grogu:       { label: 'Grogu HD',      url: 'models/grogu.glb',       yaw: Math.PI / 2, height: 1.3 },
+  robot:       { label: 'Robot',         url: null },
+  custom:      { label: 'Vlastný model', url: null, yaw: Math.PI / 2, height: 1.3 },
 };
+
+/* Načítaj custom skin config z localStorage (yaw + height) */
+(function _initCustomSkin() {
+  try {
+    const c = localStorage.getItem('karel_custom_skin');
+    if (c) { const p = JSON.parse(c); Object.assign(KAREL_SKINS.custom, p); }
+  } catch (e) { /* ignore */ }
+})();
 const DEFAULT_SKIN = 'grogu_small';
 
 function _currentSkinId() {
@@ -426,9 +435,52 @@ class KarelRenderer {
     this._karel.rotation.y = rot;
   }
 
-  /* Vráti zoznam skinov pre nastavenia (label + id) */
-  static skinList() {
-    return Object.entries(KAREL_SKINS).map(([id, s]) => ({ id, label: s.label }));
+  /* Načíta vlastný GLB model (admin). dataUrl = data: URL zo FileReadera.
+   * Okamžite sa prepne na custom skin a aplikuje yaw/height. */
+  setCustomSkin(dataUrl, yaw, height) {
+    const s = KAREL_SKINS.custom;
+    s.url = dataUrl;
+    if (yaw !== undefined) s.yaw = yaw;
+    if (height !== undefined) s.height = height;
+    this._saveCustomConfig();
+    this.setSkin('custom');
+  }
+
+  /* Živá úprava yaw vlastného modelu (bez reloadu GLB — iba rotácia wrap). */
+  adjustCustomYaw(rad) {
+    KAREL_SKINS.custom.yaw = rad;
+    this._saveCustomConfig();
+    if (this._skin === 'custom' && this._modelGroup) {
+      this._modelGroup.rotation.y = rad;
+    }
+  }
+
+  /* Živá úprava výšky vlastného modelu (reload GLB z cache — rýchle). */
+  adjustCustomHeight(height) {
+    KAREL_SKINS.custom.height = height;
+    this._saveCustomConfig();
+    if (this._skin === 'custom') this._applySkin('custom');
+  }
+
+  /* Vráti aktuálnu konfiguráciu custom skinu. */
+  getCustomSkinConfig() {
+    const s = KAREL_SKINS.custom;
+    return { yaw: s.yaw, height: s.height, hasModel: !!s.url };
+  }
+
+  _saveCustomConfig() {
+    try {
+      const s = KAREL_SKINS.custom;
+      localStorage.setItem('karel_custom_skin', JSON.stringify({ yaw: s.yaw, height: s.height }));
+    } catch (e) { /* ignore */ }
+  }
+
+  /* Vráti zoznam skinov pre nastavenia (label + id).
+   * Custom skin sa skryje kým nie je načítaný model. */
+  static skinList(includeCustom) {
+    return Object.entries(KAREL_SKINS)
+      .filter(([id, s]) => id !== 'custom' || includeCustom)
+      .map(([id, s]) => ({ id, label: s.label }));
   }
 
   /* Vráti aktuálne vizuálne nastavenia (kópia) */

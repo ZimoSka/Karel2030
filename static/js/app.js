@@ -389,11 +389,48 @@
     }).catch(() => {});
   }
   /* ---------- Nastavenia aplikácie (jazyk + vzhľad Karla + vizuál) ---------- */
+
+  /* Postaví HTML pre admin sekciu vlastného 3D modelu */
+  function _buildCustomModelHtml() {
+    const cfg = renderer.getCustomSkinConfig();
+    const yawDeg = Math.round(cfg.yaw * 180 / Math.PI);
+    const h = cfg.height.toFixed(1);
+    const curSkinIsCustom = (localStorage.getItem('karel_skin') || '') === 'custom';
+    return `
+      <div class="app-set-hdr">🔧 Vlastný 3D model (admin)</div>
+      <div id="custom-model-panel">
+        <div class="app-set-row">
+          <span>GLB súbor</span>
+          <span style="display:flex;gap:6px;align-items:center">
+            <button id="opt-glb-btn" class="mini-btn">📁 Vybrať…</button>
+            <span id="opt-glb-name" style="font-size:12px;color:var(--fg-dim)">${cfg.hasModel ? '(načítaný)' : '–'}</span>
+          </span>
+        </div>
+        <input type="file" id="opt-glb-file" accept=".glb,.gltf" class="hidden">
+        <div class="app-set-row">
+          <span>Orientácia (yaw)</span>
+          <span style="display:flex;gap:6px;align-items:center">
+            <input type="range" id="opt-glb-yaw" min="-180" max="180" step="5" value="${yawDeg}" style="width:130px">
+            <span id="opt-glb-yaw-val" style="min-width:40px;text-align:right">${yawDeg}°</span>
+          </span>
+        </div>
+        <div class="app-set-row">
+          <span>Výška modelu</span>
+          <span style="display:flex;gap:6px;align-items:center">
+            <input type="range" id="opt-glb-height" min="0.5" max="2.5" step="0.05" value="${h}" style="width:130px">
+            <span id="opt-glb-height-val" style="min-width:30px;text-align:right">${h}</span>
+          </span>
+        </div>
+        <p class="vis-note" id="opt-glb-note" style="display:none">⚠ Vlastný model sa reloaduje každú reláciu — uložte GLB súbor na rovnaké miesto.</p>
+      </div>`;
+  }
+
   $('btn-app-settings').onclick = () => {
     const langOpts = [...$('ui-lang').options]
       .map(o => `<option value="${o.value}"${o.value === uiLang ? ' selected' : ''}>${o.textContent}</option>`).join('');
+    const isAdmin = document.body.classList.contains('admin');
     const curSkin = localStorage.getItem('karel_skin') || 'grogu_small';
-    const skinOpts = KarelRenderer.skinList()
+    const skinOpts = KarelRenderer.skinList(isAdmin)
       .map(s => `<option value="${s.id}"${s.id === curSkin ? ' selected' : ''}>${s.label}</option>`).join('');
 
     // Vizuálne nastavenia
@@ -439,11 +476,17 @@
         </table>
         <input type="file" id="vis-file-input" accept="image/*" class="hidden">
         <p id="vis-tex-note" class="vis-note hidden">⚠ Obrázok > 1 MB — textura aktívna len do obnovenia stránky.</p>
+        ${isAdmin ? _buildCustomModelHtml() : ''}
       </div>`,
       [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
 
     $('opt-lang').onchange = (e) => setUiLang(e.target.value);
-    $('opt-skin').onchange = (e) => renderer.setSkin(e.target.value);
+    $('opt-skin').onchange = (e) => {
+      renderer.setSkin(e.target.value);
+      // ak sme prepli na custom, uisti sa že je panel viditeľný
+      const panel = $('custom-model-panel');
+      if (panel) panel.style.display = (e.target.value === 'custom') ? '' : 'none';
+    };
 
     // Live-apply vizuálnych nastavení
     let _texTargetKey = null;
@@ -492,6 +535,46 @@
       };
       reader.readAsDataURL(f);
     };
+
+    // Admin: vlastný GLB model
+    if (isAdmin) {
+      const glbBtn = $('opt-glb-btn');
+      const glbFile = $('opt-glb-file');
+      const yawSlider = $('opt-glb-yaw');
+      const yawVal = $('opt-glb-yaw-val');
+      const heightSlider = $('opt-glb-height');
+      const heightVal = $('opt-glb-height-val');
+
+      if (glbBtn) glbBtn.onclick = () => { glbFile.value = ''; glbFile.click(); };
+
+      if (glbFile) glbFile.onchange = (e) => {
+        const f = e.target.files && e.target.files[0]; if (!f) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          const yaw = (yawSlider ? +yawSlider.value : 90) * Math.PI / 180;
+          const height = yawSlider ? +heightSlider.value : 1.3;
+          renderer.setCustomSkin(dataUrl, yaw, height);
+          // Prepni skin dropdown na custom
+          const sel = $('opt-skin'); if (sel) sel.value = 'custom';
+          const nameEl = $('opt-glb-name'); if (nameEl) nameEl.textContent = f.name.slice(0, 24);
+          const noteEl = $('opt-glb-note'); if (noteEl) noteEl.style.display = '';
+        };
+        reader.readAsDataURL(f);
+      };
+
+      if (yawSlider) yawSlider.oninput = () => {
+        const deg = +yawSlider.value;
+        if (yawVal) yawVal.textContent = deg + '°';
+        renderer.adjustCustomYaw(deg * Math.PI / 180);
+      };
+
+      if (heightSlider) heightSlider.oninput = () => {
+        const h = (+heightSlider.value).toFixed(2);
+        if (heightVal) heightVal.textContent = (+h).toFixed(1);
+        renderer.adjustCustomHeight(+h);
+      };
+    }
   };
   // tlačidlá priameho ovládania majú title = primárne slovo (pre ws.direct)
   function rebuildActionTitles() {
