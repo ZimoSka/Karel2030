@@ -120,7 +120,9 @@ To sync published worlds back to the repository: `scripts/sync_worlds.ps1`.
 
 ---
 
-## Local development without Docker
+## Local development without Docker (developers only)
+
+> This section is for contributors modifying the source code. **Teachers should always use Docker.**
 
 You can run Karel 2030 directly without Docker for development:
 

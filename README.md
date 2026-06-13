@@ -20,31 +20,26 @@ each student's progress live.
 
 ## Running
 
-### With Docker (recommended)
+**Requirement:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) must be installed and running.
 
+**Step 1 — set the admin password.** Create a file called `.env` in the project folder with this content:
+```
+KarelAdminPWD=yourSecretPassword
+```
+(Choose any password. Leave the file empty or omit it to disable admin login.)
+
+**Step 2 — start the server:**
 ```bash
-# Create .env with the admin password (leave empty to disable admin)
-echo "KarelAdminPWD=yourSecretPassword" > .env
-
 docker compose up -d
 ```
 
-Then open **http://localhost:8000/**.
+**Step 3 — open in browser:** http://localhost:8000/
 
-After code changes: `docker compose build --no-cache && docker compose up -d`
+That's it. Karel 2030 is running. To stop it: `docker compose down`.
 
-### Without Docker (local dev)
+> For advanced configuration (publishing from a different machine, data backup, offline classrooms) see **[docs/admin-guide.md](docs/admin-guide.md)**.
 
-```bash
-pip install fastapi "uvicorn[standard]" pillow numpy
-mkdir -p data/worlds
-python -m uvicorn server.app:app --reload --port 8000
-```
-
-See **[docs/admin-guide.md](docs/admin-guide.md)** for full details: admin password, data persistence, offline vendor JS, Docker volume backup.
-
-> The original **desktop** app still lives in this repo and runs standalone:
-> `python karel2010.py`. The web version is the actively developed one.
+> The original **desktop** app still lives in this repo: `python karel2010.py`. The web version is the actively developed one.
 
 ## Roles
 

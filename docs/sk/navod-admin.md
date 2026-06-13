@@ -119,7 +119,9 @@ Synchronizácia publikovaných svetov späť do repozitára: `scripts/sync_world
 
 ---
 
-## Lokálny vývoj bez Dockera
+## Lokálny vývoj bez Dockera (len pre vývojárov)
+
+> Táto sekcia je pre prispievateľov, ktorí menia zdrojový kód. **Učitelia vždy používajú Docker.**
 
 Karel 2030 možno spustiť aj priamo bez Dockera:
 
