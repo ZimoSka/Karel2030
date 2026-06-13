@@ -2,6 +2,9 @@
 
 Tento návod pokrýva všetko, čo učiteľ potrebuje na tvorbu svetov, navrhovanie misií a konfiguráciu výukového prostredia pre žiakov.
 
+> **Používaš webovú verziu (Karel 2030)?** Admin režim, tvorba/ukladanie svetov a
+> zdieľanie úloh so žiakmi sú v [navod-web-ucitel.md](navod-web-ucitel.md).
+
 ---
 
 ## Pedagogické pozadie

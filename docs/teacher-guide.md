@@ -2,6 +2,10 @@
 
 This guide covers everything a teacher needs to create worlds, design missions, and configure the learning environment for students.
 
+> **Using the web version (Karel 2030)?** For admin mode, creating/saving worlds
+> and sharing assignments with students, see
+> [teacher-web-guide.md](teacher-web-guide.md).
+
 ---
 
 ## Pedagogical background

@@ -4,6 +4,7 @@
 |----------|------|-------|
 | [navod-pre-ziakov.md](navod-pre-ziakov.md) | Žiaci | Popis rozhrania, rýchla referencia jazyka, riešenie problémov |
 | [navod-pre-ucitelov.md](navod-pre-ucitelov.md) | Učitelia | Tvorba svetov, navrhovanie misií, pedagogická postupnosť |
+| [navod-web-ucitel.md](navod-web-ucitel.md) | Učitelia (web) | **Webová verzia:** admin režim, tvorba/ukladanie svetov, zdieľanie a kontrola žiakov |
 | [jazyk-karla.md](jazyk-karla.md) | Všetci | Kompletná referencia jazyka Karel s príkladmi |
 
 Technická dokumentácia (formát `.karxml`, architektúra kódu) je dostupná len v angličtine:
