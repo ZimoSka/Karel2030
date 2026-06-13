@@ -8,6 +8,22 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 1.1.0 — Vymeniteľný 3D model Karla (skin)
+
+- Ak existuje `static/models/karel.glb`, renderer ho použije namiesto kvádrovej
+  postavičky; inak ostáva default robot (404 → tichý fallback). GLTFLoader
+  vendorovaný (offline) + CDN fallback.
+- Model sa automaticky vycentruje, postaví na podlahu a zmenší na políčko;
+  ladenie cez `KAREL_MODEL_YAW` / `KAREL_MODEL_HEIGHT` v `render3d.js`.
+- `.glb`/`.gltf` v `static/models/` sú v `.gitignore` (IP — napr. Grogu/Disney
+  sa nedistribuuje). Návod na export z Blenderu: `static/models/README.md`.
+
+## 1.0.0 — Save kamery, oprava príkladov, učiteľom upravené svety
+
+- Uloženie sveta zapamätá aktuálny pohľad kamery (az/el/dist).
+- Príklady: medzery okolo „/"; prázdny príklad = len zaciatok/koniec, komentár 2030.
+- Pullnuté učiteľom upravené svety (01, 1a1, Bludisko) do repa.
+
 ## 0.9.0 — Layout zdieľania, verejná adresa, trvalosť svetov
 
 - **Zdieľanie — rozloženie:** karta žiaka prerobená na dve línie

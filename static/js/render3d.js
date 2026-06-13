@@ -7,6 +7,16 @@
 const BRICK_H = 0.27;            // výška malej tehly — zhodné s Python desktopom
 const BIG_H = 5 * BRICK_H;       // kvader = 5 malých (= 1.35)
 
+/* Vymeniteľný 3D model Karla ("skin"). Ak existuje súbor static/models/karel.glb,
+ * renderer ho použije namiesto kvádrovej postavičky. Inak ostane default robot.
+ * KAREL_MODEL_YAW: o koľko radiánov pootočiť model, aby jeho tvár smerovala na
+ *   +X (Karelovo "dopredu"). Väčšina modelov pozerá na +Z alebo -Z → skús
+ *   -Math.PI/2 alebo Math.PI/2 ak je otočený dozadu/dopredu nesprávne.
+ * KAREL_MODEL_HEIGHT: výška modelu v jednotkách políčka (default ~1.2 ako robot). */
+const KAREL_MODEL_URL = 'models/karel.glb';
+const KAREL_MODEL_YAW = -Math.PI / 2;
+const KAREL_MODEL_HEIGHT = 1.25;
+
 class KarelRenderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -75,13 +85,16 @@ class KarelRenderer {
    * Python box(fx0,ry0,z0,fx1,ry1,z1) → Three (fx, z, ry). */
   _makeKarel() {
     const g = new THREE.Group();
+    const boxFig = new THREE.Group();   // kvádrová postavička v podskupine (vymeniteľná za model)
+    g.add(boxFig);
+    g._boxFig = boxFig;
     const tan      = new THREE.MeshLambertMaterial({ color: 0xc8a870 });  // SK
     const tanLight = new THREE.MeshLambertMaterial({ color: 0xd8b880 });  // FC2 (čelo)
     const box = (fx0, ry0, z0, fx1, ry1, z1, mat) => {
       const m = new THREE.Mesh(
         new THREE.BoxGeometry(fx1 - fx0, z1 - z0, ry1 - ry0), mat || tan);
       m.position.set((fx0 + fx1) / 2, (z0 + z1) / 2, (ry0 + ry1) / 2);
-      g.add(m);
+      boxFig.add(m);
     };
     box(-0.12, -0.17, 0,    0.12, -0.03, 0.38);             // noha L
     box(-0.12,  0.03, 0,    0.12,  0.17, 0.38);             // noha R
@@ -94,11 +107,42 @@ class KarelRenderer {
     const pup   = new THREE.MeshBasicMaterial({ color: 0x003300 });
     [-0.08, 0.08].forEach(ry => {
       const e = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.08), white);
-      e.position.set(0.15, 1.10, ry); g.add(e);
+      e.position.set(0.15, 1.10, ry); boxFig.add(e);
       const p = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.04), pup);
-      p.position.set(0.16, 1.10, ry); g.add(p);
+      p.position.set(0.16, 1.10, ry); boxFig.add(p);
     });
+    // skús načítať vymeniteľný GLB model; pri úspechu skryje kvádrovú postavičku
+    this._tryLoadModel(g);
     return g;
+  }
+
+  /* Voliteľný GLB model Karla. Ak GLTFLoader nie je k dispozícii alebo súbor
+   * neexistuje (404), ticho ostane kvádrová postavička. Model sa normalizuje:
+   * vycentruje v X/Z, postaví na podlahu (minY=0), zmenší na KAREL_MODEL_HEIGHT
+   * (a max ~0.9 šírky políčka), otočí o KAREL_MODEL_YAW aby pozeral na +X. */
+  _tryLoadModel(g) {
+    if (typeof THREE.GLTFLoader !== 'function') return;
+    new THREE.GLTFLoader().load(KAREL_MODEL_URL, (gltf) => {
+      const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+      if (!model) return;
+      const bbox = new THREE.Box3().setFromObject(model);
+      const size = bbox.getSize(new THREE.Vector3());
+      const center = bbox.getCenter(new THREE.Vector3());
+      if (!(size.y > 0)) return;
+      let scale = KAREL_MODEL_HEIGHT / size.y;
+      const horiz = Math.max(size.x, size.z) * scale;
+      if (horiz > 0.9) scale *= 0.9 / horiz;     // nech sa zmestí do políčka
+      model.scale.setScalar(scale);
+      // vycentruj X/Z a postav na podlahu
+      model.position.set(-center.x * scale,
+                         -bbox.min.y * scale,
+                         -center.z * scale);
+      const wrap = new THREE.Group();            // yaw okolo stredu políčka
+      wrap.rotation.y = KAREL_MODEL_YAW;
+      wrap.add(model);
+      if (g._boxFig) g._boxFig.visible = false;  // skry kvádrového Karla
+      g.add(wrap);
+    }, undefined, () => { /* 404 / chyba → ostane kvádrový robot */ });
   }
 
   /* Mapovanie core→Three (stred políčka) */

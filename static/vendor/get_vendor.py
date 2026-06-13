@@ -13,6 +13,8 @@ FILES = {
         "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
     "OrbitControls.js":
         "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js",
+    "GLTFLoader.js":
+        "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js",
     "codemirror.min.js":
         "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js",
     "codemirror.min.css":
@@ -24,6 +26,7 @@ FILES = {
 MIN_SIZE = {  # sanity: minimálna očakávaná veľkosť v bajtoch
     "three.min.js": 500_000,
     "OrbitControls.js": 10_000,
+    "GLTFLoader.js": 30_000,
     "codemirror.min.js": 150_000,
     "codemirror.min.css": 5_000,
     "simple.min.js": 2_000,
