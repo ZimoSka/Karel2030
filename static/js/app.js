@@ -401,25 +401,25 @@
     const h = cfg.height.toFixed(1);
     const curSkinIsCustom = (localStorage.getItem('karel_skin') || '') === 'custom';
     return `
-      <div class="app-set-hdr">🔧 Vlastný 3D model (admin)</div>
+      <div class="app-set-hdr">🔧 ${t('app_settings.custom_model_hdr','Vlastný 3D model (admin)')}</div>
       <div id="custom-model-panel">
         <div class="app-set-row">
-          <span>GLB súbor</span>
+          <span>${t('app_settings.glb_file','GLB súbor')}</span>
           <span style="display:flex;gap:6px;align-items:center">
-            <button id="opt-glb-btn" class="mini-btn">📁 Vybrať…</button>
+            <button id="opt-glb-btn" class="mini-btn">📁 ${t('app_settings.glb_choose','Vybrať…')}</button>
             <span id="opt-glb-name" style="font-size:12px;color:var(--fg-dim)">${cfg.hasModel ? '(načítaný)' : '–'}</span>
           </span>
         </div>
         <input type="file" id="opt-glb-file" accept=".glb,.gltf" class="hidden">
         <div class="app-set-row">
-          <span>Orientácia (yaw)</span>
+          <span>${t('app_settings.glb_yaw','Orientácia (yaw)')}</span>
           <span style="display:flex;gap:6px;align-items:center">
             <input type="range" id="opt-glb-yaw" min="-180" max="180" step="5" value="${yawDeg}" style="width:130px">
             <span id="opt-glb-yaw-val" style="min-width:40px;text-align:right">${yawDeg}°</span>
           </span>
         </div>
         <div class="app-set-row">
-          <span>Výška modelu</span>
+          <span>${t('app_settings.glb_height','Výška modelu')}</span>
           <span style="display:flex;gap:6px;align-items:center">
             <input type="range" id="opt-glb-height" min="0.5" max="2.5" step="0.05" value="${h}" style="width:130px">
             <span id="opt-glb-height-val" style="min-width:30px;text-align:right">${h}</span>
@@ -455,7 +455,7 @@
         const checked = (r.hasVis && v.visible !== false) ? ' checked' : '';
         const visCell = r.hasVis
           ? `<input type="checkbox" class="vis-cb" data-key="${r.key}"${checked}>`
-          : `<span style="color:var(--fg2);font-size:.75em">vždy</span>`;
+          : `<span style="color:var(--fg2);font-size:.75em">${t('app_settings.vis_always','vždy')}</span>`;
         const color = v.color || '#ffffff';
         const texName = (v.mode === 'texture' && v.textureUrl) ? '📄' : '';
         const texBtn = r.hasTex
@@ -470,9 +470,9 @@
 
       adminHtml = `
         <label class="app-set-row"><span>👤 ${t('app_settings.skin', 'Vzhľad Karla')}</span><select id="opt-skin">${skinOpts}</select></label>
-        <div class="app-set-hdr">🎨 Vzhľad sveta</div>
+        <div class="app-set-hdr">🎨 ${t('app_settings.visual_hdr', 'Vzhľad sveta')}</div>
         <table class="vis-table">
-          <thead><tr><th>Prvok</th><th>Vidieť</th><th>Farba</th><th>Textura</th></tr></thead>
+          <thead><tr><th>${t('app_settings.vis_element','Prvok')}</th><th>${t('app_settings.vis_visible','Vidieť')}</th><th>${t('app_settings.vis_color','Farba')}</th><th>${t('app_settings.vis_texture','Textúra')}</th></tr></thead>
           <tbody>${visTableRows}</tbody>
         </table>
         <input type="file" id="vis-file-input" accept="image/*" class="hidden">
@@ -653,29 +653,30 @@
     const b = $('btn-admin');
     b.textContent = isAdmin ? '🔓 Admin' : '🔒 Admin';
     b.classList.toggle('accent', isAdmin);
-    b.title = isAdmin ? 'Admin režim zapnutý — klikni pre odhlásenie'
-                      : 'Admin režim — prihlásenie heslom';
+    b.title = isAdmin ? t('admin_login.status_active', 'Admin režim aktívny')
+                      : t('admin_login.status_login', 'Admin — prihlás sa');
   }
   $('btn-admin').onclick = () => {
     if (isAdmin) {   // odhlásenie
-      api.adminLogout().finally(() => { setAdmin(false); setStatus(null, 'Admin odhlásený'); });
+      api.adminLogout().finally(() => { setAdmin(false); setStatus(null, t('admin_login.status_login', 'Admin — prihlás sa')); });
       return;
     }
-    dialog('🔒 Admin prihlásenie',
-      '<p>Zadaj admin heslo:</p>' +
+    const loginLabel = t('admin_login.btn_login', 'Prihlásiť');
+    dialog(t('admin_login.title', '🔒 Admin prihlásenie'),
+      `<p>${t('admin_login.prompt', 'Zadaj admin heslo:')}</p>` +
       '<input id="admin-pwd" type="password" autocomplete="current-password" ' +
       'style="width:100%;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px">' +
       '<p id="admin-msg" style="color:var(--danger,#e66);min-height:18px;margin:6px 0 0"></p>',
-      [{ label: t('world_settings.btn_cancel', 'Zrušiť') },
-       { label: 'Prihlásiť', action: null }]);
+      [{ label: t('admin_login.btn_cancel', 'Zrušiť') },
+       { label: loginLabel, action: null }]);
     // tlačidlo Prihlásiť nesmie zatvárať dialóg pri chybe → vlastná obsluha
-    const loginBtn = [...document.querySelectorAll('#dlg-buttons button')].find(b => /Prihlásiť/.test(b.textContent));
+    const loginBtn = [...document.querySelectorAll('#dlg-buttons button')].find(b => b.textContent === loginLabel);
     const submit = () => {
       const pwd = ($('admin-pwd') || {}).value || '';
       api.adminLogin(pwd).then(() => {
         hideDialog(); setAdmin(true); setStatus(null, '✓ Admin režim zapnutý');
       }).catch(err => {
-        const m = $('admin-msg'); if (m) m.textContent = err.message || 'Chyba prihlásenia';
+        const m = $('admin-msg'); if (m) m.textContent = err.message || t('admin_login.error', 'Chyba prihlásenia');
         const inp = $('admin-pwd'); if (inp) { inp.value = ''; inp.focus(); }
       });
     };

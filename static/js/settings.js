@@ -179,7 +179,7 @@ const KarelSettings = (function () {
     const s = st.settings || {};
     const dis = new Set(s.disabled_cmds || []);
     // U7: otočená logika — zaškrtnuté = príkaz VIDITEĽNÝ/povolený
-    p.appendChild(el('div', { class: 'set-note', text: 'Zaškrtnuté príkazy sú pre žiaka viditeľné a povolené. Odškrtnuté = skryté/zakázané.' }));
+    p.appendChild(el('div', { class: 'set-note', text: T('world_settings.cmds_intro', 'Zaškrtnuté príkazy sú pre žiaka viditeľné a povolené. Odškrtnuté = skryté/zakázané.') }));
     const grid = el('div', { class: 'set-cmd-grid' });
     const boxes = {};
     CMD_TOKS.forEach(tok => {
@@ -190,12 +190,12 @@ const KarelSettings = (function () {
     p.appendChild(grid);
     // vlastné príkazy: zaškrtnuté = povolené (negácia disable_procedure)
     const proc = el('input', { type: 'checkbox' }); proc.checked = !s.disable_procedure;
-    p.appendChild(el('label', { class: 'inline set-row' }, [proc, el('span', { text: ' Povoliť definovanie vlastných príkazov (prikaz … koniec)' })]));
+    p.appendChild(el('label', { class: 'inline set-row' }, [proc, el('span', { text: ' ' + T('world_settings.enable_proc', 'Povoliť definovanie vlastných príkazov (prikaz … koniec)') })]));
     // Zákaz manuálneho ovládania Karla (zaškrtnuté = povolené)
     const gfx = el('input', { type: 'checkbox' }); gfx.checked = !s.disable_graphic;
-    p.appendChild(el('label', { class: 'inline set-row' }, [gfx, el('span', { text: ' Povoliť grafické ovládanie Karla (šípky + akčné tlačidlá)' })]));
+    p.appendChild(el('label', { class: 'inline set-row' }, [gfx, el('span', { text: ' ' + T('world_settings.enable_graphic', 'Povoliť grafické ovládanie Karla (šípky + akčné tlačidlá)') })]));
     const cmd = el('input', { type: 'checkbox' }); cmd.checked = !s.disable_command;
-    p.appendChild(el('label', { class: 'inline set-row' }, [cmd, el('span', { text: ' Povoliť príkazové ovládanie Karla (textový riadok)' })]));
+    p.appendChild(el('label', { class: 'inline set-row' }, [cmd, el('span', { text: ' ' + T('world_settings.enable_command', 'Povoliť príkazové ovládanie Karla (textový riadok)') })]));
     get.cmds = () => ({
       disabled_cmds: CMD_TOKS.filter(tok => !boxes[tok].checked),   // ulož NEzaškrtnuté ako zakázané
       disable_procedure: !proc.checked,
