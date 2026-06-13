@@ -1,246 +1,110 @@
-# Karel 2010
+# Karel 2030
 
 > 🇸🇰 [Slovenská verzia / Slovak version](README.sk.md)
 
-An educational programming simulator based on Karel the Robot — a Python port of the original project from 2005 (Turbo Pascal/Delphi, by Mgr. Zimo).
+A **web-based** educational programming simulator built around Karel the Robot.
+Students program a robot on a grid in a browser; teachers prepare worlds and
+share them with students via links. Karel 2030 is the web evolution of the
+**Karel 2010** desktop app (tkinter) — both share the same `karel_core` engine.
+
+- **Backend:** Python + FastAPI (REST + WebSocket)
+- **Frontend:** browser (Three.js 3D scene + CodeMirror editor)
+- **Deployment:** Docker (Linux image)
 
 ## Overview
 
-Karel is a robot that moves around a grid world. Students program it using a simple language, learning the fundamentals of algorithmic thinking.
+Karel is a robot that moves around a grid world. Students program it using a
+simple language, learning the fundamentals of algorithmic thinking. The teacher
+prepares a world (layout + task + success conditions), shares a link, and reviews
+each student's progress live.
 
-### Supported languages
+## Running (web)
 
-| Code | Language | GUI | Programming keywords |
-|------|----------|-----|----------------------|
-| `sk` | Slovenčina | ✓ | `dopredu`, `vlavo`, `opakuj` |
-| `en` | English | ✓ | `forward`, `left`, `repeat` |
-| `de` | Deutsch | ✓ | `vorwärts`, `links`, `wiederhole` |
-| `fr` | Français | ✓ | `avance`, `gauche`, `répète` |
-| `it` | Italiano | ✓ | `avanza`, `sinistra`, `ripeti` |
-| `es` | Español | ✓ | `adelante`, `izquierda`, `repite` |
-| `en_pattis` | English (Pattis 1981) | — | `move`, `turnleft`, `iterate` |
+With Docker:
 
-See [docs/language-reference.md](docs/language-reference.md) for the full keyword table in all languages.
-
-### Features
-- **3D view** with Z-buffer rendering (perspective projection, mouse control)
-- **Program editor** with syntax highlighting and command filter
-- **Direct control** of Karel via buttons and typed commands
-- **Full interpreter** for the Karel language (procedures, loops, conditionals with `not`/`and`/`or` + parentheses)
-- **XML world format** for saving and loading worlds (`.karxml`)
-- **World settings editor** — restrict commands, lock camera, limit brick inventory
-- **Mission system** — define goal conditions, evaluate success/failure after the program runs
-
-## Running
-
-```
-python karel2010.py
+```bash
+KarelAdminPWD=yourSecret docker compose up -d
 ```
 
-or double-click `Spusti Karel.bat`
+Then open **http://localhost:8000/**. The admin password (`KarelAdminPWD`) gates
+publishing/deleting shared worlds — see the teacher guide below. Leave it empty
+to disable admin login.
 
-### Requirements
+Local dev without Docker:
 
-- Python 3.8+
-- `pip install pillow numpy` (for Z-buffer 3D rendering)
+```bash
+pip install fastapi "uvicorn[standard]" pillow numpy
+python -m uvicorn server.app:app --reload --port 8000
+```
 
-Without numpy/Pillow the app falls back to a 2D painter mode.
+> The original **desktop** app still lives in this repo and runs standalone:
+> `python karel2010.py` (see the desktop sections of the docs). The web version
+> is the actively developed one.
 
-## The Karel Language
+## Roles
 
-Programs can be written in any of the supported languages. The teacher sets the language per world; the interpreter accepts all keyword variants simultaneously.
+| Role | Access | Can do |
+|------|--------|--------|
+| **Teacher** (default) | main URL `/` | Create/edit worlds, run programs, share with students, review progress |
+| **Student** | a shared link `…/s/{code}` | Sees only the task + solving environment; program autosaves |
+| **Admin** | teacher + password (🔒 Admin) | Additionally publish (📤) / delete (🗑) shared worlds |
+
+## Sharing with students (in short)
+
+1. **👥 Share** opens one window bound to the current world.
+2. Set the **🌐 student address** (public IP/hostname:port) so links work outside localhost.
+3. **➕ Add student** → copy their permanent link → send it.
+4. Watch each student's status: **— not started / ✏️ working / ✅ solved**, view
+   their program (👁), or remove them (🗑).
+
+Full instructions: **[docs/teacher-web-guide.md](docs/teacher-web-guide.md)** (EN) ·
+**[docs/sk/navod-web-ucitel.md](docs/sk/navod-web-ucitel.md)** (SK).
+
+## The Karel language
+
+The teacher sets the programming language per world; the interpreter accepts all
+keyword variants simultaneously.
 
 ```
 zaciatok          ← Slovak     |  begin          ← English
-  opakuj 4 krat  ← Slovak     |    repeat 4 times
-    dopredu                    |      forward
-    vlavo                      |      left
-  koniec                       |    end
-koniec                         |  end
+  opakuj 4 krat  ← Slovak      |    repeat 4 times
+    dopredu                     |      forward
+    vlavo                       |      left
+  koniec                        |    end
+koniec                          |  end
 ```
 
-```
-inicio            ← Spanish    |  Anfang         ← German
-  repite 4 veces               |    wiederhole 4 mal
-    adelante                   |      vorwärts
-    izquierda                  |      links
-  fin                          |    ende
-fin                            |  ende
-```
+**Supported keyword languages:** Slovak (`sk`) · English (`en`) · German (`de`) ·
+French (`fr`) · Italian (`it`) · Spanish (`es`) · English/Pattis (`en_pattis`).
+GUI languages: the six above (Pattis is keywords-only). Both dropdowns
+auto-populate from the language files present — adding a language needs only the
+corresponding files. See **[docs/language-reference.md](docs/language-reference.md)**
+for the full keyword table.
 
-**Supported keyword languages:** Slovak (`sk`) · English (`en`) · German (`de`) · French (`fr`) · Italian (`it`) · Spanish (`es`) · English/Pattis (`en_pattis`)
+## World file format (.karxml)
 
-See **[docs/language-reference.md](docs/language-reference.md)** for the complete keyword table in all languages.
+Worlds are stored as `.karxml` (XML): grid size, Karel position, bricks, big
+bricks, marks, walls, description/intro HTML, settings (limits, disabled commands,
+camera, programming language) and the mission (goal conditions). Full
+specification: **[docs/karxml-format.md](docs/karxml-format.md)**.
 
-## World File Format (.karxml)
+Built-in worlds live in `worlds/`; worlds published from the app are stored on the
+server's data volume (`data/worlds/`). To capture in-app edits back into the repo,
+use `scripts/sync_worlds.ps1` (see [CLAUDE.md](CLAUDE.md)).
 
-Worlds are stored as XML files. A complete example:
+## Features
 
-```xml
-<world width="10" height="8">
-  <karel x="1" y="1" dir="E"/>
-  <walls>
-    <wall x="0" y="0" side="S"/>
-  </walls>
-  <bricks>
-    <brick x="3" y="1" count="2"/>
-  </bricks>
-  <bigbricks>
-    <bigbrick x="5" y="2" count="1"/>
-  </bigbricks>
-  <marks>
-    <mark x="5" y="0"/>
-  </marks>
-
-  <title>My World</title>
-  <intro><![CDATA[<p>Task description shown to the student.</p>]]></intro>
-
-  <settings>
-    <brick_limit>5</brick_limit>
-    <disabled_cmds>BACK</disabled_cmds>
-    <camera_locked>true</camera_locked>
-  </settings>
-
-  <mission eval="on_finish" reset_on_failure="true">
-    <condition type="karel_pos" x="5" y="3"/>
-    <condition type="cell_state" x="2" y="2" bricks="3"/>
-    <condition type="snapshot">
-      <bricks><row>0,0,0,...</row></bricks>
-      <marks><row>0,1,0,...</row></marks>
-    </condition>
-  </mission>
-
-  <program>zaciatok
-  dopredu
-koniec</program>
-</world>
-```
-
-**Save/load:** `Edit → Save world as XML` / `Edit → Open world`
-
-## World Settings
-
-Open via `Edit → World Settings...` to configure all world parameters across six tabs:
-
-| Tab | Options |
-|-----|---------|
-| **Description** | World title; task description / intro text (HTML editor with B/I/U/H1–H3 toolbar) |
-| **Room** | Width, height, Karel starting position and direction |
-| **Inventory** | Max small bricks / big bricks / marks (or unlimited) |
-| **Commands** | Disable specific commands (shown red in editor, buttons greyed out) |
-| **View** | Lock camera to a fixed angle |
-| **Mission** | Goal conditions, evaluation mode, success/failure messages |
-
-## Language Settings
-
-Two independent language settings:
-
-| Setting | Scope | Changed by |
-|---------|-------|-----------|
-| **GUI language** | All menus, buttons, labels | Admin via **Settings → Global settings...** |
-| **Programming language** | Direct control button labels, command keywords | Teacher per world (Room tab in World Settings) |
-
-### Supported languages
-
-| Code | GUI language | Programming language | Sample keywords |
-|------|-------------|---------------------|-----------------|
-| `sk` | Slovenčina ✓ | ✓ | `dopredu`, `vlavo`, `opakuj` |
-| `en` | English ✓ | ✓ | `forward`, `left`, `repeat` |
-| `de` | Deutsch ✓ | ✓ | `vorwärts`, `links`, `wiederhole` |
-| `fr` | Français ✓ | ✓ | `avance`, `gauche`, `répète` |
-| `it` | Italiano ✓ | ✓ | `avanza`, `sinistra`, `ripeti` |
-| `es` | Español ✓ | ✓ | `adelante`, `izquierda`, `repite` |
-| `en_pattis` | — | ✓ | `move`, `turnleft`, `iterate` |
-
-GUI language is stored in `karel.ini → [ui] lang = <code>`. Programming language is stored per world in `.karxml → <settings><prog_lang>sk</prog_lang></settings>`. The interpreter accepts keywords from all languages simultaneously — a student can always type `forward` even in a Slovak-configured world. Both dropdowns auto-populate from files present — adding a new language requires only creating the corresponding files.
-
----
-
-## User Roles
-
-The active role is stored in `karel.ini` (next to the script). Security is OS-level — whoever has write access to that file can change the role.
-
-| Role | What they can do |
-|------|-----------------|
-| **Student** | Open worlds; open and save programs |
-| **Teacher** | + save worlds, open World Settings editor |
-| **Admin** | + global application settings (reserved for future use) |
-
-The current role is shown in the title bar. Change it via **Settings → Change role...** (only available if `karel.ini` is writable by the current OS user). If `karel.ini` is missing the app defaults to **Admin** — a fresh download works out of the box.
-
-```ini
-; karel.ini
-[user]
-role = teacher
-```
-
----
-
-## Mission System
-
-The mission system lets a teacher define what the student must achieve. It is configured in the **Mission** tab of the World Settings dialog.
-
-### Evaluation modes
-
-| Mode | Behaviour |
-|------|-----------|
-| **After program ends** | Conditions are checked once when the program finishes naturally. |
-| **After every step** | Conditions are checked after each Karel action (including direct control). The program stops automatically when all conditions are satisfied. |
-
-**Reset on failure** (available in *After program ends* mode): if the conditions are not met, the world automatically resets to its initial state while the student's program remains in the editor.
-
-### Condition types
-
-| Type | Description |
-|------|-------------|
-| **Karel position** | Karel must be at a specific X, Y coordinate and/or standing on a stack of a given height. Any combination of X / Y / height can be checked independently. |
-| **Cell state** | A specific cell must contain an exact number of small bricks, big bricks, and/or a mark. Multiple cells can be checked with separate conditions. |
-| **Room snapshot** | The entire room (bricks, big bricks, marks) must match a snapshot captured at design time. Optionally includes Karel's position and direction. |
-
-All conditions in the list must be satisfied simultaneously for the mission to succeed.
-
-### XML format
-
-```xml
-<mission eval="on_finish" reset_on_failure="true">
-  <condition type="karel_pos" x="5" y="3"/>
-  <condition type="karel_pos" y="2" height="4"/>
-  <condition type="cell_state" x="1" y="1" marks="true" bricks="2"/>
-  <condition type="snapshot" karel_x="5" karel_y="3" karel_dir="N">
-    <bricks>
-      <row>0,0,0,2,0</row>
-      ...
-    </bricks>
-    <bigbricks>...</bigbricks>
-    <marks>
-      <row>0,1,0,0,0</row>
-      ...
-    </marks>
-  </condition>
-</mission>
-```
-
-## Converting Original Worlds
-
-The script `kar_to_xml.py` converts the original binary `.kar` files to `.karxml`:
-
-```
-python kar_to_xml.py
-```
-
-> **Note:** The original Karel format does not use internal walls — big bricks serve as walls instead. Border walls and all text content (intro/success/failure messages, embedded programs) are preserved.
-
-## Controls
-
-| Action | How |
-|--------|-----|
-| Rotate view | Left mouse drag |
-| Pan view | Right mouse drag |
-| Zoom | Mouse wheel |
-| Run program | ▶ button or `Program → Run` |
-| Stop | ⏹ button |
-| Reset world | ↺ button (returns Karel and world to starting state) |
-| Direct control | Bottom-right panel — buttons or type a command + Enter |
+- **3D view** (Three.js) with mouse rotate/pan/zoom
+- **Program editor** with syntax highlighting and a command filter
+- **Direct control** of Karel via buttons or a typed-command line
+- **Full interpreter** (procedures, loops, conditionals with `not`/`and`/`or` +
+  parentheses; infinite-loop and recursion guards)
+- **World settings editor** — restrict commands, disable graphic/command control,
+  limit supplies, lock camera, set per-world language
+- **Mission system** — goal conditions, success/failure, reset-on-failure
+- **Student sharing** — per-student links, autosaved programs, progress &
+  completion tracking
+- **Admin mode** — password-gated publishing with brute-force lockout
 
 ## Documentation
 
@@ -248,29 +112,35 @@ python kar_to_xml.py
 
 | Document | Audience | Description |
 |----------|----------|-------------|
-| [docs/user-guide.md](docs/user-guide.md) | Students | Interface walkthrough, language quick reference, troubleshooting |
-| [docs/teacher-guide.md](docs/teacher-guide.md) | Teachers | Creating worlds, designing missions, pedagogical progression |
+| [docs/teacher-web-guide.md](docs/teacher-web-guide.md) | Teachers (web) | **Admin, creating/saving worlds, sharing & reviewing students** |
+| [docs/teacher-guide.md](docs/teacher-guide.md) | Teachers | World design + pedagogical progression (desktop origin) |
+| [docs/user-guide.md](docs/user-guide.md) | Students | Interface walkthrough, language quick reference |
 | [docs/karel-language.md](docs/karel-language.md) | Everyone | Complete language reference with examples |
-| [docs/language-reference.md](docs/language-reference.md) | Teachers / translators | All keywords in all 7 languages side by side |
-| [docs/karxml-format.md](docs/karxml-format.md) | World authors | Full `.karxml` file format specification |
-| [docs/architecture.md](docs/architecture.md) | Developers | Code architecture, data model, renderer, threading |
+| [docs/language-reference.md](docs/language-reference.md) | Teachers / translators | All keywords in all languages side by side |
+| [docs/karxml-format.md](docs/karxml-format.md) | World authors | `.karxml` file format specification |
+| [docs/architecture.md](docs/architecture.md) | Developers | Code architecture, data model, renderer |
+| [docs/api.md](docs/api.md) | Developers | REST + WebSocket API contract |
+| [CHANGELOG.md](CHANGELOG.md) | Everyone | Version history (web) |
 
 ### Slovenčina
 
 | Dokument | Komu | Popis |
 |----------|------|-------|
-| [docs/sk/navod-pre-ziakov.md](docs/sk/navod-pre-ziakov.md) | Žiaci | Popis rozhrania, rýchla referencia jazyka, riešenie problémov |
-| [docs/sk/navod-pre-ucitelov.md](docs/sk/navod-pre-ucitelov.md) | Učitelia | Tvorba svetov, navrhovanie misií, pedagogická postupnosť |
-| [docs/sk/jazyk-karla.md](docs/sk/jazyk-karla.md) | Všetci | Kompletná referencia jazyka Karel s príkladmi |
+| [docs/sk/navod-web-ucitel.md](docs/sk/navod-web-ucitel.md) | Učitelia (web) | **Admin, tvorba/ukladanie svetov, zdieľanie a kontrola žiakov** |
+| [docs/sk/navod-pre-ucitelov.md](docs/sk/navod-pre-ucitelov.md) | Učitelia | Tvorba svetov + pedagogická postupnosť |
+| [docs/sk/navod-pre-ziakov.md](docs/sk/navod-pre-ziakov.md) | Žiaci | Popis rozhrania, rýchla referencia jazyka |
+| [docs/sk/jazyk-karla.md](docs/sk/jazyk-karla.md) | Všetci | Kompletná referencia jazyka Karel |
 
 ## Background
 
-Karel 2010 is a Python port of the original educational programming environment designed as a master's thesis project at the Faculty of Mathematics, Physics and Informatics, Comenius University Bratislava (Mgr. Michal Zeman, 2004).
-
-The Karel robot concept originated with Richard Pattis (*Karel the Robot: A Gentle Introduction to the Art of Programming*, 1981) and was adapted for Slovak elementary schools in the late 1980s by Marián Vittek, Andrej Blaho, and colleagues. Karel 2010 continues this tradition with a modern 3D interface and a configurable mission system.
+Karel 2030 grows out of **Karel 2010**, a Python port of the educational
+environment designed as a master's project at the Faculty of Mathematics, Physics
+and Informatics, Comenius University Bratislava (Mgr. Michal Zeman, 2004). The
+Karel robot concept originated with Richard Pattis (*Karel the Robot*, 1981) and
+was adapted for Slovak schools in the late 1980s by Marián Vittek, Andrej Blaho
+and colleagues.
 
 ## Author
 
-Original: Mgr. Zimo, 2005  
-Python port: 2024  
-https://github.com/ZimoSka/karel2010
+Original: Mgr. Zimo, 2005 · Web version: 2026
+https://github.com/ZimoSka/Karel2030
