@@ -15,8 +15,8 @@ const BIG_H = 5 * BRICK_H;       // kvader = 5 malých (= 1.35)
  *             Ak model pozerá opačne (+X), yaw = 0; ak -Z, yaw = +π/2.
  *   height — výška modelu v jednotkách políčka */
 const KAREL_SKINS = {
-  grogu_small: { label: 'Grogu',    url: 'models/grogu_small.glb', yaw: -Math.PI / 2, height: 1.3 },
-  grogu:       { label: 'Grogu HD', url: 'models/grogu.glb',       yaw: -Math.PI / 2, height: 1.3 },
+  grogu_small: { label: 'Grogu',    url: 'models/grogu_small.glb', yaw: Math.PI / 2, height: 1.3 },
+  grogu:       { label: 'Grogu HD', url: 'models/grogu.glb',       yaw: Math.PI / 2, height: 1.3 },
   robot:       { label: 'Robot',    url: null },
 };
 const DEFAULT_SKIN = 'grogu_small';
