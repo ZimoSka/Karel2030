@@ -32,6 +32,10 @@
       const v = T[el.dataset.i18nPh];
       if (v) el.placeholder = v;
     });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const v = T[el.dataset.i18nTitle];
+      if (v) el.title = v;
+    });
   }
 
   /* ---------- dialógy ---------- */
@@ -459,9 +463,9 @@
         const color = v.color || '#ffffff';
         const texName = (v.mode === 'texture' && v.textureUrl) ? '📄' : '';
         const texBtn = r.hasTex
-          ? `<button class="vis-tex-btn mini-btn" data-key="${r.key}" title="Vybrať textúru zo súboru">📁</button>` +
+          ? `<button class="vis-tex-btn mini-btn" data-key="${r.key}" title="${t('app_settings.tt_tex_choose','Vybrať textúru zo súboru')}">📁</button>` +
             `<span class="vis-tex-name" id="vis-tn-${r.key}">${texName}</span>` +
-            `<button class="vis-tex-clr mini-btn" data-key="${r.key}" title="Odstrániť textúru" style="${texName ? '' : 'display:none'}">✕</button>`
+            `<button class="vis-tex-clr mini-btn" data-key="${r.key}" title="${t('app_settings.tt_tex_remove','Odstrániť textúru')}" style="${texName ? '' : 'display:none'}">✕</button>`
           : '';
         return `<tr><td>${r.label}</td><td>${visCell}</td>` +
                `<td><input type="color" class="vis-col" data-key="${r.key}" value="${color}"></td>` +

@@ -18,12 +18,12 @@
   <label class="tb-label teacher-only"><span>Svety:</span>
     <select id="worlds"></select>
   </label>
-  <button class="tb teacher-only" id="btn-world-open" title="Otvoriť svet zo súboru (.karxml)">📂</button>
-  <button class="tb teacher-only" id="btn-world-save" title="Uložiť svet do súboru (.karxml)">💾</button>
-  <button class="tb admin-only" id="btn-world-pub" title="Publikovať / uložiť zdieľaný svet (admin)">📤</button>
-  <button class="tb admin-only" id="btn-world-del" title="Zmazať vybraný publikovaný svet (admin)">🗑</button>
-  <button class="tb teacher-only accent" id="btn-share" title="Zdieľať svet žiakom — pridaj žiaka, link a pokrok v jednom okne">👥 Zdieľaj</button>
-  <button class="tb teacher-only" id="btn-admin" title="Admin režim — prihlásenie heslom">🔒 Admin</button>
+  <button class="tb teacher-only" id="btn-world-open" data-i18n-title="toolbar.tt_world_open" title="Otvoriť svet zo súboru (.karxml)">📂</button>
+  <button class="tb teacher-only" id="btn-world-save" data-i18n-title="toolbar.tt_world_save" title="Uložiť svet do súboru (.karxml)">💾</button>
+  <button class="tb admin-only" id="btn-world-pub" data-i18n-title="toolbar.tt_world_pub" title="Publikovať / uložiť zdieľaný svet (admin)">📤</button>
+  <button class="tb admin-only" id="btn-world-del" data-i18n-title="toolbar.tt_world_del" title="Zmazať vybraný publikovaný svet (admin)">🗑</button>
+  <button class="tb teacher-only accent" id="btn-share" data-i18n-title="toolbar.tt_share" title="Zdieľať svet žiakom — pridaj žiaka, link a pokrok v jednom okne">👥 Zdieľaj</button>
+  <button class="tb teacher-only" id="btn-admin" data-i18n-title="toolbar.tt_admin" title="Admin režim — prihlásenie heslom">🔒 Admin</button>
   <span class="tb-sep teacher-only"></span>
   <button id="btn-task"  class="tb" data-i18n="toolbar.task">📋 Zadanie</button>
   <button id="btn-run"   class="tb accent" data-i18n="toolbar.run">▶ Spustiť</button>
@@ -41,10 +41,10 @@
   <label class="tb-label hidden" title="Jazyk rozhrania"><span>🌐</span>
     <select id="ui-lang"></select>
   </label>
-  <button class="tb" id="btn-app-settings" title="Nastavenia (jazyk, vzhľad Karla)">⚙</button>
+  <button class="tb" id="btn-app-settings" data-i18n-title="toolbar.tt_app_settings" title="Nastavenia (jazyk, vzhľad Karla)">⚙</button>
   <span id="status" data-i18n="status.ready">Pripravený</span>
   <span id="version" title="verzia / build"></span>
-  <span id="conn-dot" title="offline"></span>
+  <span id="conn-dot" data-i18n-title="toolbar.tt_conn_offline" title="offline"></span>
 </header>
 
 <!-- ===== Main layout ===== -->
@@ -90,10 +90,10 @@
 
       <div id="tab-graphic">
         <div id="dpad">
-          <button class="ctl" id="ctl-fwd"  data-cmd="FORWARD" title="dopredu">▲</button>
-          <button class="ctl" id="ctl-left" data-cmd="LEFT"    title="vlavo">◀</button>
-          <button class="ctl" id="ctl-right"data-cmd="RIGHT"   title="vpravo">▶</button>
-          <button class="ctl" id="ctl-back" data-cmd="BACK"    title="dozadu">▼</button>
+          <button class="ctl" id="ctl-fwd"  data-cmd="FORWARD" data-i18n-title="toolbar.tt_fwd"   title="dopredu">▲</button>
+          <button class="ctl" id="ctl-left" data-cmd="LEFT"    data-i18n-title="toolbar.tt_left"  title="vlavo">◀</button>
+          <button class="ctl" id="ctl-right"data-cmd="RIGHT"   data-i18n-title="toolbar.tt_right" title="vpravo">▶</button>
+          <button class="ctl" id="ctl-back" data-cmd="BACK"    data-i18n-title="toolbar.tt_back"  title="dozadu">▼</button>
         </div>
         <div id="actions">
           <button class="act" data-cmd="DROP">Polož<br>tehlu</button>
@@ -118,8 +118,8 @@
   <div id="editor-wrap">
     <h2>
       <span data-i18n="program_panel.title">Môj program...</span>
-      <button class="mini-btn" id="btn-prog-open" title="Otvoriť program zo súboru">📂</button>
-      <button class="mini-btn" id="btn-prog-save" title="Uložiť program do súboru">💾</button>
+      <button class="mini-btn" id="btn-prog-open" data-i18n-title="toolbar.tt_prog_open" title="Otvoriť program zo súboru">📂</button>
+      <button class="mini-btn" id="btn-prog-save" data-i18n-title="toolbar.tt_prog_save" title="Uložiť program do súboru">💾</button>
     </h2>
     <textarea id="code"></textarea>
   </div>
