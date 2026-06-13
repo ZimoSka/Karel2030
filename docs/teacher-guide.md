@@ -1,379 +1,200 @@
-# Karel 2010 — Teacher Guide
+# Karel 2030 — Teacher's Guide
 
-This guide covers everything a teacher needs to create worlds, design missions, and configure the learning environment for students.
-
-> **Using the web version (Karel 2030)?** For admin mode, creating/saving worlds
-> and sharing assignments with students, see
-> [teacher-web-guide.md](teacher-web-guide.md).
+> 🇸🇰 [Slovenská verzia](sk/navod-pre-ucitelov.md)
 
 ---
 
-## Pedagogical background
+## What is Karel 2030?
 
-Karel 2010 is a Python port of the original Karel 3D educational programming environment (Mgr. Michal Zeman, 2004, Comenius University Bratislava). The project continues a tradition started by Richard Pattis (1981) and adapted for Slovak elementary schools by Marián Vittek, Andrej Blaho and colleagues in the late 1980s.
+Karel 2030 is a web-based educational programming environment. Students control a robot (Karel) on a 3D grid by writing programs. The teacher prepares **worlds** — grid layouts with tasks and success conditions — and shares them with students via links. Everything runs in the browser.
 
-### Recommended age group
+**No installation is needed for students.** They open a link and start programming.
 
-- **Grades 3–4**: Direct control only (buttons and typed commands). Focus on spatial orientation, relative movement, basic mouse skills.
-- **Grades 4–7**: Programming mode. Sequences, procedures, loops, conditions, and eventually recursion.
+---
 
-Karel is intended as a bridge — it is **not** a replacement for Logo or Pascal. Its purpose is to teach algorithmic thinking before students encounter variables and data types.
+## Teacher role
 
-### Learning progression
+When you open the main URL (`http://…:8000/`), you are in **teacher mode** by default:
 
-| Stage | Concepts | Tools |
-|-------|---------|-------|
-| 1 | Spatial orientation, relative movement | Direct control buttons |
-| 2 | Sequences | Short programs (`begin … end`) |
-| 3 | Procedures / decomposition | `procedure … end` |
-| 4 | Counted repetition | `repeat N times` |
-| 5 | Condition-based repetition | `while condition do` |
-| 6 | Branching | `if condition then … else` |
-| 7 | Compound conditions | `not`, `and`, `or`, parentheses `( )` |
-| 8 | Recursion | Tail recursion, counting with bricks |
+- Create, edit, and save worlds.
+- Run programs and control Karel directly.
+- Share worlds with students and monitor their progress.
+- Publishing or deleting shared worlds requires admin access (see [Admin Guide](admin-guide.md)).
 
-A key pedagogical insight from classroom experiments: **`while` is conceptually harder than `repeat`** for younger students. Plan extra time for it.
+---
 
-**Logical connectives (stage 7):** students can combine conditions:
-```
-if wall or sign then left end
-while not wall and not brick do forward end
-if (wall or brick) and not sign then back end
-```
-Precedence is **`not` > `and` > `or`** (like "times before plus"); parentheses
-override it. Connectives work in every language (DE `und`/`oder`, FR `et`/`ou`, …) —
-see `docs/language-reference.md`. Introduce only after simple conditions are solid,
-otherwise students confuse `and`/`or`.
+## Interface overview
+
+| Area | What it does |
+|------|-------------|
+| **Toolbar** (top) | Switch worlds, run/stop/reset, open world settings, access sharing |
+| **3D scene** (center-left) | Displays the current world; rotate/pan/zoom with mouse |
+| **Navigator** (top-right) | Shows inventory (bricks, marks) and steps/turns budget if set |
+| **Control panel** (bottom-right) | Control Karel manually (d-pad or typed commands) |
+| **Editor** (bottom-center) | Write and run Karel programs |
+| **Command list** (bottom-right) | Available commands and conditions; click to insert |
 
 ---
 
 ## Creating a world
 
-### World settings dialog
+1. Open World Settings via the **⚙ Nastavenia** button.
+2. The dialog has six tabs: **Popis, Miestnosť, Zásoby, Príkazy, Pohľad, Misia**.
+3. Configure the world and click **Použiť a zavrieť**.
 
-Open via **Edit → ⚙ World Settings...**
+### Tab: Popis (Description)
+- **Title** — displayed above the 3D view.
+- **Intro HTML** — task description shown to the student when they open the world (supports `<b>`, `<ul>`, `<img>`, etc.).
+- **Success / Failure HTML** — message shown at mission end.
 
-The dialog has six tabs:
+### Tab: Miestnosť (Room)
+- Set grid **width** and **height**.
+- Set Karel's **starting position** (x, y) and facing direction.
+- Place bricks, big bricks (kvaders), marks, and walls directly in the 3D view.
 
----
+> **Tip:** Move Karel to the desired start position using the control panel, then open World Settings — it shows the current position.
 
-### Tab 1 — Description (Popis)
+### Tab: Zásoby (Inventory)
+- **Brick limit** — how many small bricks Karel has. `-1` = unlimited.
+- **Big brick limit** — how many kvaders Karel has. `-1` = unlimited.
+- **Mark limit** — how many marks Karel has. `-1` = unlimited.
+- **Max steps / Max turns** — movement budget. When exhausted → program stops, dialog appears.
+- **Max climb** — maximum brick-height difference Karel can step up in one move (default 1).
+- **Max drop** — maximum height Karel can step down. `-1` = unlimited.
+- **Max brick height** — maximum stack height Karel can place bricks on.
 
-| Field | Purpose |
-|-------|---------|
-| **World title** | Short name shown in the window title bar. |
-| **Task description** | HTML text shown to the student. Use the B/I/U/H1/H2/H3 toolbar to format. Describe the task, give hints or motivational context. |
+### Tab: Príkazy (Commands)
+- Choose the **programming language** (Slovak, English, German, French, Italian, Spanish, English/Pattis).
+- Check/uncheck individual commands to **disable** them for this world.
+- **Disable procedures** — prevents students from defining their own commands.
+- **Disable graphic control** — hides the d-pad; forces program-only mode.
+- **Disable command-line** — hides the typed-command input.
 
-The task description is shown to the student in two ways:
-- **Automatically** — a dialog pops up when the student opens the world (if the field is not empty).
-- **On demand** — the student can re-open it anytime via the **📋 Zadanie** button in the toolbar.
+### Tab: Pohľad (Camera)
+- Adjust and **lock** the camera angle for this world. When locked, students cannot rotate the view.
 
-**HTML tips:**
-- Use `<b>bold</b>`, `<i>italic</i>`, `<u>underline</u>` for emphasis.
-- Use `<h1>`, `<h2>`, `<h3>` for headings.
-- Use `<br>` for line breaks.
-- You can embed any valid HTML — images, tables, links.
+### Tab: Misia (Mission)
+- Add **goal conditions** — rules that trigger success or failure.
+- Each condition has: type, when to evaluate (on each step / on finish), operator (AND/OR), negation flag, and result (success/failure).
 
----
+**Goal condition types:**
 
-### Tab 2 — Room (Miestnosť)
+| Type | Triggers when… |
+|------|---------------|
+| `karel_pos` | Karel is at a specific (x, y, height) — any field can be blank for "any value" |
+| `cell_state` | A specific cell has the required bricks/marks |
+| `sign` | Karel is standing on a mark |
+| `brick_ahead` | There is a brick in front of Karel |
+| `wall_ahead` | There is a wall in front of Karel |
+| `snapshot` | The entire room matches a previously captured snapshot |
 
-> **Programming language** is also set here — see the *Programming language* section below.
-
-| Field | Purpose |
-|-------|---------|
-| **Width / Height** | Dimensions of the room grid (3–50 tiles). |
-| **Karel X / Y** | Starting position of Karel. Pre-filled from Karel's *current* position, so you can place Karel with direct control first, then save that as the start. |
-| **Direction** | Which way Karel faces at the start (N / E / S / W). |
-
-> **Tip:** Arrange bricks, marks and Karel in the 3D view first, then open Settings and click **Apply** — Karel's current position becomes the new starting position.
-
-#### Movement restrictions
-
-| Field | Effect | Default |
-|-------|--------|---------|
-| **Max. climb height** | How many bricks higher Karel may step up. 0 = can't climb. | 1 |
-| **Max. drop** | How many bricks lower Karel may drop in one step. -1 = unlimited. | -1 |
-| **Max. steps** | Budget of forward/back moves **counted from the last reset**. -1 = unlimited. | -1 |
-| **Max. turns** | Budget of left/right turns counted from the last reset. -1 = unlimited. | -1 |
-| **Max. brick height** | Up to what stack height Karel may add bricks. **A kvader counts as 5.** -1 = unlimited. | -1 |
-
-**When the step/turn budget runs out:** the program stops and a dialog appears with
-**OK** (leave Karel in place) and **Reset** (return the world to start). Direct control
-behaves the same — the button does nothing and the dialog appears. Climb/drop/brick-height
-limits are "physical": the command is silently skipped (like hitting a wall), no dialog.
-
-> **Pedagogical tip:** A step/turn budget is great for challenges like *"solve the maze
-> in at most 20 steps"* — it pushes students toward more efficient solutions.
+> **Reset on failure:** When enabled, Karel resets automatically when a failure condition triggers.
 
 ---
 
-### Tab 3 — Inventory (Zásoby)
+## Placing objects in the world
 
-Limit how many items Karel starts with. Leave **unlimited (∞)** checked for no restriction.
+Use the **Control panel** to move Karel, and the action buttons to place/pick bricks and marks:
 
-| Limit | Effect |
-|-------|--------|
-| **Small bricks** | Number of small bricks Karel can place in total. |
-| **Big bricks** | Number of big bricks Karel can place. |
-| **Marks** | Number of marks Karel can place. |
+- **Drop brick** — place a small brick on the tile in front of Karel.
+- **Drop big brick (kvader)** — place a kvader (= 5 brick-heights) in front of Karel.
+- **Pick brick** — pick up a small brick from the tile in front of Karel.
+- **Mark** — place a mark under Karel (on Karel's current tile).
+- **Clear** — remove the mark from Karel's current tile.
 
-The current inventory is shown live in the Navigator panel during the session.
-
----
-
-### Tab 4 — Commands (Príkazy)
-
-Check any command to **disable** it for this world. Disabled commands:
-- Appear **red** in the program editor.
-- Raise an error if the student tries to run them.
-- Are greyed out in the direct control panel.
-
-Use this to force students to solve problems without certain shortcuts. For example, disable `back` to require planning ahead.
-
-The **"Forbid custom procedures"** checkbox disables `procedure … end` — useful for early stages where you only want `begin … end` programs.
+Walls can be placed via **World Settings → Miestnosť** or by clicking a cell edge in the 3D view.
 
 ---
 
-### Tab 5 — View (Pohľad)
+## Saving a world
 
-Check **Lock camera** to prevent students from rotating the 3D view. The camera angle you have set in the 3D window at the moment of clicking Apply is saved and enforced.
+**Save locally (teacher's own files):**
+Click **💾** in the toolbar → downloads a `.karxml` file to your computer.
+To reload it later, click **📂** and choose the file.
 
-Use this to:
-- Fix a specific pedagogically useful perspective.
-- Simulate a "first-person" view from a specific angle.
-- Prevent distraction.
-
-When locked, all camera controls (mouse drag, navigation preset buttons) are disabled for the student.
+**Publish for students (admin required):**
+Admin users click **📤** to publish the current world. Published worlds appear in the Worlds dropdown for all users. See the [Admin Guide](admin-guide.md).
 
 ---
 
-### Tab 6 — Mission (Misia)
+## Sharing with students
 
-Define what the student must achieve. Leave empty for free-form exploration worlds.
+Click **👥 Zdieľaj** to open the Share dialog for the current world.
 
-#### Evaluation mode
+1. **Set the student address** (🌐 field) — the public IP/hostname:port where students can reach your server. Example: `192.168.1.10:8000` or `karel.school.sk`.
+2. **Add a student** (➕ Pridať žiaka) — enter a name and click Add. A permanent student link is created.
+3. **Copy the link** (📋 icon next to each student) and send it to them (email, chat, whiteboard…).
+4. **Monitor progress** — each student shows one of three states:
+   - `— nezačal` — link not yet opened
+   - `✏️ pracuje` — program in progress
+   - `✅ vyriešil` — mission completed
+5. **View a student's program** — click 👁 to see what they wrote.
+6. **Delete a student** — click 🗑 (removes their link and saved work).
 
-| Mode | Behaviour |
-|------|-----------|
-| **After program ends** | Check conditions once when the program finishes naturally. Suitable for "write a program that does X". |
-| **After every step** | Check after every Karel action, including direct control. The program stops automatically when all conditions are met. Suitable for "guide Karel to position X". |
-
-**Reset on failure** (available in *After program ends* mode): if the student's program does not meet the conditions, the world automatically resets to its initial state. The student's program stays in the editor so they can fix and retry.
-
-#### Adding conditions
-
-Click **＋ Add condition** to define a goal condition. Choose one of three types:
-
-**1. Karel position**
-Karel must be at a specific coordinate and/or standing on a specific height of bricks. Check only the fields you want to constrain — unchecked fields are ignored.
-
-| Field | Example | Meaning |
-|-------|---------|---------|
-| X | 5 | Karel must be in column 5 |
-| Y | 3 | Karel must be in row 3 |
-| Height | 4 | Karel must be standing on a stack of 4 small bricks |
-
-**2. Cell state**
-A specific tile must contain a certain number of bricks or a mark.
-
-| Field | Example | Meaning |
-|-------|---------|---------|
-| X, Y | 2, 4 | The tile at (2,4) |
-| Marks | ✓ checked | The tile must have a mark |
-| Small bricks | 3 | The tile must have exactly 3 small bricks |
-| Big bricks | 1 | The tile must have exactly 1 big brick |
-
-**3. Room snapshot**
-The entire room state (all brick positions and marks) must match a snapshot captured now. Optionally also checks Karel's position and direction.
-
-> **Tip for snapshots:** Set up the room in the desired goal state first (move Karel, place bricks, etc.), then add a snapshot condition. The current state of the room is captured at the moment you click **Add condition**.
-
-#### Multiple conditions
-
-You can add as many conditions as needed. **All conditions must be satisfied simultaneously** for the mission to succeed.
-
-#### Success / failure messages
-
-Enter the text shown to the student after evaluation:
-
-- **Success message**: Shown when all conditions are met (green dialog).
-- **Failure message**: Shown when conditions are not met (red dialog).
-
-Both fields support plain text or HTML.
+> **Student links are permanent.** The same link works across sessions. Students can close the browser and continue where they left off.
 
 ---
 
-## Language settings
+## Pedagogical progression
 
-Karel 2010 has two independent language settings:
+The Karel language is designed so that teachers can reveal complexity gradually:
 
-| Setting | Where | Scope | Who changes it |
-|---------|-------|-------|----------------|
-| **GUI language** | `karel.ini` → `[ui] lang` | All menus, buttons, labels, status messages | Admin via **Settings → Global settings...** |
-| **Programming language** | World Settings → Room tab | Karel keywords on direct control buttons; which language students type commands in | Teacher per world |
+| Stage | Concept | Suggested world settings |
+|-------|---------|-------------------------|
+| 1 | Direct control — buttons and typed commands | Disable program editor |
+| 2 | Simple sequences — `begin … end` | Limited inventory |
+| 3 | Procedures — define and call custom commands | Disable recursion if needed |
+| 4 | Repeat loop — `repeat N times` | Known-count problems |
+| 5 | While loop — `while condition do` | Wall/brick conditions |
+| 6 | If/else — `if condition then … else` | Branching worlds |
+| 7 | Recursion — procedures calling themselves | Counting with bricks |
 
-### GUI language
+**Tip:** Disable `BACK` and `RIGHT` in early stages to focus attention on relative orientation. Use `max_steps` to motivate efficient solutions.
 
-Changed in **Settings → Global settings...** (admin only). A dropdown lists all available languages discovered from `lang/*.ini` files. Takes effect immediately — no restart needed. Stored in `karel.ini`:
+---
 
-```ini
-[ui]
-lang = en
+## Working with multiple worlds
+
+The **Worlds** dropdown (toolbar) lists all published worlds. Switching worlds reloads the full state (grid, program, settings).
+
+To prepare a new world from scratch: make edits in World Settings, save locally with **💾**, then publish with **📤** (admin).
+
+---
+
+## Tips for good world design
+
+- Write the **Intro** with clear, concrete instructions. Students see it first.
+- Use `max_steps` or `max_turns` to discourage brute-force solutions.
+- Lock the camera for worlds where orientation matters.
+- Use `snapshot` conditions when the final state of the entire room must be correct.
+- Use `on_step` failure conditions (e.g., "Karel must not step on a mark") to catch mistakes immediately.
+- Test your world as a student: open the student link in a private browser window.
+
+---
+
+## The Karel language (quick reference)
+
+Full reference: **[language-reference.md](language-reference.md)**
+
+```
+begin                           procedure TurnRight
+  forward                       begin
+  left                            left
+  forward                         left
+end                               left
+                                end
+
+repeat 4 times                  while not wall do
+  forward                         forward
+  left                          end
+end
+                                if brick then
+                                  pick
+                                else
+                                  forward
+                                end
 ```
 
-Translation strings live in `lang/sk.ini`, `lang/en.ini`, etc. Adding a new UI language = create `lang/xx.ini` with a `[meta] name = ...` section and all translation keys. The dropdown auto-detects it on next launch.
-
-### Programming language
-
-Set per-world in the **Room** tab of World Settings via a dropdown that lists all available languages from `lang/interpreter/*.lng`. Adding a new programming language = create `lang/interpreter/xx.lng`. No code changes needed.
-
-**What the two language settings control:**
-
-| Element | Follows |
-|---------|---------|
-| Action button labels (*Polož tehlu* / *Drop brick*) | **GUI language** |
-| Command sent to Karel when button clicked (`poloz` / `drop`) | **Programming language** |
-| Commands list in the editor (`dopredu` / `forward`) | **Programming language** |
-| All other UI text (menus, labels, tabs) | **GUI language** |
-
-The interpreter always accepts **all** loaded languages simultaneously — students can type `forward` or `dopredu` regardless of the world's prog_lang setting. The setting controls what appears in the command list and on buttons.
-
-Stored in `.karxml`:
-
-```xml
-<settings>
-  <prog_lang>en</prog_lang>
-</settings>
-```
-
----
-
-## User roles
-
-Karel 2010 supports three user roles that restrict what the current user can do. The active role is stored in `karel.ini` (next to `karel2010.py`).
-
-| Role | Permissions |
-|------|-------------|
-| **Student** | Open worlds; open and save programs. Cannot modify or save worlds. |
-| **Teacher** | Everything a student can do, plus: save worlds, open the World Settings editor. |
-| **Admin** | Everything a teacher can do, plus: global application settings (future). |
-
-The current role is shown in the window title bar: `Karel 2010  [Učiteľ]`.
-
-### How role security works
-
-There is no password — security is delegated to the operating system. The admin sets the file-system permissions on `karel.ini`:
-
-| OS-level access to `karel.ini` | Effect |
-|-------------------------------|--------|
-| Read + Write | User can change the role via **Settings → Change role...** |
-| Read only | Role is read at startup but cannot be changed from within the app |
-| No access / file missing | Defaults to **Student** role |
-
-**Typical classroom setup:**
-1. Install Karel 2010 in a folder like `C:\KarelSchool\`.
-2. Set the teacher/admin account as the only one with write access to `karel.ini`.
-3. Student OS accounts have read-only access to the folder.
-4. Create `karel.ini` manually with `role = teacher` — teacher machines have a writable copy, student machines have a read-only copy.
-
-### karel.ini format
-
-```ini
-[user]
-role = teacher
-```
-
-Valid values: `student`, `teacher`, `admin`.
-
-If the file is missing, the app defaults to **Admin** role — so a fresh download works out of the box without any configuration. Restrict access by creating `karel.ini` with `role = student` and setting it read-only for student OS accounts.
-
----
-
-## Saving the world
-
-`Edit → Save world as XML` saves the complete world to a `.karxml` file, including:
-- Room layout (all bricks, marks, walls)
-- Karel's starting position and direction
-- All settings (inventory limits, disabled commands, camera lock)
-- Mission conditions
-- Task description HTML
-- The current program in the editor
-
----
-
-## Designing good tasks
-
-Lessons learned from the original 2004 classroom experiment:
-
-1. **Test every task yourself before giving it to students.** Edge cases (e.g. brick stacks at intersections) can create impossible or unexpectedly hard situations.
-
-2. **Sequence commands before conditions.** Students find `repeat` easier than `while`. Introduce them in that order.
-
-3. **`while` needs extra time.** The concept of "repeat while condition is true" is counter-intuitive for many students. Use simple examples: "walk forward until you hit a wall."
-
-4. **Make the task description visual.** Describe the expected room state. Saying "build a wall 5 bricks tall" is clearer than "use the `drop` command 5 times."
-
-5. **Use missions for automatic feedback.** Students benefit enormously from immediate confirmation that their solution is correct. The mission system provides this without teacher intervention.
-
-6. **Enable Reset on failure.** For timed or exam-style tasks, enabling reset prevents students from "editing the answer" after the program runs.
-
-7. **Lock the camera for spatial reasoning tasks.** A fixed perspective forces students to think about Karel's orientation rather than rotating the view to cheat.
-
----
-
-## Suggested task set
-
-### Direct control tasks
-
-1. Navigate Karel through a maze using only the buttons.
-2. Navigate the same maze using only typed commands.
-3. Build a column of 5 bricks (Karel stays on top).
-
-### Procedure tasks
-
-4. Teach Karel a `Side` command that walks 3 steps and turns. Use it to walk a square.
-5. Teach Karel `WalkAround` — walk around a 6×6 brick house.
-6. Teach Karel `HalfTurn` (180°) using only `left`.
-
-### Repeat loop tasks
-
-7. Walk around the room 3 times.
-8. Build a staircase — each column one brick taller than the previous.
-
-### While loop tasks
-
-9. Pick up all bricks in a row.
-10. Walk to the wall and back.
-11. Lower a stack of bricks by 4.
-
-### Condition + recursion tasks
-
-12. Solve a maze using the right-hand rule.
-13. Move a stack of bricks one step forward.
-14. Pave a floor with marks in a chessboard pattern.
-
----
-
-## Sample world file
-
-```xml
-<world width="12" height="10">
-  <karel x="1" y="1" dir="E"/>
-  <title>Walk to the wall</title>
-  <intro><![CDATA[
-    <h2>Task</h2>
-    <p>Write a program that moves Karel forward until he reaches the east wall.</p>
-    <p>Use the <b>while</b> loop.</p>
-  ]]></intro>
-  <settings>
-    <disabled_cmds>BACK,DROP,DROP_BIG,PICK,MARK,CLEAR</disabled_cmds>
-  </settings>
-  <mission eval="on_finish" reset_on_failure="true">
-    <condition type="karel_pos" x="10" y="1"/>
-  </mission>
-  <program>begin
-  // Write your solution here
-end</program>
-</world>
-```
+**Conditions:** `wall`, `brick`, `free`, `sign`, `true`, `false`  
+**Operators:** `not`, `and`, `or` — parentheses supported  
+**Comments:** `// text` or `{ text }`

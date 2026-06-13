@@ -1,132 +1,72 @@
-# Karel 2010 — Návod pre žiakov
+# Karel 2030 — Návod pre žiakov
 
-Karel 2010 je výukové programovacie prostredie pre deti. Karel je robot, ktorý žije v 3D miestnosti a plní príkazy, ktoré mu zadáš. Tvojou úlohou je naučiť Karla riešiť problémy písaním programov v jazyku Karel.
-
----
-
-## Spustenie
-
-```
-python karel2010.py
-```
-
-alebo dvakrát klikni na **Spusti Karel.bat** vo Windows.
+> 🇬🇧 [English version](../student-guide.md)
 
 ---
 
-## Hlavné okno
+## Čo je Karel?
 
-Okno je rozdelené do štyroch oblastí:
+Karel je robot, ktorý žije v 3D svete — mriežke. Tvojou úlohou je Karela naprogramovať — napísať príkazy, ktoré mu povedia čo má robiť — aby vyriešil zadanie, ktoré ti dal tvoj učiteľ.
 
-```
-┌─────────────────────────────┬──────────────────┐
-│                             │  Kamera / Nav    │
-│       3D Miestnosť          │                  │
-│       (Karlov svet)         ├──────────────────┤
-│                             │  Priame ovládanie│
-├─────────────────────────────┴──────────────────┤
-│              Editor programu                   │
-└────────────────────────────────────────────────┘
-```
-
-| Oblasť | Účel |
-|--------|------|
-| **3D Miestnosť** | Miestnosť kde žije Karel. Zobrazuje Karla, tehly, značky, steny. |
-| **Kamera / Nav** | Otáčanie, posun a zoom 3D pohľadu. Zobrazuje inventár Karla. |
-| **Priame ovládanie** | Pohyb Karla tlačidlami alebo písaním príkazov. |
-| **Editor programu** | Písanie a spúšťanie programov. |
+Nemusíš nič inštalovať. Učiteľ ti dal link, ktorý sa otvorí priamo v prehliadači.
 
 ---
 
-## Ovládanie 3D pohľadu
+## Otvorenie zadania
 
-| Akcia | Ako |
-|-------|-----|
-| Otočenie pohľadu | Ľavé tlačidlo myši + ťahanie |
-| Posun pohľadu | Pravé tlačidlo myši + ťahanie |
-| Priblíženie/oddialenie | Koliesko myši |
-| Skok na predvolený pohľad | Kliknutie na šípky v paneli navigátora |
+Otvor link, ktorý ti poslal učiteľ. Uvidíš:
 
-Panel **Navigátor** (vpravo hore) obsahuje predvolené uhly kamery. Ak učiteľ zamkol kameru, tieto tlačidlá sú vypnuté.
+1. **Popis zadania** (vyskakovacie okno na začiatku) — prečítaj ho pozorne.
+2. 3D svet Karela — mriežka kde Karel stojí.
+3. **Editor** dole — tu píšeš program.
+
+---
+
+## Rozhranie
+
+### 3D pohľad
+Zobrazuje Karela a svet. Ťahaním myšou otáčaš pohľad, kolieskom priblížiš/vzdialíš. Karel vždy hľadí jedným zo štyroch smerov (Východ, Sever, Západ, Juh).
+
+### Navigátor (vpravo hore)
+Zobrazuje koľko tehál, značiek a krokov ti zostalo (ak učiteľ nastavil limity).
+
+### Ovládanie Karla (vpravo dole)
+Umožňuje pohybovať Karelom ručne pomocou šípkových tlačidiel alebo písaním príkazov. Hodí sa na preskúmanie sveta pred písaním programu.
+
+### Editor (dole uprostred)
+Tu píšeš Karlov program. Klikni **▶ Spustiť** na spustenie.
+
+### Zoznam príkazov (vpravo dole)
+Zobrazuje dostupné príkazy v tomto svete. Klik na príkaz ho vloží do editora.
+
+---
+
+## Spustenie programu
+
+1. Napíš program do editora.
+2. Klikni **▶ Spustiť** (alebo Ctrl+Enter) na spustenie.
+3. Klikni **⏹ Stop** na zastavenie.
+4. Klikni **↺ Reset** na návrat Karela na štart.
+
+Posuvníkom **Rýchlosť** spomaľ alebo zrýchľ vykonávanie — vidíš čo Karel robí krok po kroku.
 
 ---
 
 ## Priame ovládanie
 
-Karla môžeš ovládať priamo bez písania programu.
+Ak sú viditeľné šípkové tlačidlá v Ovládaní Karla, môžeš ho pohybovať ručne:
 
-### Pomocou tlačidiel
-
-Panel **Priame ovládanie** (vpravo dole) má tlačidlá pre každú základnú akciu: pohyb dopredu, dozadu, otočenie vľavo/vpravo, kladenie/dvíhanie tehál, kladenie/odstraňovanie značiek.
-
-### Písaním príkazov
-
-Prepni sa na záložku **„Príkazovo"** v paneli priameho ovládania. Napíš ľubovoľný príkaz Karla (napr. `dopredu`) a stlač **Enter**. Takto môžeš volať aj vlastné procedúry — po napísaní v editore sa objavia automaticky ako tlačidlá.
+- **▲** — dopredu
+- **◀** — vlavo
+- **▶** — vpravo
+- **▼** — dozadu (ak je povolené)
+- Akčné tlačidlá: kladenie/zdvíhanie tehál, kladenie/odstraňovanie značiek
 
 ---
 
-## Písanie a spúšťanie programov
+## Písanie programu
 
-### Editor
-
-Programy píš v editore na spodku okna. Príkazy sa **automaticky zvýrazňujú farbou**:
-- Známe príkazy sú **farebné**.
-- Príkazy zakázané učiteľom sú **červené**.
-- Komentáre (`//` alebo `{ }`) sú sivé.
-
-### Zadanie úlohy
-
-Klikni na **📋 Zadanie** v paneli nástrojov — zobrazí sa popis úlohy pre aktuálny svet. Ak svet obsahuje zadanie, zobrazí sa automaticky aj pri jeho otvorení.
-
-### Spustenie programu
-
-1. Napíš program do editora.
-2. Klikni na **▶ Spustiť** v paneli nástrojov.
-3. Karel vykonáva príkazy krok za krokom. Sleduj 3D pohľad.
-4. Na predčasné zastavenie klikni na **⏹ Stop**.
-5. Na návrat Karla na štartovaciu pozíciu klikni na **↺ Reset**.
-
-> **Dôležité:** Program beží **z aktuálnej polohy Karla**, nie od začiatku. Ak si Karla pred tým presunul priamym ovládaním, program pokračuje odtiaľ. Na návrat na začiatok použi **↺ Reset**.
-
-### Rýchlosť
-
-**Posuvník rýchlosti** v paneli nástrojov ovláda rýchlosť Karla. Dopravo = rýchlejšie, doľava = pomalšie. V programe môžeš tiež použiť príkazy `pomaly` a `rychlo`.
-
----
-
-## Karlov svet
-
-### Miestnosť
-
-Karel sa pohybuje na mriežke políčok. Miestnosť je ohraničená stenami zo všetkých štyroch strán. Karel **nemôže prejsť cez stenu** — pri pokuse nastane chyba.
-
-### Tehly
-
-- **Malé tehly** sa kladú pred Karla (`poloz`).
-- **Veľké tehly** sa kladú pred Karla (`poloz_velku`). Sú vyššie a Karel cez ne nemôže prejsť — slúžia ako vnútorné steny.
-- Karel môže vyjsť **najviac o 1 malú tehlu** vyššie ako je jeho aktuálne políčko.
-- Malé tehly sa dvíhajú príkazom `zdvihni`.
-
-### Značky
-
-Značky sú ploché symboly, ktoré Karel kladie **na políčko kde stojí** (`oznac`). Odstrániť ich môže príkazom `odznac`. Značky sa hodia na označovanie navštívených políčok alebo na zanechávanie stopy.
-
-### Inventár
-
-Ak učiteľ nastavil obmedzenie, Karel začína s daným počtom tehál alebo značiek. Aktuálny inventár je zobrazený v paneli **Navigátor**. Keď počet klesne na nulu, daný príkaz skončí chybou.
-
-### Rozpočet krokov a otočení
-
-Učiteľ môže obmedziť **počet krokov** alebo **otočení**, ktoré máš k dispozícii
-(počíta sa od posledného **Resetu**). Keď ich minieš, program sa zastaví a objaví sa
-okno s tlačidlami **OK** a **Reset**. Vtedy treba úlohu vyriešiť **úspornejšie** —
-menej krokov, šikovnejšia cesta. To isté platí pri ovládaní tlačidlami.
-
----
-
-## Jazyk Karel — rýchla referencia
-
-### Kostra programu
+Každý Karlov program má hlavný blok:
 
 ```
 zaciatok
@@ -136,23 +76,24 @@ zaciatok
 koniec
 ```
 
-### Vlastné príkazy (procedúry)
+### Príkazy
 
-```
-prikaz MojPrikaz
-zaciatok
-  dopredu
-  dopredu
-koniec
+| Príkaz | Čo robí |
+|--------|---------|
+| `dopredu` | Krok dopredu |
+| `dozadu` | Krok dozadu |
+| `vlavo` | Otočenie o 90° doľava |
+| `vpravo` | Otočenie o 90° doprava |
+| `poloz` | Polož tehlu pred Karela |
+| `zdvihni` | Zdvihni tehlu pred Karelom |
+| `oznac` | Polož značku na políčko kde Karel stojí |
+| `odznac` | Odstráni značku z Karlovho políčka |
 
-zaciatok
-  MojPrikaz
-  vlavo
-  MojPrikaz
-koniec
-```
+> Učiteľ mohol niektoré príkazy zakázať pre toto zadanie.
 
-### Cyklus opakuj
+### Opakuj (repeat)
+
+Použi `opakuj` keď vieš koľkokrát opakovať:
 
 ```
 opakuj 4 krat
@@ -161,7 +102,9 @@ opakuj 4 krat
 koniec
 ```
 
-### Cyklus kým
+### Kým (while)
+
+Použi `kym` keď nevieš koľkokrát opakovať:
 
 ```
 kym nie stena rob
@@ -169,7 +112,9 @@ kym nie stena rob
 koniec
 ```
 
-### Podmienka ak
+### Ak (if)
+
+Použi `ak` na rozhodovanie:
 
 ```
 ak tehla potom
@@ -179,104 +124,76 @@ inak
 koniec
 ```
 
-### Všetky príkazy
-
-| Príkaz | Čo robí |
-|--------|---------|
-| `dopredu` | Pohyb dopredu |
-| `dozadu` | Pohyb dozadu |
-| `vlavo` | Otočenie doľava |
-| `vpravo` | Otočenie doprava |
-| `poloz` | Položenie malej tehly pred Karla |
-| `zdvihni` | Zdvihnutie malej tehly pred Karlom |
-| `poloz_velku` | Položenie veľkej tehly pred Karla |
-| `oznac` | Položenie značky na aktuálne políčko |
-| `odznac` | Odstránenie značky z aktuálneho políčka |
-| `pomaly` | Spomalenie |
-| `rychlo` | Zrýchlenie |
-
 ### Podmienky
 
-| Podmienka | Pravda keď |
-|-----------|-----------|
-| `stena` | Pred Karlom je stena alebo okraj |
-| `tehla` | Pred Karlom je akákoľvek tehla |
-| `volno` | Pred Karlom nie je tehla |
-| `znacka` | Na políčku Karla je značka |
+| Podmienka | Pravdivá keď… |
+|-----------|--------------|
+| `stena` | Pred Karelom je stena alebo okraj |
+| `tehla` | Pred Karelom je tehla |
+| `volno` | Pred Karelom nič nestojí |
+| `znacka` | Karel stojí na značke |
 
-### Spájanie podmienok (`nie`, `a`, `alebo`)
-
-Podmienku môžeš **negovať** slovom `nie` a viac podmienok **spojiť** spojkami
-`a` (musia platiť obe) a `alebo` (stačí jedna). Na zoskupenie použi zátvorky `( )`.
-
+Podmienky možno kombinovať:
 ```
-ak stena alebo znacka potom vlavo koniec
-kym nie stena a nie tehla rob dopredu koniec
-ak (stena alebo tehla) a nie znacka potom dozadu koniec
+ak nie stena a nie tehla potom dopredu koniec
+kym stena alebo tehla rob vlavo koniec
 ```
 
-Najskôr platí `nie`, potom `a`, nakoniec `alebo` — ako v matematike „krát pred plus".
-Zátvorkami toto poradie zmeníš.
+### Procedúry (vlastné príkazy)
 
-> **Tip:** Na chôdzu až k stene použi `kym nie stena` (nie `kym volno`) —
-> `volno` totiž nereaguje na okraj miestnosti.
+Môžeš Karelovi naučiť nové príkazy:
 
----
+```
+prikaz OtocVpravo
+zaciatok
+  vlavo
+  vlavo
+  vlavo
+koniec
 
-## Ukladanie a načítavanie
-
-### Uloženie programu
-
-`Edituj → Uložiť program` uloží tvoj `.prg` súbor.
-
-### Načítanie programu
-
-`Edituj → Otvoriť program` načíta `.prg` súbor do editora.
-
-### Uloženie sveta
-
-`Edituj → Uložiť svet ako XML` uloží aktuálny stav miestnosti (polohy tehál, značiek, Karla) ako `.karxml` súbor.
-
-### Načítanie sveta
-
-`Edituj → Otvoriť svet` otvorí `.karxml` alebo `.karjson` súbor sveta.
+zaciatok
+  OtocVpravo
+  dopredu
+koniec
+```
 
 ---
 
-## Misie
+## Keď Karel uviazne alebo program nefunguje
 
-Niektoré svety majú **misiu** — cieľ, ktorý musíš splniť. Popis úlohy je v názve sveta a môže sa zobraziť aj ako správa pri načítaní sveta.
-
-Po skončení programu (alebo počas priameho ovládania, ak učiteľ zvolil „po každom kroku") simulátor skontroluje, či si misiu splnil:
-
-- **Úspech ✓** — objaví sa zelený dialóg so správou o úspechu.
-- **Neúspech ✗** — objaví sa červený dialóg so správou o neúspechu. Ak učiteľ povolil reset, svet sa automaticky vráti do pôvodného stavu a môžeš skúsiť znova.
+- Karel **nikdy nespadne**. Ak nemôže vykonať príkaz (napr. ísť do steny), ticho ho preskočí a pokračuje.
+- Použi **↺ Reset** na reštart od začiatku.
+- Sleduj vykonávanie so spomalenou rýchlosťou — uvidíš čo Karel robí krok po kroku.
+- Skontroluj zoznam príkazov — ukáže aké príkazy sú v tomto svete povolené.
 
 ---
 
-## Úrovne používateľov a obmedzený režim
+## Úspech a neúspech misie
 
-Karel 2010 môže bežať v troch režimoch podľa toho, čo nastavil učiteľ. Aktuálny režim je zobrazený v titulku okna.
+Keď splníš úlohu, zobrazí sa **správa o úspechu**. Ak porušíš pravidlo, zobrazí sa **správa o neúspechu**.
 
-| Režim | Čo môžeš robiť |
-|-------|---------------|
-| **Žiak** | Otváranie svetov; písanie a ukladanie programov. Niektoré položky menu môžu byť sivé. |
-| **Učiteľ** | Navyše: ukladanie svetov, editor nastavení sveta. |
-| **Admin** | Navyše: globálne nastavenia aplikácie. |
-
-Ak je nejaká položka menu sivá, nemáš potrebnú úroveň prístupu. Požiadaj učiteľa alebo správcu systému.
+Tvoj pokrok sa automaticky ukladá. Môžeš zavrieť prehliadač a vrátiť sa neskôr — program aj pozícia Karela budú tam kde si skončil.
 
 ---
 
-## Riešenie problémov
+## Klávesové skratky
 
-| Problém | Pravdepodobná príčina | Riešenie |
-|---------|----------------------|---------|
-| „Karel narazil do steny" | Pokus o chôdzu cez stenu | Skontroluj cestu — pridaj kontrolu podmienky alebo otočenie pred pohybom |
-| „Karel nevie vylesť" | Pokus o výstup na 2+ tehly naraz | Stav schody (po 1 tehle) alebo odober prebytočné tehly |
-| „Príkaz je zakázaný" | Učiteľ zakázal tento príkaz | Prečítaj zadanie — musíš úlohu vyriešiť bez tohto príkazu |
-| „Nemáš žiadne tehly" | Inventár tehál je prázdny | Spotreboval si všetky dostupné tehly |
-| „Program zastavený — nekonečný cyklus" | `kym` slučka sa nikdy neskončí (napr. `kym pravda`) | Sprav podmienku, ktorá raz prestane platiť (napr. `kym nie stena`) |
-| „Príliš hlboká rekurzia" | Procedúra volá samú seba bez konca | Pridaj podmienku ukončenia (napr. `ak nie stena potom …`) |
-| Program akoby zamrzol | Veľmi pomalý chod alebo dlhá slučka | Klikni ⏹ Stop; program sa pri nekonečnom cykle aj sám zastaví |
-| Tlačidlo Spustiť je sivé | Program stále beží | Počkaj na dokončenie alebo klikni ⏹ Stop |
+| Skratka | Akcia |
+|---------|-------|
+| `Ctrl+Enter` | Spustiť program |
+| `Ctrl+S` | Uložiť program do súboru |
+
+---
+
+## Varianty jazyka
+
+Učiteľ mohol nastaviť svet na iný jazyk príkazov. Fungujú rovnako — menia sa len slová:
+
+| Slovenčina | Angličtina | Nemčina | Francúzština |
+|------------|-----------|---------|--------------|
+| `dopredu` | `forward` | `vorwärts` | `avance` |
+| `vlavo` | `left` | `links` | `gauche` |
+| `kym nie stena rob` | `while not wall do` | `solange nicht wand tue` | `tantque pas mur faire` |
+| `zaciatok` / `koniec` | `begin` / `end` | `anfang` / `ende` | `début` / `fin` |
+
+Kompletná tabuľka kľúčových slov: **[jazyk-karla.md](jazyk-karla.md)**

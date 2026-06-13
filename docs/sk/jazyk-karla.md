@@ -1,12 +1,30 @@
-# Referencia jazyka Karel
+# Karel 2030 — Referencia jazyka
 
-Programy pre Karla môžete písať v **slovenčine** alebo v angličtine — obe sady kľúčových slov sú plne podporované a dajú sa aj kombinovať v jednom programe.
+> 🇬🇧 [English version](../language-reference.md)
+
+Tento dokument pokrýva programovací jazyk Karla — jeho syntax, všetky príkazy, kľúčové slová vo všetkých podporovaných jazykoch a príklady programov.
+
+**Ako to funguje:** Interpreter akceptuje *všetky* varianty kľúčových slov zo *všetkých* jazykov súčasne. Žiak môže v jednom programe kombinovať `dopredu`, `forward`, `adelante` a Karel im porozumie. Učiteľ nastavuje *primárny* jazyk per svet (Nastavenia sveta → Príkazy) — to určuje, aké slová sa zobrazujú na tlačidlách a v šablónach kódu.
+
+---
+
+## Podporované jazyky
+
+| Kód | Jazyk | Ukážkové kľúčové slová |
+|-----|-------|------------------------|
+| `sk` | Slovenčina | `dopredu`, `vlavo`, `opakuj` |
+| `en` | English | `forward`, `left`, `repeat` |
+| `de` | Deutsch / Nemčina | `vorwärts`, `links`, `wiederhole` |
+| `fr` | Français / Francúzština | `avance`, `gauche`, `répète` |
+| `it` | Italiano / Taliančina | `avanza`, `sinistra`, `ripeti` |
+| `es` | Español / Španielčina | `adelante`, `izquierda`, `repite` |
+| `en_pattis` | Angličtina (Pattis 1981) | `move`, `turnleft`, `iterate` |
 
 ---
 
 ## Štruktúra programu
 
-Každý program, ktorý Karel vykonáva automaticky, musí mať hlavný blok:
+Každý Karlov program má hlavný blok:
 
 ```
 zaciatok
@@ -16,7 +34,7 @@ zaciatok
 koniec
 ```
 
-Vlastné príkazy (procedúry) sa definujú pred alebo za hlavným blokom:
+Vlastné príkazy (procedúry) sa definujú pred hlavným blokom:
 
 ```
 prikaz Strana
@@ -32,70 +50,166 @@ koniec
 
 ---
 
-## Základné príkazy
+## Príkazy
 
-| Slovensky | Anglicky | Popis |
-|-----------|---------|-------|
-| `dopredu` | `forward` | Pohyb o krok dopredu |
-| `dozadu` / `vzad` | `back` | Pohyb o krok dozadu |
-| `vlavo` / `vľavo` | `left` | Otočenie o 90° doľava |
-| `vpravo` | `right` | Otočenie o 90° doprava |
-| `poloz` / `položiť` | `drop` | Položenie malej tehly pred Karla |
-| `zdvihni` / `zodvihni` | `pick` | Zdvihnutie malej tehly pred Karlom |
-| `poloz_velku` / `poloz_v` | `drop_big` | Položenie veľkej tehly pred Karla |
-| `oznac` / `označ` | `mark` | Položenie značky na políčko pod Karlom |
-| `odznac` / `odznač` | `clear` | Odobratie značky z políčka pod Karlom |
-| `pomaly` | `slowly` | Spomalenie Karla |
-| `rychlo` / `rýchlo` | `quickly` | Zrýchlenie Karla |
+### Pohyb
 
-### Poznámky k tehlám
-- Karel kladie a dvíha tehly **pred sebou**, nie na políčku, kde stojí.
-- Karel môže vyjsť **najviac o 1 tehlu** vyššie ako je jeho aktuálne políčko. Pri väčšom výškovom rozdiele nastane chyba.
-- **Veľká tehla** sa rovná 5 malým tehlám na výšku. Na veľkú tehlu Karel nevystúpi — slúži ako vnútorná stena.
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| FORWARD | `dopredu` | `forward` | `vorwärts` | `avance` | `avanza` | `adelante` | `move` |
+| BACK | `dozadu` | `back` | `zurück` | `recule` | `arretra` | `atras` | *(zakázané)* |
+| LEFT | `vlavo` | `left` | `links` | `gauche` | `sinistra` | `izquierda` | `turnleft` |
+| RIGHT | `vpravo` | `right` | `rechts` | `droite` | `destra` | `derecha` | *(zakázané)* |
+
+Aliasy: `vzad`, `vľavo`, `doľava`, `dolava` (SK); `move`, `moveforward`, `turnleft`, `turnright` (EN); `vorwaerts` (DE); `avancer` (FR); `avanza`, `avanzar` (ES)
+
+---
+
+### Tehly — kladú sa a zdvíhajú **pred** Karelom
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| DROP | `poloz` | `drop` | `lege` | `pose` | `posa` | `pon` | *(zakázané)* |
+| PICK | `zdvihni` | `pick` | `hebe` | `prends` | `prendi` | `toma` | *(zakázané)* |
+| DROP_BIG | `kvader` | `drop_big` | `quader` | `bloc` | `blocco` | `bloque` | *(zakázané)* |
+
+Aliasy: `polož`, `zodvihni` (SK); `block`, `dropb` (EN); `lege_quader` (DE); `pose_bloc` (FR)
+
+**Malé tehly** (`poloz` / `drop`):
+- Kladú sa a zdvíhajú pred Karelom, nie na jeho políčku.
+- Viac tehál sa vrství na seba.
+- Karel vie vystúpiť max. o 1 tehlu vyššie v jednom kroku (nastaviteľné).
+- Zobrazujú sa **zelenou** farbou.
+
+**Kvader / block** (`kvader` / `drop_big`):
+- Výška = **5 malých tehál**.
+- Max. **jeden kvader na políčko**.
+- Malé tehly na tom istom políčku sa vrstva na vrch kvadera.
+- Podmienka `stena` vracia **pravda** keď je kvader priamo pred Karelom.
+- Karel **nemôže preskočiť** kvader (príliš vysoký).
+- Zdvíhanie kvadera je **len cez GUI** — nie v Karel programe.
+- Zobrazuje sa **hnedou** farbou.
+
+---
+
+### Značky — kladú sa a odstraňujú **pod** Karelom (políčko kde stojí)
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| MARK | `oznac` | `mark` | `markiere` | `marque` | `marca` | `marca` | `putbeeper` |
+| CLEAR | `odznac` | `clear` | `lösche` | `efface` | `cancella` | `borra` | `pickbeeper` |
+
+Aliasy: `označ`, `odznač`, `čisti` (SK); `unmark` (EN); `loesche` (DE); `marcar`, `borrar` (ES)
+
+> **Poznámka Pattis:** `putbeeper` a `pickbeeper` kladú/odstraňujú značku na políčku kde Karel stojí — podľa pôvodnej Pattis sémantiky kde Karel interaguje s "bzučiakmi" na aktuálnom rohu.
+
+---
+
+### Rýchlosť
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| SLOWLY | `pomaly` | `slowly` | `langsam` | `lentement` | `lentamente` | `despacio` | *(zakázané)* |
+| QUICKLY | `rychlo` | `quickly` | `schnell` | `vite` | `presto` | `rapido` | *(zakázané)* |
+
+Aliasy: `rýchlo`, `spomal`, `pridaj` (SK); `slow`, `quick` (EN)
+
+---
+
+## Podmienky
+
+Používajú sa vo `kym` a `ak`. Atómové podmienky možno negovať pomocou `nie` a kombinovať pomocou `a` / `alebo` a závoriek `( )`.
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis | Pravdivá keď… |
+|-------|----|----|----|----|----|----|--------|--------------|
+| WALL | `stena` | `wall` | `wand` | `mur` | `muro` | `pared` | `front_is_blocked` | Stena, okraj alebo kvader pred Karelom |
+| BRICK | `tehla` | `brick` | `stein` | `brique` | `mattone` | `ladrillo` | *(zakázané)* | Aspoň jedna tehla pred Karelom |
+| FREE | `volno` | `free` | `frei` | `libre` | `libero` | `libre` | `front_is_clear` | Žiadna tehla pred Karelom |
+| SIGN | `znacka` | `sign` | `markierung` | `marqueur` | `segno` | `senal` | `next_to_a_beeper` | Značka na políčku kde Karel stojí |
+| TRUE | `pravda` | `true` | `wahr` | `vrai` | `vero` | `verdadero` | `true` | Vždy pravda |
+| FALSE | `nepravda` | `false` | `falsch` | `faux` | `falso` | `falso` | `false` | Vždy nepravda |
+
+> **Pozor:** `volno` a `stena` **nie sú** presnými opakmi pri okraji mriežky — `volno` okraj ignoruje, `stena` ho deteguje. Na chôdzu k stene používaj `kym nie stena`, nie `kym volno`.
+
+### Logické spojky
+
+| Token | SK | EN | DE | FR | IT | ES |
+|-------|----|----|----|----|----|----|
+| NOT | `nie` | `not` | `nicht` | `pas` | `non` | `no` |
+| AND | `a` (`aj`) | `and` | `und` | `et` | `e` | `y` |
+| OR | `alebo` | `or` | `oder` | `ou` | `o` | `o` |
+
+**Priorita:** `NIE` > `A` > `ALEBO`. Závorky `( )` menia prioritu.
+
+```
+ak stena alebo znacka potom vlavo koniec
+kym nie stena a nie tehla rob dopredu koniec
+ak (stena alebo tehla) a nie znacka potom dozadu koniec
+```
 
 ---
 
 ## Riadiace štruktúry
 
-### Definícia vlastného príkazu (procedúra)
+### Hlavný blok programu
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| BEGIN | `zaciatok` | `begin` | `anfang` | `début` | `inizio` | `inicio` | `begin` |
+| END | `koniec` | `end` | `ende` | `fin` | `fine` | `fin` | `end` |
+
+Aliasy: `začiatok` (SK); `debut` (FR)
+
+---
+
+### Procedúra (vlastný príkaz)
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| PROCEDURE | `prikaz` | `procedure` | `prozedur` | `procedure` | `procedura` | `instruccion` | `define` |
+
+Aliasy: `príkaz` (SK); `instrucción`, `procedimiento` (ES); `define_new_instruction` (Pattis)
 
 ```
-prikaz MenoPrikazu
+prikaz Nazov
 zaciatok
   ...
 koniec
 ```
 
-- Procedúry môžu volať navzájom aj samy seba (rekurzia).
-- Maximálna hĺbka rekurzie je 500 úrovní.
-- Jazyk nemá premenné — ako „pamäť" slúži hĺbka rekurzie a stoh tehál.
+- Procedúry môžu volať seba navzájom a samy seba (rekurzia).
+- Maximálna hĺbka rekurzie: **1000 úrovní**.
+- V jazyku neexistujú premenné — rekurzia a zásoby tehál slúžia ako "pamäť".
 
-### Cyklus opakuj
+---
+
+### Opakuj (repeat)
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| REPEAT | `opakuj` | `repeat` | `wiederhole` | `répète` | `ripeti` | `repite` | `iterate` |
+| TIMES | `krat` | `times` | `mal` | `fois` | `volte` | `veces` | `times` |
+
+Aliasy: `krát` (SK); `repete` (FR); `repetir` (ES); `repeat` (Pattis alias)
 
 ```
-opakuj N krat
-  ...
-koniec
-```
-
-`N` musí byť celé číslo. Príklad:
-
-```
-opakuj 4 krat
+opakuj 5 krat
   dopredu
-  vlavo
 koniec
 ```
 
-### Cyklus kým
+`N` musí byť celé číslo.
 
-```
-kym podmienka rob
-  ...
-koniec
-```
+---
 
-Príklad — choď dopredu, kým nenarazíš na stenu:
+### Kým (while)
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| WHILE | `kym` | `while` | `solange` | `tantque` | `mentre` | `mientras` | `while` |
+| DO | `rob` | `do` | `tue` | `faire` | `fai` | `haz` | `do` |
+
+Aliasy: `kým` (SK); `hacer` (ES)
 
 ```
 kym nie stena rob
@@ -103,76 +217,163 @@ kym nie stena rob
 koniec
 ```
 
-### Podmienka ak
+Podmienka môže byť logický výraz: `kym nie stena a nie tehla rob …`
 
-```
-ak podmienka potom
-  ...
-inak
-  ...
-koniec
-```
+---
 
-Vetva `inak` je nepovinná:
+### Ak (if)
+
+| Token | SK | EN | DE | FR | IT | ES | Pattis |
+|-------|----|----|----|----|----|----|--------|
+| IF | `ak` | `if` | `wenn` | `si` | `se` | `si` | `if` |
+| THEN | `potom` | `then` | `dann` | `alors` | `allora` | `entonces` | `then` |
+| ELSE | `inak` | `else` | `sonst` | `sinon` | `altrimenti` | `sino` | `else` |
+
+Aliasy: `tak` (SK); `si_no` (ES)
 
 ```
 ak tehla potom
   zdvihni
+inak
+  dopredu
 koniec
 ```
 
+Vetva `inak` je nepovinná.
+
 ---
 
-## Podmienky
+## Správanie príkazov pri prekážkach
 
-| Slovensky | Anglicky | Pravda keď |
-|-----------|---------|-----------|
-| `stena` | `wall` | Pred Karlom je stena alebo okraj miestnosti |
-| `tehla` | `brick` | Pred Karlom je aspoň jedna tehla (malá alebo veľká) |
-| `volno` | `free` | Pred Karlom nie je žiadna tehla |
-| `znacka` / `značka` | `sign` | Karel stojí na políčku so značkou |
-| `pravda` | `true` | Vždy pravda |
-| `nepravda` | `false` | Vždy nepravda |
+Karel **nikdy nespadne**. Ak príkaz nemôže byť vykonaný, ticho sa preskočí:
 
-### Logické spojky
+| Situácia | Správanie |
+|----------|-----------|
+| `dopredu` / `dozadu` do steny, okraja alebo kvadera | Karel zostane, program pokračuje |
+| `dopredu` / `dozadu` na príliš vysoké políčko | Karel zostane, program pokračuje |
+| `poloz` bez tehál v zásobách | Preskočí sa |
+| `kvader` bez kvadera alebo políčko má kvader | Preskočí sa |
+| `zdvihni` bez tehly pred Karelom | Preskočí sa |
+| `oznac` bez značiek v zásobách | Preskočí sa |
 
-Podmienky sa dajú negovať pomocou `nie` a spájať spojkami `a` / `alebo`.
-Na zoskupenie slúžia zátvorky `( )`. Priorita: **nie > a > alebo**.
+---
 
-| Slovensky | Anglicky | Nemecky | Francúzsky | Taliansky | Španielsky |
-|-----------|----------|---------|------------|-----------|------------|
-| `nie` | `not` | `nicht` | `pas` | `non` | `no` |
-| `a` (`aj`) | `and` | `und` | `et` | `e` | `y` |
-| `alebo` | `or` | `oder` | `ou` | `o` | `o` |
+## Mód Pattis (angličtina, 1981)
 
-```
-kym nie stena rob dopredu koniec
-ak nie znacka potom oznac koniec
-ak stena alebo znacka potom vlavo koniec
-kym nie stena a nie tehla rob dopredu koniec
-ak (stena alebo tehla) a nie znacka potom dozadu koniec
-```
+Pattis variant reprodukuje pôvodný jazyk Richarda Pattisa z roku 1981. Je obmedzenjší:
 
-> **Pozor:** `volno` a `stena` nie sú presné opaky na okraji miestnosti —
-> `volno` okraj ignoruje, `stena` ho deteguje. Na chôdzu k stene použi
-> `kym nie stena`, nie `kym volno`.
+**Zakázané:** `BACK`, `RIGHT`, `DROP`, `DROP_BIG`, `PICK`, `BRICK`, `SLOWLY`, `QUICKLY`
+
+| Koncept | Pattis | Štandardný ekvivalent |
+|---------|--------|-----------------------|
+| Krok dopredu | `move` | `forward` |
+| Otočenie vľavo | `turnleft` | `left` |
+| Polož značku | `putbeeper` | `mark` |
+| Odstráň značku | `pickbeeper` | `clear` |
+| Je stena pred? | `front_is_blocked` | `wall` |
+| Je cesta voľná? | `front_is_clear` | `free` |
+| Je značka pod? | `next_to_a_beeper` | `sign` |
+| Opakuj | `iterate N times` | `repeat N times` |
+| Definuj procedúru | `define Nazov` | `procedure Nazov` |
 
 ---
 
 ## Komentáre
 
 ```
-// Toto je riadkový komentár
-# Aj toto je riadkový komentár
-{ Toto je blokový komentár }
+// Jednoriadkový komentár
+# Tiež jednoriadkový
+{ Blokový komentár }
 ```
 
 ---
 
-## Príklady programov
+## Kompletný príklad — rovnaký program vo všetkých jazykoch
 
-### Chôdza po štvorci
+**Úloha:** Choď Karelom dopredu až k stene a na každom políčku polož značku.
 
+### Slovenčina
+```
+zaciatok
+  kym nie stena rob
+    oznac
+    dopredu
+  koniec
+  oznac
+koniec
+```
+
+### Angličtina
+```
+begin
+  while not wall do
+    mark
+    forward
+  end
+  mark
+end
+```
+
+### Nemčina
+```
+anfang
+  solange nicht wand tue
+    markiere
+    vorwärts
+  ende
+  markiere
+ende
+```
+
+### Francúzština
+```
+début
+  tantque pas mur faire
+    marque
+    avance
+  fin
+  marque
+fin
+```
+
+### Taliančina
+```
+inizio
+  mentre non muro fai
+    marca
+    avanza
+  fine
+  marca
+fine
+```
+
+### Španielčina
+```
+inicio
+  mientras no pared haz
+    marca
+    adelante
+  fin
+  marca
+fin
+```
+
+### Angličtina (Pattis)
+```
+begin
+  while not front_is_blocked do
+    putbeeper
+    move
+  end
+  putbeeper
+end
+```
+
+---
+
+## Ďalšie príklady programov
+
+### Chôdza po štvorcovej dráhe
 ```
 prikaz Strana
 zaciatok
@@ -185,24 +386,22 @@ zaciatok
 koniec
 ```
 
-### Zber všetkých tehál v rade
-
+### Pozbieranie všetkých tehál v rade
 ```
-prikaz ZdvihniVsetko
+prikaz ZbierVsetky
 zaciatok
   kym tehla rob zdvihni koniec
 koniec
 
 zaciatok
   kym nie stena rob
-    ZdvihniVsetko
+    ZbierVsetky
     dopredu
   koniec
 koniec
 ```
 
-### Riešenie bludiska (pravidlo pravej ruky)
-
+### Bludisko (pravidlo pravej ruky)
 ```
 prikaz Krok
 zaciatok
@@ -214,37 +413,9 @@ zaciatok
 koniec
 ```
 
-### Označenie každého políčka až po stenu
-
+### Presunutie stohu tehál dopredu
 ```
-zaciatok
-  kym nie stena rob
-    oznac
-    dopredu
-  koniec
-  oznac
-koniec
-```
-
-### Nekonečná slučka pomocou rekurzie
-
-```
-prikaz Navzdy
-zaciatok
-  dopredu
-  vlavo
-  Navzdy
-koniec
-
-zaciatok Navzdy koniec
-```
-
-> **Poznámka:** Chvostová rekurzia beží dovtedy, kým Karel nenarazí na stenu alebo kým sa nedosiahne limit rekurzie (500 úrovní).
-
-### Prenesenie stĺpika tehál o krok dopredu
-
-```
-prikaz PreniesStlpik
+prikaz PriesunutieStohu
 zaciatok
   kym tehla rob
     zdvihni
@@ -254,43 +425,63 @@ zaciatok
   koniec
 koniec
 
-zaciatok
-  PreniesStlpik
-koniec
+zaciatok PriesunutieStohu koniec
 ```
 
 ---
 
-## Gramatika jazyka (zjednodušená)
+## Formálna gramatika
 
 ```
-program      = { prikaz } hlavny_blok
-prikaz       = 'prikaz' MENO hlavny_blok
-hlavny_blok  = 'zaciatok' { prikaz } 'koniec'
-prikazs      = prikaz
-             | 'opakuj' CISLO 'krat' { prikazs } 'koniec'
-             | 'kym' podmienka 'rob' { prikazs } 'koniec'
-             | 'ak' podmienka 'potom' { prikazs } [ 'inak' { prikazs } ] 'koniec'
+program      = { procedúra } hlavný_blok
+procedúra    = PRIKAZ MENO hlavný_blok
+hlavný_blok  = ZACIATOK { príkaz } KONIEC
+príkaz       = príkaz_pohybu
+             | OPAKUJ ČÍSLO KRAT { príkaz } KONIEC
+             | KYM podmienka ROB { príkaz } KONIEC
+             | AK podmienka POTOM { príkaz } [ INAK { príkaz } ] KONIEC
              | MENO
-prikaz       = 'dopredu' | 'dozadu' | 'vlavo' | 'vpravo'
-             | 'poloz' | 'zdvihni' | 'poloz_velku'
-             | 'oznac' | 'odznac'
-             | 'pomaly' | 'rychlo'
-podmienka    = [ 'nie' ] ( 'stena' | 'tehla' | 'volno' | 'znacka' | 'pravda' | 'nepravda' )
+podmienka    = alebo_výraz
+alebo_výraz  = a_výraz { ALEBO a_výraz }
+a_výraz      = nie_výraz { A nie_výraz }
+nie_výraz    = [ NIE ] atom
+atom         = STENA | TEHLA | VOLNO | ZNACKA | PRAVDA | NEPRAVDA | '(' alebo_výraz ')'
 ```
 
 ---
 
-## Pedagogický postup
+## Pedagogická postupnosť
 
-Jazyk Karel bol navrhnutý pre konkrétnu postupnosť výučby:
+| Stupeň | Koncept | Poznámky |
+|--------|---------|----------|
+| 1 | Priame ovládanie — tlačidlá, písané príkazy | Naučiť sa relatívnu orientáciu |
+| 2 | Jednoduché sekvencie — `zaciatok … koniec` | Krátke deterministické programy |
+| 3 | Procedúry — `prikaz … koniec` | Rozkladanie problémov; abstrakcia |
+| 4 | Opakuj — `opakuj N krat` | Keď je počet opakovaní známy |
+| 5 | Kým — `kym podmienka rob` | Keď počet nie je známy; použitie senzorov |
+| 6 | Ak/inak — `ak podmienka potom … inak` | Vetvenie, rozhodovanie |
+| 7 | Rekurzia — procedúra volajúca seba | Počítanie s tehlami ako pamäťou |
 
-1. **Priame ovládanie** — pohyb Karla tlačidlami, pochopenie relatívnej orientácie (čo je „vľavo" keď je Karel otočený rôznymi smermi?)
-2. **Základné sekvencie** — krátke programy v tvare `zaciatok … koniec`
-3. **Procedúry** — učíme Karla nové príkazy (`prikaz … koniec`), rozklad problémov
-4. **Cyklus opakuj** — `opakuj N krat` keď vieme počet opakovaní vopred
-5. **Cyklus kým** — `kym podmienka rob` keď počet opakovaní nie je vopred známy
-6. **Podmienka ak** — `ak podmienka potom … inak` na vetvenie programu
-7. **Rekurzia** — chvostová rekurzia ako nekonečná slučka; počítadlo z tehál
+Odporúčaná veková skupina: 3.–7. ročník základnej školy. Karel je mostíkom k Logo, Pascalu a Jave.
 
-Odporúčaná veková skupina je 3. – 7. ročník základnej školy. Karel je premostenie na Logo a neskôr Pascal/Java.
+---
+
+## Pridanie nového jazyka
+
+1. Vytvorte `lang/interpreter/xx.lng` — formát nižšie.
+2. Vytvorte `lang/xx.ini` — GUI texty (menu, toolbar, dialógy); pozrite akékoľvek existujúce `.ini` ako šablónu.
+3. Oba dropdowny sa automaticky doplnia — **žiadna zmena kódu nie je potrebná**.
+
+**Formát súboru `.lng`:**
+```
+# Komentár
+NAME       = Zobrazený názov         ← zobrazí sa v dropdowne
+DISABLED   = BACK RIGHT              ← tokeny zakázané pri výbere tohto jazyka
+FORWARD    = primárne_slovo  alias1  ← TOKEN = primárne alias1 alias2 ...
+LEFT       = primárne_slovo  alias1
+BEGIN      = zaciatok
+END        = koniec
+...
+```
+
+Prvé slovo za `=` je primárne kľúčové slovo (zobrazuje sa na tlačidlách). Všetky slová zo všetkých `.lng` súborov sa zlúčia do jednej globálnej mapy — interpreter akceptuje každý variant z každého jazyka súčasne.

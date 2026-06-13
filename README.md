@@ -18,28 +18,33 @@ simple language, learning the fundamentals of algorithmic thinking. The teacher
 prepares a world (layout + task + success conditions), shares a link, and reviews
 each student's progress live.
 
-## Running (web)
+## Running
 
-With Docker:
+### With Docker (recommended)
 
 ```bash
-KarelAdminPWD=yourSecret docker compose up -d
+# Create .env with the admin password (leave empty to disable admin)
+echo "KarelAdminPWD=yourSecretPassword" > .env
+
+docker compose up -d
 ```
 
-Then open **http://localhost:8000/**. The admin password (`KarelAdminPWD`) gates
-publishing/deleting shared worlds — see the teacher guide below. Leave it empty
-to disable admin login.
+Then open **http://localhost:8000/**.
 
-Local dev without Docker:
+After code changes: `docker compose build --no-cache && docker compose up -d`
+
+### Without Docker (local dev)
 
 ```bash
 pip install fastapi "uvicorn[standard]" pillow numpy
+mkdir -p data/worlds
 python -m uvicorn server.app:app --reload --port 8000
 ```
 
+See **[docs/admin-guide.md](docs/admin-guide.md)** for full details: admin password, data persistence, offline vendor JS, Docker volume backup.
+
 > The original **desktop** app still lives in this repo and runs standalone:
-> `python karel2010.py` (see the desktop sections of the docs). The web version
-> is the actively developed one.
+> `python karel2010.py`. The web version is the actively developed one.
 
 ## Roles
 
@@ -57,8 +62,8 @@ python -m uvicorn server.app:app --reload --port 8000
 4. Watch each student's status: **— not started / ✏️ working / ✅ solved**, view
    their program (👁), or remove them (🗑).
 
-Full instructions: **[docs/teacher-web-guide.md](docs/teacher-web-guide.md)** (EN) ·
-**[docs/sk/navod-web-ucitel.md](docs/sk/navod-web-ucitel.md)** (SK).
+Full instructions: **[docs/teacher-guide.md](docs/teacher-guide.md)** (EN) ·
+**[docs/sk/navod-pre-ucitelov.md](docs/sk/navod-pre-ucitelov.md)** (SK).
 
 ## The Karel language
 
@@ -112,11 +117,10 @@ use `scripts/sync_worlds.ps1` (see [CLAUDE.md](CLAUDE.md)).
 
 | Document | Audience | Description |
 |----------|----------|-------------|
-| [docs/teacher-web-guide.md](docs/teacher-web-guide.md) | Teachers (web) | **Admin, creating/saving worlds, sharing & reviewing students** |
-| [docs/teacher-guide.md](docs/teacher-guide.md) | Teachers | World design + pedagogical progression (desktop origin) |
-| [docs/user-guide.md](docs/user-guide.md) | Students | Interface walkthrough, language quick reference |
-| [docs/karel-language.md](docs/karel-language.md) | Everyone | Complete language reference with examples |
-| [docs/language-reference.md](docs/language-reference.md) | Teachers / translators | All keywords in all languages side by side |
+| [docs/teacher-guide.md](docs/teacher-guide.md) | Teachers | World design, World Settings, sharing with students, pedagogy |
+| [docs/student-guide.md](docs/student-guide.md) | Students | Interface walkthrough, language quick reference |
+| [docs/admin-guide.md](docs/admin-guide.md) | Admins / IT | Docker setup, admin password, publishing worlds, local dev |
+| [docs/language-reference.md](docs/language-reference.md) | Everyone | Complete language reference — all commands, all languages, examples |
 | [docs/karxml-format.md](docs/karxml-format.md) | World authors | `.karxml` file format specification |
 | [docs/architecture.md](docs/architecture.md) | Developers | Code architecture, data model, renderer |
 | [docs/api.md](docs/api.md) | Developers | REST + WebSocket API contract |
@@ -126,10 +130,10 @@ use `scripts/sync_worlds.ps1` (see [CLAUDE.md](CLAUDE.md)).
 
 | Dokument | Komu | Popis |
 |----------|------|-------|
-| [docs/sk/navod-web-ucitel.md](docs/sk/navod-web-ucitel.md) | Učitelia (web) | **Admin, tvorba/ukladanie svetov, zdieľanie a kontrola žiakov** |
-| [docs/sk/navod-pre-ucitelov.md](docs/sk/navod-pre-ucitelov.md) | Učitelia | Tvorba svetov + pedagogická postupnosť |
+| [docs/sk/navod-pre-ucitelov.md](docs/sk/navod-pre-ucitelov.md) | Učitelia | Tvorba svetov, Nastavenia sveta, zdieľanie so žiakmi, pedagogika |
 | [docs/sk/navod-pre-ziakov.md](docs/sk/navod-pre-ziakov.md) | Žiaci | Popis rozhrania, rýchla referencia jazyka |
-| [docs/sk/jazyk-karla.md](docs/sk/jazyk-karla.md) | Všetci | Kompletná referencia jazyka Karel |
+| [docs/sk/navod-admin.md](docs/sk/navod-admin.md) | Admini / IT | Docker, admin heslo, publikovanie svetov, lokálny vývoj |
+| [docs/sk/jazyk-karla.md](docs/sk/jazyk-karla.md) | Všetci | Kompletná referencia jazyka — všetky príkazy, všetky jazyky, príklady |
 
 ## Background
 
