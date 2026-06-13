@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Karel 2030 — FastAPI server podľa docs/api.md (REST §2, WS §3)."""
-import os, asyncio, configparser
+import os, asyncio, configparser, time, secrets
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -54,6 +54,96 @@ _SAFE_WID = _re.compile(r'^[A-Za-z0-9 _-]{1,64}$')
 
 def _err(status: int, code: str, detail: str = '') -> JSONResponse:
     return JSONResponse({'error': code, 'detail': detail}, status_code=status)
+
+
+# =========================================================================
+# Admin autentifikácia — heslo z env KarelAdminPWD, session cookie, lockout
+# =========================================================================
+ADMIN_PWD   = os.environ.get('KarelAdminPWD', '')
+ADMIN_TTL   = 8 * 3600          # platnosť admin session (s)
+MAX_FAILS   = 3                 # počet pokusov pred zablokovaním
+BLOCK_SECS  = 30 * 60           # dĺžka blokovania (s)
+ADMIN_COOKIE = 'karel_admin'
+
+_admin_sessions: dict = {}      # token -> expiry (epoch)
+_admin_fails: dict = {}         # client_key -> {'count': int, 'blocked_until': epoch}
+
+
+def _client_key(request: Request) -> str:
+    """Identita klienta pre lockout: prvý X-Forwarded-For, inak IP."""
+    xff = request.headers.get('x-forwarded-for')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.client.host if request.client else 'unknown'
+
+
+def _block_minutes(key: str) -> int:
+    """Koľko minút zostáva do odblokovania (0 = neblokovaný)."""
+    rec = _admin_fails.get(key)
+    if rec and rec['blocked_until'] > time.time():
+        return int((rec['blocked_until'] - time.time()) // 60) + 1
+    return 0
+
+
+def _is_admin(request: Request) -> bool:
+    tok = request.cookies.get(ADMIN_COOKIE)
+    if not tok:
+        return False
+    exp = _admin_sessions.get(tok)
+    if not exp:
+        return False
+    if exp < time.time():
+        _admin_sessions.pop(tok, None)
+        return False
+    return True
+
+
+@app.post('/api/admin/login')
+async def admin_login(request: Request):
+    key = _client_key(request)
+    mins = _block_minutes(key)
+    if mins:
+        return _err(429, 'locked', f'Príliš veľa pokusov. Skús znova o {mins} min.')
+    if not ADMIN_PWD:
+        return _err(403, 'admin_disabled', 'Admin heslo nie je na serveri nastavené.')
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    pwd = str((body or {}).get('password', ''))
+    if secrets.compare_digest(pwd, ADMIN_PWD):
+        _admin_fails.pop(key, None)               # vynuluj pokusy
+        token = secrets.token_urlsafe(24)
+        _admin_sessions[token] = time.time() + ADMIN_TTL
+        resp = JSONResponse({'ok': True})
+        resp.set_cookie(ADMIN_COOKIE, token, httponly=True,
+                        samesite='lax', max_age=ADMIN_TTL)
+        return resp
+    # neúspešný pokus
+    rec = _admin_fails.setdefault(key, {'count': 0, 'blocked_until': 0})
+    rec['count'] += 1
+    if rec['count'] >= MAX_FAILS:
+        rec['blocked_until'] = time.time() + BLOCK_SECS
+        rec['count'] = 0
+        return _err(429, 'locked',
+                    f'Príliš veľa pokusov. Admin zablokovaný na {BLOCK_SECS // 60} min.')
+    left = MAX_FAILS - rec['count']
+    return _err(401, 'bad_password', f'Nesprávne heslo. Zostáva pokusov: {left}.')
+
+
+@app.get('/api/admin/status')
+def admin_status(request: Request):
+    return {'admin': _is_admin(request), 'configured': bool(ADMIN_PWD)}
+
+
+@app.post('/api/admin/logout')
+def admin_logout(request: Request):
+    tok = request.cookies.get(ADMIN_COOKIE)
+    if tok:
+        _admin_sessions.pop(tok, None)
+    resp = JSONResponse({'ok': True})
+    resp.delete_cookie(ADMIN_COOKIE)
+    return resp
 
 
 # =========================================================================
@@ -115,6 +205,8 @@ def _world_files() -> dict:
 @app.post('/api/worlds')
 async def publish_world(request: Request):
     """Publikuj svet do volume (admin). Body: {id, karxml}."""
+    if not _is_admin(request):
+        return _err(401, 'unauthorized', 'len admin')
     data = await request.json()
     wid = (data or {}).get('id', '').strip()
     karxml = (data or {}).get('karxml', '')
@@ -132,8 +224,10 @@ async def publish_world(request: Request):
 
 
 @app.delete('/api/worlds/{world_id}')
-def delete_world(world_id: str):
+def delete_world(world_id: str, request: Request):
     """Zmaž publikovaný svet z volume (admin). Baked worlds/ sa nedajú mazať."""
+    if not _is_admin(request):
+        return _err(401, 'unauthorized', 'len admin')
     if not _SAFE_WID.match(world_id):
         return _err(400, 'bad_id', 'neplatné id')
     path = os.path.join(_PUBLISHED_DIR, f'{world_id}.karxml')

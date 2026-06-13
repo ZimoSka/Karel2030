@@ -4,6 +4,11 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      # Admin heslo pre admin režim (publikovanie/mazanie zdieľaných svetov).
+      # Nastav cez .env súbor alebo shell: KarelAdminPWD=tajne docker compose up -d
+      # Prázdne = admin prihlásenie vypnuté (server vráti 403).
+      - KarelAdminPWD=${KarelAdminPWD:-}
     volumes:
       - karel_data:/data
     restart: unless-stopped

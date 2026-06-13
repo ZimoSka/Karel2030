@@ -10,7 +10,7 @@
   const pathTok = location.pathname.match(/^\/s\/([A-Za-z0-9_-]+)/);
   const TOKEN = (pathTok && pathTok[1]) || qs.get('token') || null;
   const STUDENT = !!TOKEN;
-  const ADMIN = !STUDENT && qs.get('role') === 'admin';   // dev: rola cez URL
+  let isAdmin = false;   // admin režim — zapne sa po prihlásení heslom (server cookie)
 
   const api = MOCK ? MockApi : Api;
   const $ = (id) => document.getElementById(id);
@@ -446,6 +446,43 @@
            .then(() => loadWorldsDropdown())
            .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true)) }]);
   };
+  /* ---------- Admin režim (prihlásenie heslom) ---------- */
+  function setAdmin(on) {
+    isAdmin = !!on;
+    document.body.classList.toggle('admin', isAdmin);
+    const b = $('btn-admin');
+    b.textContent = isAdmin ? '🔓 Admin' : '🔒 Admin';
+    b.classList.toggle('accent', isAdmin);
+    b.title = isAdmin ? 'Admin režim zapnutý — klikni pre odhlásenie'
+                      : 'Admin režim — prihlásenie heslom';
+  }
+  $('btn-admin').onclick = () => {
+    if (isAdmin) {   // odhlásenie
+      api.adminLogout().finally(() => { setAdmin(false); setStatus(null, 'Admin odhlásený'); });
+      return;
+    }
+    dialog('🔒 Admin prihlásenie',
+      '<p>Zadaj admin heslo:</p>' +
+      '<input id="admin-pwd" type="password" autocomplete="current-password" ' +
+      'style="width:100%;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px">' +
+      '<p id="admin-msg" style="color:var(--danger,#e66);min-height:18px;margin:6px 0 0"></p>',
+      [{ label: t('world_settings.btn_cancel', 'Zrušiť') },
+       { label: 'Prihlásiť', action: null }]);
+    // tlačidlo Prihlásiť nesmie zatvárať dialóg pri chybe → vlastná obsluha
+    const loginBtn = [...document.querySelectorAll('#dlg-buttons button')].find(b => /Prihlásiť/.test(b.textContent));
+    const submit = () => {
+      const pwd = ($('admin-pwd') || {}).value || '';
+      api.adminLogin(pwd).then(() => {
+        hideDialog(); setAdmin(true); setStatus(null, '✓ Admin režim zapnutý');
+      }).catch(err => {
+        const m = $('admin-msg'); if (m) m.textContent = err.message || 'Chyba prihlásenia';
+        const inp = $('admin-pwd'); if (inp) { inp.value = ''; inp.focus(); }
+      });
+    };
+    if (loginBtn) loginBtn.onclick = submit;
+    setTimeout(() => { const i = $('admin-pwd'); if (i) { i.focus(); i.onkeydown = (e) => { if (e.key === 'Enter') submit(); }; } }, 50);
+  };
+
   // F4: otvoriť/uložiť program
   $('btn-prog-open').onclick = () => $('file-prog').click();
   $('file-prog').onchange = (e) => readFile(e.target, (txt) => editor.setValue(txt));
@@ -569,7 +606,8 @@
           '<p>Neplatný alebo expirovaný žiacky link.</p>', null, true);
       }
     } else {
-      if (ADMIN) document.body.classList.add('admin');
+      // admin režim sa obnoví z platnej server cookie (po refreshi zostáva)
+      api.adminStatus().then(s => { if (s && s.admin) setAdmin(true); }).catch(() => {});
       loadWorldsDropdown();
       // učiteľ: vlastná session — session_id generuje frontend (viď NOTES.md)
       let sid = sessionStorage.getItem('karel_session');

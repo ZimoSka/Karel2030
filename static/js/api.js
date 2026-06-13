@@ -28,6 +28,10 @@ const Api = {
   },
 
   version:        ()     => Api._get('/version'),
+  // admin autentifikácia (cookie session na serveri)
+  adminLogin:     (password) => Api._send('POST', '/admin/login', { password }),
+  adminStatus:    ()         => Api._get('/admin/status'),
+  adminLogout:    ()         => Api._send('POST', '/admin/logout'),
   // jazyky
   uiLangs:        ()     => Api._get('/langs/ui'),
   uiStrings:      (code) => Api._get('/langs/ui/' + code),

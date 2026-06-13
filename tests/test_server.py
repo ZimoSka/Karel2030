@@ -192,6 +192,40 @@ def test_direct_command_reset_on_failure():
         assert (kp['x'], kp['y']) == start      # Karel späť na štarte
 
 
+def test_admin_auth_and_lockout():
+    """Admin: prihlásenie heslom, ochrana publish/delete, lockout po 3 pokusoch."""
+    from server import app as appmod
+    appmod.ADMIN_PWD = 'secret'
+    appmod._admin_fails.clear(); appmod._admin_sessions.clear()
+    c = TestClient(appmod.app)
+    # stav: nie admin, ale heslo nakonfigurované
+    s = c.get('/api/admin/status').json()
+    assert s['admin'] is False and s['configured'] is True
+    # publish bez admina → 401
+    assert c.post('/api/worlds',
+                  json={'id': 'x', 'karxml': _karxml()}).status_code == 401
+    # 3 nesprávne pokusy → po treťom zablokované (429)
+    assert c.post('/api/admin/login', json={'password': 'nope'}).status_code == 401
+    assert c.post('/api/admin/login', json={'password': 'nope'}).status_code == 401
+    assert c.post('/api/admin/login', json={'password': 'nope'}).status_code == 429
+    # počas blokovania ani správne heslo neprejde
+    assert c.post('/api/admin/login', json={'password': 'secret'}).status_code == 429
+    # po odblokovaní (simulácia) sa prihlásime
+    appmod._admin_fails.clear()
+    assert c.post('/api/admin/login', json={'password': 'secret'}).json()['ok'] is True
+    assert c.get('/api/admin/status').json()['admin'] is True
+    # teraz publish prejde (cookie sa posiela automaticky)
+    assert c.post('/api/worlds',
+                  json={'id': 'admintest', 'karxml': _karxml()}).status_code == 200
+    # odhlásenie → už nie admin, publish opäť 401
+    c.post('/api/admin/logout')
+    assert c.get('/api/admin/status').json()['admin'] is False
+    assert c.post('/api/worlds',
+                  json={'id': 'y', 'karxml': _karxml()}).status_code == 401
+    appmod.ADMIN_PWD = ''   # vyčisti pre ostatné testy
+    appmod._admin_fails.clear(); appmod._admin_sessions.clear()
+
+
 # ---------------- WS: žiacka session ----------------
 
 def test_ws_connect_and_run():
