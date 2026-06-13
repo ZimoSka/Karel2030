@@ -43,7 +43,5 @@ karel.ini
 # Runtime dáta servera (assignments/links/workspaces/worlds)
 /data/
 
-# Vymeniteľné 3D modely Karla (môžu byť chránené IP, napr. Grogu/Disney) —
-# nedistribuovať v repe; vkladajú sa lokálne do static/models/
-static/models/*.glb
+# 3D modely — gltf binárky (veľké súbory)
 static/models/*.gltf
