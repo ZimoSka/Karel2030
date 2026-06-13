@@ -315,9 +315,12 @@ class World:
         _txt('prev_level',   self.prev_level)
         # nastavenia sveta
         s = self.settings
+        cam_custom = (abs(s.camera_az - math.radians(225)) > 1e-6
+                      or abs(s.camera_el - math.radians(28)) > 1e-6
+                      or abs(s.camera_dist - 16.0) > 1e-6)
         has_settings = (s.brick_limit!=-1 or s.big_brick_limit!=-1 or s.mark_limit!=-1
                         or s.disabled_cmds or s.disable_procedure or s.camera_locked
-                        or s.disable_graphic or s.disable_command
+                        or s.disable_graphic or s.disable_command or cam_custom
                         or s.max_climb != 1 or s.prog_lang != 'sk'
                         or s.max_drop != -1 or s.max_steps != -1 or s.max_turns != -1
                         or s.max_brick_height != -1)
@@ -347,9 +350,11 @@ class World:
                 ET.SubElement(st,'disable_command').text = 'true'
             if s.camera_locked:
                 ET.SubElement(st,'camera_locked').text = 'true'
-                ET.SubElement(st,'camera_az').text    = str(s.camera_az)
-                ET.SubElement(st,'camera_el').text    = str(s.camera_el)
-                ET.SubElement(st,'camera_dist').text  = str(s.camera_dist)
+            # uložený pohľad kamery (vždy — aby sa zapamätal aktuálny pohľad,
+            # nielen pri zamknutej kamere)
+            ET.SubElement(st,'camera_az').text    = str(s.camera_az)
+            ET.SubElement(st,'camera_el').text    = str(s.camera_el)
+            ET.SubElement(st,'camera_dist').text  = str(s.camera_dist)
         # misia — podmienky splnenia
         if self.goal_conditions or self.mission_reset_on_failure:
             miss = ET.SubElement(root, 'mission')
@@ -430,10 +435,10 @@ class World:
             w.settings.disable_graphic   = _gb('disable_graphic')
             w.settings.disable_command   = _gb('disable_command')
             w.settings.camera_locked     = _gb('camera_locked')
-            if w.settings.camera_locked:
-                w.settings.camera_az   = _gf('camera_az',  math.radians(225))
-                w.settings.camera_el   = _gf('camera_el',  math.radians(28))
-                w.settings.camera_dist = _gf('camera_dist', 16.0)
+            # uložený pohľad kamery sa načíta vždy (ak je v súbore), nielen pri zámku
+            w.settings.camera_az   = _gf('camera_az',  math.radians(225))
+            w.settings.camera_el   = _gf('camera_el',  math.radians(28))
+            w.settings.camera_dist = _gf('camera_dist', 16.0)
         # misia
         miss_el = root.find('mission')
         if miss_el is not None:

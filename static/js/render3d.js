@@ -155,6 +155,16 @@ class KarelRenderer {
     this.controls.update();
   }
 
+  /* Aktuálny pohľad kamery (az/el/dist) — inverzia setCamera, pre uloženie do sveta */
+  getCamera() {
+    const t = this.controls.target, p = this.camera.position;
+    const dx = p.x - t.x, dy = p.y - t.y, dz = p.z - t.z;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 16;
+    const el = Math.asin(Math.max(-1, Math.min(1, dy / d)));
+    const az = -Math.atan2(dz, dx);   // setCamera používa az_three = -cam.az
+    return { az, el, dist: d };
+  }
+
   /* Preset pohľadu (tlačidlá Def/Pred/Vrch/Bok) — uhly v stupňoch,
    * zachová aktuálnu vzdialenosť kamery od cieľa. */
   setViewPreset(azDeg, elDeg) {

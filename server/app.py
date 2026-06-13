@@ -504,6 +504,13 @@ async def _handle_client_msg(ws: WebSocket, session: Session, msg: dict):
         w = session.world
         if 'program' in msg:
             w.program_text = msg['program']
+        cam = msg.get('camera') or {}      # zapamätaj aktuálny pohľad kamery
+        for key, attr in (('az', 'camera_az'), ('el', 'camera_el'), ('dist', 'camera_dist')):
+            if key in cam:
+                try:
+                    setattr(w.settings, attr, float(cam[key]))
+                except (TypeError, ValueError):
+                    pass
         await ws.send_json({'v': 1, 'type': 'world_export',
                             'karxml': w.to_xml(), 'title': w.title})
     else:

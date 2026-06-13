@@ -2,21 +2,18 @@
 """Karel core – ukážkové programy."""
 
 EXAMPLES={
-"Prázdny/Empty":"""\
-# Karel 2010 – program
+"Prázdny / Empty":"""\
+# Karel 2030 – program
 # Slovak: zaciatok/koniec, dopredu, vlavo, vpravo, dozadu
 #   poloz=pred seba, zdvihni=z pred seba, oznac=pod seba
 #   opakuj N krat ... koniec
 #   kym podmienka rob ... koniec
 #   ak podmienka potom ... inak ... koniec
 zaciatok
-  dopredu
-  dopredu
-  vlavo
-  dopredu
+
 koniec
 """,
-"Štvorec/Square":"""\
+"Štvorec / Square":"""\
 prikaz Strana
 zaciatok
   opakuj 3 krat dopredu koniec
@@ -27,7 +24,7 @@ zaciatok
   opakuj 4 krat Strana koniec
 koniec
 """,
-"Stavanie múru/Build wall":"""\
+"Stavanie múru / Build wall":"""\
 # Karel stavia múr z tehál pred sebou
 zaciatok
   opakuj 4 krat
@@ -36,7 +33,7 @@ zaciatok
   koniec
 koniec
 """,
-"Zbieranie tehál/Collect":"""\
+"Zbieranie tehál / Collect":"""\
 prikaz ZdvihniVsetko
 zaciatok
   kym tehla rob zdvihni koniec
@@ -59,7 +56,7 @@ zaciatok
 koniec
 Zaciatok Samba Koniec
 """,
-"Valčík/Waltz":"""\
+"Valčík / Waltz":"""\
 prikaz Valcik
 zaciatok
   opakuj 4 krat
@@ -69,13 +66,13 @@ zaciatok
 koniec
 zaciatok opakuj 6 krat Valcik koniec koniec
 """,
-"Označenie trate/Mark path":"""\
+"Označenie trate / Mark path":"""\
 zaciatok
   kym nie stena rob oznac dopredu koniec
   oznac
 koniec
 """,
-"Bludisko/Maze":"""\
+"Bludisko / Maze":"""\
 prikaz Krok
 zaciatok
   ak stena potom vlavo inak dopredu koniec

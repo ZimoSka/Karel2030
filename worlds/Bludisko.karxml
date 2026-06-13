@@ -269,9 +269,19 @@
 koniec&lt;/pre&gt;</intro>
   <success>&lt;h3 style=&quot;color:#44ff88&quot;&gt;Hotovo! 🏁&lt;/h3&gt;&lt;p&gt;Karel prešiel celé bludisko. Výborne!&lt;/p&gt;</success>
   <failure>&lt;h3 style=&quot;color:#ff6666&quot;&gt;Skús znova&lt;/h3&gt;&lt;p&gt;Karel zablúdil. Skontroluj svoj postup cez bludisko.&lt;/p&gt;</failure>
-  <program>Začiatok
-
-Koniec</program>
+  <program># Karel 2030 — napíš svoj program medzi zaciatok a koniec
+# Príkazy: dopredu, vlavo, vpravo, poloz, zdvihni
+zaciatok
+  
+koniec
+</program>
+  <settings>
+    <max_climb>1</max_climb>
+    <brick_limit>-1</brick_limit>
+    <big_brick_limit>-1</big_brick_limit>
+    <mark_limit>-1</mark_limit>
+    <disabled_cmds>CLEAR,MARK</disabled_cmds>
+  </settings>
   <mission>
     <condition check="karel_pos" eval="failure" when="on_step" op="or" z="1"/>
     <condition check="sign" eval="success" when="on_step" op="or"/>

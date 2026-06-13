@@ -424,7 +424,7 @@
   // F1: uložiť svet do súboru (cez export_world)
   $('btn-world-save').onclick = () => {
     _pendingExport = (karxml) => download((state.meta.title || 'svet') + '.karxml', karxml, 'application/xml');
-    ws.exportWorld(editor.getValue());
+    ws.exportWorld(editor.getValue(), renderer.getCamera());
   };
   // F2: publikovať / uložiť zdieľaný svet (admin) do volume.
   // Default id = práve editovaný svet → uloženie prepíše (= editovanie zdieľaného sveta).
@@ -435,7 +435,7 @@
     _pendingExport = (karxml) => api.publishWorld(id, karxml)
       .then(() => { _curWorldId = id; loadWorldsDropdown(id); setStatus(null, '✓ Uložené: ' + id); })
       .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.detail || err.error || 'chyba') + '</p>', null, true));
-    ws.exportWorld(editor.getValue());
+    ws.exportWorld(editor.getValue(), renderer.getCamera());
   };
   // F-admin: zmazať vybraný publikovaný svet
   $('btn-world-del').onclick = () => {
@@ -505,7 +505,7 @@
         .then(r => { setStatus('status.ready', 'Pripravený'); renderShare(r.assignment_id); })
         .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
     };
-    ws.exportWorld(editor.getValue());
+    ws.exportWorld(editor.getValue(), renderer.getCamera());
   };
   // verejná adresa pre žiacke linky (IP/hostname:port) — uložená v prehliadači
   function shareBase() {

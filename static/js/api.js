@@ -139,5 +139,10 @@ class KarelWS {
   getState()     { this.send('get_state'); }
   loadWorld(o)   { this.send('load_world', o); }   // {karxml} | {world_id}
   applySettings(o){ this.send('apply_settings', o); }
-  exportWorld(program) { this.send('export_world', program != null ? { program } : {}); }
+  exportWorld(program, camera) {
+    const f = {};
+    if (program != null) f.program = program;
+    if (camera) f.camera = camera;
+    this.send('export_world', f);
+  }
 }

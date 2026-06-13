@@ -83,6 +83,19 @@ def test_run_to_wall():
     assert wd.karel_x == 9   # pri východnej stene
 
 
+def test_camera_view_roundtrip():
+    """Uložený pohľad kamery (az/el/dist) sa zapamätá aj bez zamknutia kamery."""
+    w = k.World(8, 8)
+    w.settings.camera_az = 1.234
+    w.settings.camera_el = 0.567
+    w.settings.camera_dist = 22.5
+    assert w.settings.camera_locked is False     # neuzamknuté, ale aj tak sa uloží
+    w2 = k.World.from_xml(w.to_xml())
+    assert abs(w2.settings.camera_az - 1.234) < 1e-6
+    assert abs(w2.settings.camera_el - 0.567) < 1e-6
+    assert abs(w2.settings.camera_dist - 22.5) < 1e-6
+
+
 def test_world01_success_requires_mark():
     """Svet 01: úspech = dôjsť na značku (3,1), nie len skončiť na muriku.
     Strážca proti regresii falošného úspechu pri prejdení len časti muriku."""
