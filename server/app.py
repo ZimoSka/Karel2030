@@ -45,7 +45,8 @@ async def _no_cache_static(request, call_next):
         resp.headers['Cache-Control'] = 'no-cache'
     return resp
 # Publikované svety (admin) — perzistentné na volume, popri baked worlds/
-_PUBLISHED_DIR = os.path.join(os.environ.get('KAREL_DATA_DIR', './data'), 'worlds')
+_DATA_DIR      = os.environ.get('KAREL_DATA_DIR', './data')
+_PUBLISHED_DIR = os.path.join(_DATA_DIR, 'worlds')
 os.makedirs(_PUBLISHED_DIR, exist_ok=True)
 
 import re as _re
