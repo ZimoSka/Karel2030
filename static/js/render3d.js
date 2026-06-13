@@ -63,13 +63,15 @@ function _loadVisualSettings() {
 
 function _saveVisualSettings(vs) {
   try {
-    // Neukladaj veľké textúry do localStorage (limit ~5 MB) — iba dataURL < 1 MB
-    const safe = JSON.parse(JSON.stringify(vs));
-    Object.values(safe).forEach(v => {
-      if (v.textureUrl && v.textureUrl.length > 1_000_000) v.textureUrl = null;
-    });
-    localStorage.setItem('karel_visual', JSON.stringify(safe));
-  } catch (e) { /* ignore quota */ }
+    localStorage.setItem('karel_visual', JSON.stringify(vs));
+  } catch (e) {
+    // Quota prekročená — ulož bez textúr (farby zostanú)
+    try {
+      const safe = JSON.parse(JSON.stringify(vs));
+      Object.values(safe).forEach(v => { if (v.textureUrl) v.textureUrl = null; });
+      localStorage.setItem('karel_visual', JSON.stringify(safe));
+    } catch (e2) { /* ignore */ }
+  }
 }
 
 class KarelRenderer {

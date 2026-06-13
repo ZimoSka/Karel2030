@@ -426,48 +426,45 @@
   }
 
   $('btn-app-settings').onclick = () => {
+    const isAdmin = document.body.classList.contains('admin');
     const langOpts = [...$('ui-lang').options]
       .map(o => `<option value="${o.value}"${o.value === uiLang ? ' selected' : ''}>${o.textContent}</option>`).join('');
-    const isAdmin = document.body.classList.contains('admin');
-    const curSkin = localStorage.getItem('karel_skin') || 'grogu_small';
-    const skinOpts = KarelRenderer.skinList(isAdmin)
-      .map(s => `<option value="${s.id}"${s.id === curSkin ? ' selected' : ''}>${s.label}</option>`).join('');
 
-    // Vizuálne nastavenia
-    const vis = renderer.getVisualSettings();
-    const visRows = [
-      { key: 'wall',      label: 'Murik',        hasVis: true,  hasTex: true  },
-      { key: 'floor',     label: 'Podlaha',       hasVis: true,  hasTex: true  },
-      { key: 'grid',      label: 'Grid podlahy',  hasVis: true,  hasTex: false },
-      { key: 'sky',       label: 'Okolie',        hasVis: true,  hasTex: true  },
-      { key: 'brick',     label: 'Tehla',         hasVis: false, hasTex: true  },
-      { key: 'big_brick', label: 'Kvader',        hasVis: false, hasTex: true  },
-      { key: 'mark',      label: 'Značka',        hasVis: false, hasTex: true  },
-    ];
-    const visTableRows = visRows.map(r => {
-      const v = vis[r.key] || {};
-      const checked = (r.hasVis && v.visible !== false) ? ' checked' : '';
-      const visCell = r.hasVis
-        ? `<input type="checkbox" class="vis-cb" data-key="${r.key}"${checked}>`
-        : `<span style="color:var(--fg2);font-size:.75em">vždy</span>`;
-      const color = v.color || '#ffffff';
-      const texName = (v.mode === 'texture' && v.textureUrl) ? '📄' : '';
-      const texBtn = r.hasTex
-        ? `<button class="vis-tex-btn mini-btn" data-key="${r.key}" title="Vybrať textúru zo súboru">📁</button>` +
-          `<span class="vis-tex-name" id="vis-tn-${r.key}">${texName}</span>` +
-          `<button class="vis-tex-clr mini-btn" data-key="${r.key}" title="Odstrániť textúru" style="${texName ? '' : 'display:none'}">✕</button>`
-        : '';
-      return `<tr>
-        <td>${r.label}</td>
-        <td>${visCell}</td>
-        <td><input type="color" class="vis-col" data-key="${r.key}" value="${color}"></td>
-        <td>${texBtn}</td>
-      </tr>`;
-    }).join('');
+    let adminHtml = '';
+    if (isAdmin) {
+      const curSkin = localStorage.getItem('karel_skin') || 'grogu_small';
+      const skinOpts = KarelRenderer.skinList(true)
+        .map(s => `<option value="${s.id}"${s.id === curSkin ? ' selected' : ''}>${s.label}</option>`).join('');
 
-    dialog('⚙ ' + t('menu.settings', 'Nastavenia'),
-      `<div class="app-set">
-        <label class="app-set-row"><span>🌐 ${t('app_settings.language', 'Jazyk rozhrania')}</span><select id="opt-lang">${langOpts}</select></label>
+      const vis = renderer.getVisualSettings();
+      const visRows = [
+        { key: 'wall',      label: 'Murik',       hasVis: true,  hasTex: true  },
+        { key: 'floor',     label: 'Podlaha',      hasVis: true,  hasTex: true  },
+        { key: 'grid',      label: 'Grid podlahy', hasVis: true,  hasTex: false },
+        { key: 'sky',       label: 'Okolie',       hasVis: true,  hasTex: true  },
+        { key: 'brick',     label: 'Tehla',        hasVis: false, hasTex: true  },
+        { key: 'big_brick', label: 'Kvader',       hasVis: false, hasTex: true  },
+        { key: 'mark',      label: 'Značka',       hasVis: false, hasTex: true  },
+      ];
+      const visTableRows = visRows.map(r => {
+        const v = vis[r.key] || {};
+        const checked = (r.hasVis && v.visible !== false) ? ' checked' : '';
+        const visCell = r.hasVis
+          ? `<input type="checkbox" class="vis-cb" data-key="${r.key}"${checked}>`
+          : `<span style="color:var(--fg2);font-size:.75em">vždy</span>`;
+        const color = v.color || '#ffffff';
+        const texName = (v.mode === 'texture' && v.textureUrl) ? '📄' : '';
+        const texBtn = r.hasTex
+          ? `<button class="vis-tex-btn mini-btn" data-key="${r.key}" title="Vybrať textúru zo súboru">📁</button>` +
+            `<span class="vis-tex-name" id="vis-tn-${r.key}">${texName}</span>` +
+            `<button class="vis-tex-clr mini-btn" data-key="${r.key}" title="Odstrániť textúru" style="${texName ? '' : 'display:none'}">✕</button>`
+          : '';
+        return `<tr><td>${r.label}</td><td>${visCell}</td>` +
+               `<td><input type="color" class="vis-col" data-key="${r.key}" value="${color}"></td>` +
+               `<td>${texBtn}</td></tr>`;
+      }).join('');
+
+      adminHtml = `
         <label class="app-set-row"><span>👤 ${t('app_settings.skin', 'Vzhľad Karla')}</span><select id="opt-skin">${skinOpts}</select></label>
         <div class="app-set-hdr">🎨 Vzhľad sveta</div>
         <table class="vis-table">
@@ -475,24 +472,24 @@
           <tbody>${visTableRows}</tbody>
         </table>
         <input type="file" id="vis-file-input" accept="image/*" class="hidden">
-        <p id="vis-tex-note" class="vis-note hidden">⚠ Obrázok > 1 MB — textura aktívna len do obnovenia stránky.</p>
-        ${isAdmin ? _buildCustomModelHtml() : ''}
+        ${_buildCustomModelHtml()}`;
+    }
+
+    dialog('⚙ ' + t('menu.settings', 'Nastavenia'),
+      `<div class="app-set">
+        <label class="app-set-row"><span>🌐 ${t('app_settings.language', 'Jazyk rozhrania')}</span><select id="opt-lang">${langOpts}</select></label>
+        ${adminHtml}
       </div>`,
-      [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+      [{ label: 'OK' }]);
 
     $('opt-lang').onchange = (e) => setUiLang(e.target.value);
-    $('opt-skin').onchange = (e) => {
-      renderer.setSkin(e.target.value);
-      // ak sme prepli na custom, uisti sa že je panel viditeľný
-      const panel = $('custom-model-panel');
-      if (panel) panel.style.display = (e.target.value === 'custom') ? '' : 'none';
-    };
+
+    if (!isAdmin) return;
+
+    $('opt-skin').onchange = (e) => renderer.setSkin(e.target.value);
 
     // Live-apply vizuálnych nastavení
     let _texTargetKey = null;
-    function _applyVis() {
-      renderer.applyVisualSettings(renderer.getVisualSettings());
-    }
     document.querySelectorAll('.vis-cb').forEach(cb => {
       cb.onchange = () => {
         const v = renderer.getVisualSettings();
@@ -517,7 +514,6 @@
         renderer.applyVisualSettings(v);
         const tn = $('vis-tn-' + k); if (tn) tn.textContent = '';
         btn.style.display = 'none';
-        $('vis-tex-note').classList.add('hidden');
       };
     });
     $('vis-file-input').onchange = (e) => {
@@ -531,50 +527,39 @@
         const tn = $('vis-tn-' + k); if (tn) tn.textContent = '📄 ' + f.name.slice(0, 16);
         const clrBtn = document.querySelector(`.vis-tex-clr[data-key="${k}"]`);
         if (clrBtn) clrBtn.style.display = '';
-        if (dataUrl.length > 1_000_000) $('vis-tex-note').classList.remove('hidden');
       };
       reader.readAsDataURL(f);
     };
 
-    // Admin: vlastný GLB model
-    if (isAdmin) {
-      const glbBtn = $('opt-glb-btn');
-      const glbFile = $('opt-glb-file');
-      const yawSlider = $('opt-glb-yaw');
-      const yawVal = $('opt-glb-yaw-val');
-      const heightSlider = $('opt-glb-height');
-      const heightVal = $('opt-glb-height-val');
+    // Vlastný GLB model
+    const glbBtn = $('opt-glb-btn'), glbFile = $('opt-glb-file');
+    const yawSlider = $('opt-glb-yaw'), yawVal = $('opt-glb-yaw-val');
+    const heightSlider = $('opt-glb-height'), heightVal = $('opt-glb-height-val');
 
-      if (glbBtn) glbBtn.onclick = () => { glbFile.value = ''; glbFile.click(); };
-
-      if (glbFile) glbFile.onchange = (e) => {
-        const f = e.target.files && e.target.files[0]; if (!f) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const dataUrl = ev.target.result;
-          const yaw = (yawSlider ? +yawSlider.value : 90) * Math.PI / 180;
-          const height = yawSlider ? +heightSlider.value : 1.3;
-          renderer.setCustomSkin(dataUrl, yaw, height);
-          // Prepni skin dropdown na custom
-          const sel = $('opt-skin'); if (sel) sel.value = 'custom';
-          const nameEl = $('opt-glb-name'); if (nameEl) nameEl.textContent = f.name.slice(0, 24);
-          const noteEl = $('opt-glb-note'); if (noteEl) noteEl.style.display = '';
-        };
-        reader.readAsDataURL(f);
+    if (glbBtn) glbBtn.onclick = () => { glbFile.value = ''; glbFile.click(); };
+    if (glbFile) glbFile.onchange = (e) => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const yaw = (yawSlider ? +yawSlider.value : 90) * Math.PI / 180;
+        const height = heightSlider ? +heightSlider.value : 1.3;
+        renderer.setCustomSkin(ev.target.result, yaw, height);
+        const sel = $('opt-skin'); if (sel) sel.value = 'custom';
+        const nameEl = $('opt-glb-name'); if (nameEl) nameEl.textContent = f.name.slice(0, 24);
+        const noteEl = $('opt-glb-note'); if (noteEl) noteEl.style.display = '';
       };
-
-      if (yawSlider) yawSlider.oninput = () => {
-        const deg = +yawSlider.value;
-        if (yawVal) yawVal.textContent = deg + '°';
-        renderer.adjustCustomYaw(deg * Math.PI / 180);
-      };
-
-      if (heightSlider) heightSlider.oninput = () => {
-        const h = (+heightSlider.value).toFixed(2);
-        if (heightVal) heightVal.textContent = (+h).toFixed(1);
-        renderer.adjustCustomHeight(+h);
-      };
-    }
+      reader.readAsDataURL(f);
+    };
+    if (yawSlider) yawSlider.oninput = () => {
+      const deg = +yawSlider.value;
+      if (yawVal) yawVal.textContent = deg + '°';
+      renderer.adjustCustomYaw(deg * Math.PI / 180);
+    };
+    if (heightSlider) heightSlider.oninput = () => {
+      const h = (+heightSlider.value).toFixed(2);
+      if (heightVal) heightVal.textContent = (+h).toFixed(1);
+      renderer.adjustCustomHeight(+h);
+    };
   };
   // tlačidlá priameho ovládania majú title = primárne slovo (pre ws.direct)
   function rebuildActionTitles() {
