@@ -20,43 +20,42 @@ Admin mode is unlocked by clicking **🔒 Admin** in the toolbar and entering th
 
 ---
 
-## Running with Docker (recommended)
+## Running
 
-Docker is the primary deployment method. The image runs on Linux and handles all dependencies.
+**Requirement:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) or Docker Engine (Linux). No other software needed — no git, no Python, no cloning.
 
-### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) or Docker Engine (Linux)
-- `docker compose` (included with Docker Desktop)
-
-### Quick start
+### Start
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/ZimoSka/Karel2030.git
-cd Karel2030
-
-# 2. Create the .env file with the admin password
-echo "KarelAdminPWD=yourSecretPassword" > .env
-
-# 3. Build and start
-docker compose up -d
-
-# 4. Open in browser
-# http://localhost:8000/
+docker run -d \
+  -p 8000:8000 \
+  -e KarelAdminPWD=yourSecretPassword \
+  -v karel_data:/data \
+  --restart unless-stopped \
+  --name karel2030 \
+  ghcr.io/zimoska/karel2030:latest
 ```
 
-### Stopping and restarting
+Open **http://localhost:8000/**. Replace `yourSecretPassword` with your chosen admin password, or remove the `-e KarelAdminPWD=…` line to disable admin login.
+
+### Common operations
 
 ```bash
-docker compose down          # stop
-docker compose up -d         # start again (uses existing image)
-docker compose up -d --build # rebuild image (after code changes)
+docker stop karel2030          # stop
+docker start karel2030         # start again
+
+# Update to the latest version:
+docker pull ghcr.io/zimoska/karel2030:latest
+docker stop karel2030 && docker rm karel2030
+# then run the docker run command above again
 ```
 
-### After code changes (JS, Python, templates)
+### Different port (e.g. port 80)
 
 ```bash
-docker compose build --no-cache && docker compose up -d
+docker run -d -p 80:8000 -e KarelAdminPWD=… -v karel_data:/data \
+  --restart unless-stopped --name karel2030 \
+  ghcr.io/zimoska/karel2030:latest
 ```
 
 ---

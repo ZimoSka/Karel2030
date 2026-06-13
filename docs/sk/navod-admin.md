@@ -20,43 +20,42 @@ Admin režim sa odomkne kliknutím na **🔒 Admin** v toolbare a zadaním hesla
 
 ---
 
-## Spustenie cez Docker (odporúčané)
+## Spustenie
 
-Docker je primárny spôsob nasadenia. Obraz beží na Linuxe a zahŕňa všetky závislosti.
+**Požiadavka:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) alebo Docker Engine (Linux). Nič iné nie je potrebné — žiadny git, žiadny Python, žiadne klonovanie.
 
-### Predpoklady
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) alebo Docker Engine (Linux)
-- `docker compose` (súčasť Docker Desktop)
-
-### Rýchly štart
+### Spustenie
 
 ```bash
-# 1. Klonovanie repozitára
-git clone https://github.com/ZimoSka/Karel2030.git
-cd Karel2030
-
-# 2. Vytvor súbor .env s admin heslom
-echo "KarelAdminPWD=tvojeHeslo" > .env
-
-# 3. Zostavenie a spustenie
-docker compose up -d
-
-# 4. Otvoriť v prehliadači
-# http://localhost:8000/
+docker run -d \
+  -p 8000:8000 \
+  -e KarelAdminPWD=tvojeHeslo \
+  -v karel_data:/data \
+  --restart unless-stopped \
+  --name karel2030 \
+  ghcr.io/zimoska/karel2030:latest
 ```
 
-### Zastavenie a reštart
+Otvorte **http://localhost:8000/**. Nahraďte `tvojeHeslo` zvoleným admin heslom, alebo odstráňte riadok `-e KarelAdminPWD=…` na vypnutie admin prihlásenia.
+
+### Bežné operácie
 
 ```bash
-docker compose down          # zastaviť
-docker compose up -d         # spustiť znova (použije existujúci obraz)
-docker compose up -d --build # prestaviť obraz (po zmenách kódu)
+docker stop karel2030          # zastaviť
+docker start karel2030         # spustiť znova
+
+# Aktualizácia na najnovšiu verziu:
+docker pull ghcr.io/zimoska/karel2030:latest
+docker stop karel2030 && docker rm karel2030
+# potom znova spusti docker run príkaz vyššie
 ```
 
-### Po zmenách kódu (JS, Python, šablóny)
+### Iný port (napr. port 80)
 
 ```bash
-docker compose build --no-cache && docker compose up -d
+docker run -d -p 80:8000 -e KarelAdminPWD=… -v karel_data:/data \
+  --restart unless-stopped --name karel2030 \
+  ghcr.io/zimoska/karel2030:latest
 ```
 
 ---

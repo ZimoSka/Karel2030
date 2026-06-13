@@ -22,22 +22,27 @@ each student's progress live.
 
 **Requirement:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) must be installed and running.
 
-**Step 1 — set the admin password.** Create a file called `.env` in the project folder with this content:
-```
-KarelAdminPWD=yourSecretPassword
-```
-(Choose any password. Leave the file empty or omit it to disable admin login.)
-
-**Step 2 — start the server:**
 ```bash
-docker compose up -d
+docker run -d \
+  -p 8000:8000 \
+  -e KarelAdminPWD=yourSecretPassword \
+  -v karel_data:/data \
+  --restart unless-stopped \
+  --name karel2030 \
+  ghcr.io/zimoska/karel2030:latest
 ```
 
-**Step 3 — open in browser:** http://localhost:8000/
+Then open **http://localhost:8000/**.
 
-That's it. Karel 2030 is running. To stop it: `docker compose down`.
+Replace `yourSecretPassword` with a password of your choice — this protects the **admin** functions (publishing/deleting worlds). To disable admin login, remove the `-e KarelAdminPWD=…` line.
 
-> For advanced configuration (publishing from a different machine, data backup, offline classrooms) see **[docs/admin-guide.md](docs/admin-guide.md)**.
+| Command | What it does |
+|---------|-------------|
+| `docker stop karel2030` | Stop the server |
+| `docker start karel2030` | Start it again |
+| `docker pull ghcr.io/zimoska/karel2030:latest && docker restart karel2030` | Update to the latest version |
+
+> Worlds and student data are stored in the Docker volume `karel_data` and survive restarts and updates. For backup, port mapping to a different port, or offline (no-internet) setup, see **[docs/admin-guide.md](docs/admin-guide.md)**.
 
 > The original **desktop** app still lives in this repo: `python karel2010.py`. The web version is the actively developed one.
 
