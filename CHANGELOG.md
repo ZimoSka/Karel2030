@@ -8,6 +8,19 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 1.3.0 — Vizuálne nastavenia sveta + Grogu malý + oprava orientácie
+
+- **Vizuálne nastavenia sveta** v ⚙ Nastavenia: farba/textúra + viditeľnosť pre
+  Murik, Podlahu, Grid, Okolie; len farba/textúra pre Tehlu, Kvader, Značku.
+  Aplikujú sa naživo, ukladajú do localStorage. Textúry z lokálneho súboru (PNG/JPG…);
+  textúry > 1 MB sa neukladajú (session-only) s upozornením.
+- **Grogu malý** (`grogu_small.glb`, ~4.8 MB) — nový default skin (bola 21 MB verzia).
+  Grogu HD (`grogu.glb`) ostáva ako voliteľný skin v menu. Oba gitignored (Disney IP).
+- **Oprava orientácie GLB modelu**: `yaw = -π/2` (GLB štandard: +Z dopredu → Karel: +X
+  dopredu). Komentár v `KAREL_SKINS` vysvetľuje ako nastaviť `yaw` pre ďalšie modely.
+- `KarelRenderer.skinList()` — statická metóda pre dynamický zoznam skinov v dialógu.
+- `renderer.getVisualSettings()` / `applyVisualSettings(vs)` — verejné API renderera.
+
 ## 1.2.0 — Okno nastavení + výber skinu (Grogu default)
 
 - Nové **⚙ Nastavenia** (ikona v lište, pre všetkých): jazyk rozhrania +
