@@ -62,6 +62,28 @@ a `_load_ui_lang()` mutujú stav modulu — `_T`/`_cmds_*` to vidia automaticky.
 
 ---
 
+## ⚠️ Pravidlo: Svety — zdroj pravdy je repo `worlds/`, in-app úpravy treba PULLNÚŤ
+
+Svety existujú na dvoch miestach:
+- **baked** `worlds/` v image (zo zdroja/gitu) — **zdroj pravdy**
+- **publikované** na volume `data/worlds/` (učiteľ ich uloží v appke cez 📤, admin) —
+  pri zhode `id` **prepíšu baked** za behu (`_world_files()`), prežijú `docker run -v`,
+  ale **NIE sú v gite** → pri čistom nasadení / novom volume sa stratia.
+
+**Preto: in-app úpravy svetov treba zachytiť do gitu, inak sa „zabudnú".**
+Rutina **pred každým rebuildom** (a kedykoľvek to učiteľ chce uložiť):
+```
+pwsh scripts/sync_worlds.ps1 pull   # volume -> worlds/ (konflikty NEprepíše, vypíše)
+git add worlds/ && git commit && git push
+docker build … && docker run …      # baked teraz obsahuje úpravy
+```
+Pri konflikte (rovnaké `id`, iný obsah na oboch stranách) skript zmeny **nezlúči
+automaticky** — treba ručne reconcilovať (napr. zachovať opravu z repa + `disabled_cmds`
+z volume) a potom zmazať/aktualizovať volume verziu (`docker exec … rm /data/worlds/{id}.karxml`),
+aby po rebuilde vyhrala baked verzia.
+
+---
+
 ## ⚠️ Pravidlo: /compact — nikdy bez povolenia
 
 Príkaz `/compact` nespúšťať automaticky. Vždy sa opýtať používateľa a počkať na jeho súhlas.

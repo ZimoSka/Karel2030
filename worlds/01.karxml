@@ -83,6 +83,13 @@
   <program>Zacatok
  
 Koniec</program>
+  <settings>
+    <max_climb>1</max_climb>
+    <brick_limit>-1</brick_limit>
+    <big_brick_limit>-1</big_brick_limit>
+    <mark_limit>-1</mark_limit>
+    <disabled_cmds>CLEAR,DROP,DROP_BIG,MARK,PICK</disabled_cmds>
+  </settings>
   <mission>
     <condition check="karel_pos" eval="failure" when="on_step" op="or" negate="true" z="1"/>
     <condition check="sign" eval="success" when="on_finish" op="or"/>

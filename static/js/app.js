@@ -39,6 +39,7 @@
     $('dlg-title').textContent = title;
     $('dlg-body').innerHTML = bodyHtml;
     $('dialog').classList.toggle('failure', !!failure);
+    $('dialog').classList.remove('dlg-wide');   // široký dialóg len kde sa explicitne nastaví
     const bb = $('dlg-buttons');
     bb.innerHTML = '';
     (buttons || [{ label: 'OK' }]).forEach(b => {
@@ -506,30 +507,50 @@
     };
     ws.exportWorld(editor.getValue());
   };
+  // verejná adresa pre žiacke linky (IP/hostname:port) — uložená v prehliadači
+  function shareBase() {
+    return (localStorage.getItem('karel_share_base') || location.host).trim();
+  }
+  function shareUrl(path) {                 // path = '/s/{token}'
+    let b = shareBase();
+    if (!/^https?:\/\//i.test(b)) b = location.protocol + '//' + b;
+    return b.replace(/\/+$/, '') + path;
+  }
   function renderShare(aid) {
     api.progress(aid).then(rows => {
-      const origin = location.origin;
       const list = (rows || []).map((r, i) => {
-        const url = origin + r.url;
+        const url = shareUrl(r.url);
         const stat = r.solved ? `✅ vyriešil · ${_fmtDate(r.completed_at || r.updated)}`
                    : r.has_work ? `✏️ ${_fmtDate(r.updated)}` : '— nezačal';
         const view = r.has_work ? `<button class="prog-view" data-i="${i}" title="Zobraziť program žiaka">👁</button>` : '';
         return `<div class="share-row" data-tok="${r.token}">` +
-               `<span class="share-name" title="${_esc(r.name)}">${_esc(r.name) || ('žiak ' + (i + 1))}</span>` +
-               `<input class="share-url" readonly value="${url}">` +
-               `<button class="share-copy" data-url="${url}" title="Kopíruj link">📋</button>` +
-               `<span style="min-width:130px;color:var(--fg-dim);font-size:12px">${stat}</span>` +
-               view +
-               `<button class="share-del" data-tok="${r.token}" title="Zmazať žiaka">🗑</button></div>`;
+               `<div class="share-line1">` +
+                 `<span class="share-name" title="${_esc(r.name)}">${_esc(r.name) || ('žiak ' + (i + 1))}</span>` +
+                 `<span class="share-stat">${stat}</span>` +
+                 `<span class="share-acts">${view}<button class="share-del" data-tok="${r.token}" title="Zmazať žiaka">🗑</button></span>` +
+               `</div>` +
+               `<div class="share-line2">` +
+                 `<input class="share-url" readonly data-path="${r.url}" value="${url}">` +
+                 `<button class="share-copy" data-path="${r.url}" title="Kopíruj link">📋</button>` +
+               `</div></div>`;
       }).join('');
       const body =
+        '<div class="share-base"><label>🌐 Adresa pre žiakov:</label>' +
+        `<input id="share-base" value="${_esc(shareBase())}" placeholder="localhost:8000" ` +
+        'title="Verejná IP/hostname a port, na ktorom je Karel dostupný pre žiakov"></div>' +
         '<p>Žiaci tohto sveta — každý má vlastný trvalý link. Pridaj žiaka, sleduj pokrok, alebo zmaž.</p>' +
-        '<div class="share-add" style="display:flex;gap:6px;margin-bottom:8px">' +
-        '<input id="share-newname" placeholder="Meno žiaka" autocomplete="off" ' +
-        'style="flex:1;background:var(--bg-dark);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px">' +
+        '<div class="share-add"><input id="share-newname" placeholder="Meno žiaka" autocomplete="off">' +
         '<button id="share-addbtn" class="accent">➕ Pridať žiaka</button></div>' +
         '<div id="share-links">' + (list || '<p style="color:var(--fg-dim)">Zatiaľ žiadni žiaci.</p>') + '</div>';
       dialog('👥 Zdieľanie žiakom', body, [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+      $('dialog').classList.add('dlg-wide');
+      // zmena verejnej adresy → ulož + prepočítaj všetky linky naživo
+      $('share-base').oninput = () => {
+        localStorage.setItem('karel_share_base', $('share-base').value.trim());
+        document.querySelectorAll('#share-links .share-url').forEach(inp => {
+          inp.value = shareUrl(inp.dataset.path);
+        });
+      };
       const add = () => {
         const nm = ($('share-newname').value || '').trim();
         api.addLink(aid, nm).then(() => renderShare(aid)).catch(err =>
@@ -539,7 +560,7 @@
       $('share-newname').onkeydown = (e) => { if (e.key === 'Enter') add(); };
       $('share-newname').focus();
       document.querySelectorAll('.share-copy').forEach(b => {
-        b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(b.dataset.url); b.textContent = '✓'; setTimeout(() => b.textContent = '📋', 1200); };
+        b.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(shareUrl(b.dataset.path)); b.textContent = '✓'; setTimeout(() => b.textContent = '📋', 1200); };
       });
       document.querySelectorAll('.share-del').forEach(b => {
         b.onclick = () => {
