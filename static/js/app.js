@@ -442,13 +442,13 @@
 
       const vis = renderer.getVisualSettings();
       const visRows = [
-        { key: 'wall',      label: 'Murik',       hasVis: true,  hasTex: true  },
-        { key: 'floor',     label: 'Podlaha',      hasVis: true,  hasTex: true  },
-        { key: 'grid',      label: 'Grid podlahy', hasVis: true,  hasTex: false },
-        { key: 'sky',       label: 'Okolie',       hasVis: true,  hasTex: true  },
-        { key: 'brick',     label: 'Tehla',        hasVis: false, hasTex: true  },
-        { key: 'big_brick', label: 'Kvader',       hasVis: false, hasTex: true  },
-        { key: 'mark',      label: 'Značka',       hasVis: false, hasTex: true  },
+        { key: 'wall',      label: t('app_settings.vis_lbl_wall',      'Múrik'),       hasVis: true,  hasTex: true  },
+        { key: 'floor',     label: t('app_settings.vis_lbl_floor',     'Podlaha'),     hasVis: true,  hasTex: true  },
+        { key: 'grid',      label: t('app_settings.vis_lbl_grid',      'Grid podlahy'),hasVis: true,  hasTex: false },
+        { key: 'sky',       label: t('app_settings.vis_lbl_sky',       'Okolie'),      hasVis: true,  hasTex: true  },
+        { key: 'brick',     label: t('app_settings.vis_lbl_brick',     'Tehla'),       hasVis: false, hasTex: true  },
+        { key: 'big_brick', label: t('app_settings.vis_lbl_big_brick', 'Kvader'),      hasVis: false, hasTex: true  },
+        { key: 'mark',      label: t('app_settings.vis_lbl_mark',      'Značka'),      hasVis: false, hasTex: true  },
       ];
       const visTableRows = visRows.map(r => {
         const v = vis[r.key] || {};
