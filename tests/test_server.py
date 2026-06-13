@@ -165,6 +165,33 @@ def test_assignment_errors():
                        json={}).status_code == 400
 
 
+def test_direct_command_reset_on_failure():
+    """Reset pri neúspechu musí fungovať aj pri priamom (grafickom) kroku,
+    nielen po behu programu. Svet 01: krok dozadu = pád z plošiny → failure."""
+    w = kc.World.from_xml('worlds/01.karxml')
+    w.mission_reset_on_failure = True
+    start = (w.karel_x, w.karel_y)
+    aid = client.post('/api/assignments',
+                      json={'karxml': w.to_xml(), 'title': '01'}).json()['assignment_id']
+    token = client.post(f'/api/assignments/{aid}/links',
+                        json={'name': 'X'}).json()['link']['token']
+    with client.websocket_connect(f'/ws/{token}') as ws:
+        ws.receive_json()                       # connect state
+        ws.send_json({'v': 1, 'type': 'direct', 'cmd': 'dozadu'})
+        msgs = []
+        for _ in range(20):
+            m = ws.receive_json(); msgs.append(m)
+            if m['type'] == 'state' and m.get('reason') == 'reset':
+                break
+        types = [m['type'] for m in msgs]
+        assert 'mission' in types
+        assert any(m.get('result') == 'failure' for m in msgs if m['type'] == 'mission')
+        reset = [m for m in msgs if m['type'] == 'state' and m.get('reason') == 'reset']
+        assert reset, 'svet sa nezresetoval po neúspechu priameho kroku'
+        kp = reset[-1]['state']['karel']
+        assert (kp['x'], kp['y']) == start      # Karel späť na štarte
+
+
 # ---------------- WS: žiacka session ----------------
 
 def test_ws_connect_and_run():

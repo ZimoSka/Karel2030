@@ -171,4 +171,11 @@ class Session:
             html = w.success_html if result == 'success' else w.failure_html
             out.append(_v1({'type': 'mission', 'result': result,
                             'message_html': html}))
+            # reset sveta pri neúspechu aj pri priamom (grafickom/príkazovom) ovládaní
+            if result == 'failure' and w.mission_reset_on_failure:
+                self.world = self.base.copy()
+                self.world.reset_inventory()
+                self.itp = self._new_itp()
+                out.append(_v1({'type': 'state', 'reason': 'reset',
+                                'state': world_to_state(self.world, full=self.teacher)}))
         return out
