@@ -285,7 +285,7 @@
     ws.on('parse_error', m => {
       setRunning(false);
       dialog(t('limit.title', 'Chyba programu'),
-        `<p>${m.message}</p><p style="color:var(--fg-dim)">Riadok: ${m.line}</p>`, null, true);
+        `<p>${m.message}</p><p style="color:var(--fg-dim)">${t('status.line','Riadok')}: ${m.line}</p>`, null, true);
     });
     ws.on('error', m => {
       setRunning(false);
@@ -411,7 +411,7 @@
           <span>${t('app_settings.glb_file','GLB súbor')}</span>
           <span style="display:flex;gap:6px;align-items:center">
             <button id="opt-glb-btn" class="mini-btn">📁 ${t('app_settings.glb_choose','Vybrať…')}</button>
-            <span id="opt-glb-name" style="font-size:12px;color:var(--fg-dim)">${cfg.hasModel ? '(načítaný)' : '–'}</span>
+            <span id="opt-glb-name" style="font-size:12px;color:var(--fg-dim)">${cfg.hasModel ? t('app_settings.glb_status_loaded','(načítaný)') : '–'}</span>
           </span>
         </div>
         <input type="file" id="opt-glb-file" accept=".glb,.gltf" class="hidden">
@@ -429,7 +429,7 @@
             <span id="opt-glb-height-val" style="min-width:30px;text-align:right">${h}</span>
           </span>
         </div>
-        <p class="vis-note" id="opt-glb-note" style="display:none">⚠ Vlastný model sa reloaduje každú reláciu — uložte GLB súbor na rovnaké miesto.</p>
+        <p class="vis-note" id="opt-glb-note" style="display:none">⚠ ${t('app_settings.glb_note_reload','Vlastný model sa reloaduje každú reláciu — uložte GLB súbor na rovnaké miesto.')}</p>
       </div>`;
   }
 
@@ -703,7 +703,7 @@
   }
   $('btn-share').onclick = () => {
     if (!state) return;
-    setStatus(null, 'Pripravujem zdieľanie…');
+    setStatus(null, t('share.preparing', 'Pripravujem zdieľanie…'));
     _pendingExport = (karxml) => {
       api.ensureAssignment(_shareWorldKey(), karxml, (state.meta && state.meta.title) || 'Úloha')
         .then(r => { setStatus('status.ready', 'Pripravený'); renderShare(r.assignment_id); })
@@ -724,29 +724,29 @@
     api.progress(aid).then(rows => {
       const list = (rows || []).map((r, i) => {
         const url = shareUrl(r.url);
-        const stat = r.solved ? `✅ vyriešil · ${_fmtDate(r.completed_at || r.updated)}`
-                   : r.has_work ? `✏️ ${_fmtDate(r.updated)}` : '— nezačal';
-        const view = r.has_work ? `<button class="prog-view" data-i="${i}" title="Zobraziť program žiaka">👁</button>` : '';
+        const stat = r.solved ? `✅ ${t('share.status_solved','vyriešil')} · ${_fmtDate(r.completed_at || r.updated)}`
+                   : r.has_work ? `✏️ ${_fmtDate(r.updated)}` : `— ${t('share.status_not_started','nezačal')}`;
+        const view = r.has_work ? `<button class="prog-view" data-i="${i}" title="${t('share.tt_view_prog','Zobraziť program žiaka')}">👁</button>` : '';
         return `<div class="share-row" data-tok="${r.token}">` +
                `<div class="share-line1">` +
-                 `<span class="share-name" title="${_esc(r.name)}">${_esc(r.name) || ('žiak ' + (i + 1))}</span>` +
+                 `<span class="share-name" title="${_esc(r.name)}">${_esc(r.name) || (t('share.student_label','žiak') + ' ' + (i + 1))}</span>` +
                  `<span class="share-stat">${stat}</span>` +
-                 `<span class="share-acts">${view}<button class="share-del" data-tok="${r.token}" title="Zmazať žiaka">🗑</button></span>` +
+                 `<span class="share-acts">${view}<button class="share-del" data-tok="${r.token}" title="${t('share.tt_delete_student','Zmazať žiaka')}">🗑</button></span>` +
                `</div>` +
                `<div class="share-line2">` +
                  `<input class="share-url" readonly data-path="${r.url}" value="${url}">` +
-                 `<button class="share-copy" data-path="${r.url}" title="Kopíruj link">📋</button>` +
+                 `<button class="share-copy" data-path="${r.url}" title="${t('share.tt_copy_link','Kopíruj link')}">📋</button>` +
                `</div></div>`;
       }).join('');
       const body =
-        '<div class="share-base"><label>🌐 Adresa pre žiakov:</label>' +
+        `<div class="share-base"><label>🌐 ${t('share.lbl_base_addr','Adresa pre žiakov')}:</label>` +
         `<input id="share-base" value="${_esc(shareBase())}" placeholder="localhost:8000" ` +
-        'title="Verejná IP/hostname a port, na ktorom je Karel dostupný pre žiakov"></div>' +
-        '<p>Žiaci tohto sveta — každý má vlastný trvalý link. Pridaj žiaka, sleduj pokrok, alebo zmaž.</p>' +
-        '<div class="share-add"><input id="share-newname" placeholder="Meno žiaka" autocomplete="off">' +
-        '<button id="share-addbtn" class="accent">➕ Pridať žiaka</button></div>' +
-        '<div id="share-links">' + (list || '<p style="color:var(--fg-dim)">Zatiaľ žiadni žiaci.</p>') + '</div>';
-      dialog('👥 Zdieľanie žiakom', body, [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
+        `title="${t('share.tt_base_addr','Verejná IP/hostname a port, na ktorom je Karel dostupný pre žiakov')}"></div>` +
+        `<p>${t('share.intro','Žiaci tohto sveta — každý má vlastný trvalý link. Pridaj žiaka, sleduj pokrok, alebo zmaž.')}</p>` +
+        `<div class="share-add"><input id="share-newname" placeholder="${t('share.placeholder_name','Meno žiaka')}" autocomplete="off">` +
+        `<button id="share-addbtn" class="accent">➕ ${t('share.btn_add_student','Pridať žiaka')}</button></div>` +
+        `<div id="share-links">` + (list || `<p style="color:var(--fg-dim)">${t('share.no_students','Zatiaľ žiadni žiaci.')}</p>`) + '</div>';
+      dialog(`👥 ${t('share.title','Zdieľanie žiakom')}`, body, [{ label: t('world_settings.btn_cancel', 'Zavrieť') }]);
       $('dialog').classList.add('dlg-wide');
       // zmena verejnej adresy → ulož + prepočítaj všetky linky naživo
       $('share-base').oninput = () => {
@@ -770,17 +770,17 @@
         b.onclick = () => {
           const row = b.closest('.share-row');
           const nm = row && row.querySelector('.share-name').textContent;
-          if (!confirm('Zmazať žiaka „' + nm + '" a jeho prácu?')) return;
+          if (!confirm(t('share.confirm_delete','Zmazať žiaka „{name}" a jeho prácu?').replace('{name}', nm))) return;
           api.deleteLink(b.dataset.tok).then(() => renderShare(aid)).catch(() => {});
         };
       });
       document.querySelectorAll('.prog-view').forEach(b => b.onclick = () => {
         const r = rows[+b.dataset.i];
-        dialog('Program — ' + (r.name || 'žiak'),
+        dialog(t('share.prog_title','Program') + ' — ' + (r.name || t('share.student_label','žiak')),
           '<pre style="background:var(--bg-dark);border:1px solid var(--border);border-radius:6px;padding:8px;max-height:300px;overflow:auto;white-space:pre-wrap;color:var(--fg)">' +
           _esc(r.program_text) + '</pre>',
-          [{ label: '← Späť', action: () => renderShare(aid) },
-           { label: '↧ Načítať do editora', action: () => { editor.setValue(r.program_text || ''); } }]);
+          [{ label: `← ${t('share.btn_back','Späť')}`, action: () => renderShare(aid) },
+           { label: `↧ ${t('share.btn_load_editor','Načítať do editora')}`, action: () => { editor.setValue(r.program_text || ''); } }]);
       });
     }).catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.message || 'chyba') + '</p>', null, true));
   }

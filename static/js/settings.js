@@ -143,8 +143,8 @@ const KarelSettings = (function () {
     p.appendChild(field('world_settings.lbl_width', 'Šírka:', w));
     p.appendChild(field('world_settings.lbl_height', 'Výška:', h));
     // U5: jasné X / Y (výška = Z, preto nemiešať)
-    p.appendChild(field('', 'Karel X:', kx));
-    p.appendChild(field('', 'Karel Y:', ky));
+    p.appendChild(field('world_settings.lbl_karel_x', 'Karel X:', kx));
+    p.appendChild(field('world_settings.lbl_karel_y', 'Karel Y:', ky));
     p.appendChild(field('world_settings.frame_dir', 'Smer Karla', dir));
     p.appendChild(el('div', { class: 'set-sep', text: T('world_settings.frame_move', 'Pohyb — obmedzenia') }));
     // max_climb: 0..N (0 = nevylezie, default 1) — bez „neobmedzene"
@@ -228,11 +228,11 @@ const KarelSettings = (function () {
     const neg = c.negate ? '¬' : '';
     let d = c.check;
     if (c.check === 'karel_pos') d = `Karel @ (${c.x ?? '?'},${c.y ?? '?'})` + (c.z != null ? ` v=${c.z}` : '');
-    else if (c.check === 'cell_state') d = `bunka (${c.x},${c.y})`;
-    else if (c.check === 'sign') d = 'značka pod Karlom';
-    else if (c.check === 'brick_ahead') d = 'tehla pred Karlom';
-    else if (c.check === 'wall_ahead') d = 'stena pred Karlom';
-    else if (c.check === 'snapshot') d = 'snímok miestnosti';
+    else if (c.check === 'cell_state') d = `${T('goal_condition.disp_cell','bunka')} (${c.x},${c.y})`;
+    else if (c.check === 'sign') d = T('goal_condition.disp_sign','značka pod Karlom');
+    else if (c.check === 'brick_ahead') d = T('goal_condition.disp_brick_ahead','tehla pred Karlom');
+    else if (c.check === 'wall_ahead') d = T('goal_condition.disp_wall_ahead','stena pred Karlom');
+    else if (c.check === 'snapshot') d = T('goal_condition.disp_snapshot','snímok miestnosti');
     return `${prefix}${ev}${wh} ${neg}${d}`;
   }
 
