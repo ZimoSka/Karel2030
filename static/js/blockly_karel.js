@@ -224,6 +224,15 @@ const KarelBlockly = (() => {
     gen.ORDER_ATOMIC = 0;
     const fb = gen.forBlock;
 
+    // scrub_ reťazí nasledujúce bloky v stohu (next connection).
+    // Bez tejto definície sa vygeneruje len prvý blok a ďalšie v stohu sa
+    // zahodia (napr. príkaz za vnútorným cyklom).
+    gen.scrub_ = function(block, code, opt_thisOnly) {
+      const next = block.nextConnection && block.nextConnection.targetBlock();
+      const nextCode = (opt_thisOnly || !next) ? '' : gen.blockToCode(next);
+      return code + nextCode;
+    };
+
     fb['karel_program'] = function(block) {
       const body = gen.statementToCode(block, 'BODY');
       return KW.BEGIN + '\n' + body + KW.END + '\n';
