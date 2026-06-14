@@ -906,12 +906,15 @@
         document.body.classList.remove('editor-medium', 'editor-full');
         if (size === 'medium') document.body.classList.add('editor-medium');
         if (size === 'full')   document.body.classList.add('editor-full');
-        if (_blocksInited) setTimeout(() => KarelBlockly.resize(), 250);
-        setTimeout(() => editor.refresh(), 250);
+        setTimeout(() => {
+          if (_blocksInited) KarelBlockly.resize();
+          editor.refresh();
+          renderer.resize();   // 3D si dorovná aspect (inak sa splošti)
+        }, 250);
       };
     });
 
-    // Resize Blockly keď sa zmení veľkosť okna
+    // Resize Blockly + 3D keď sa zmení veľkosť okna
     window.addEventListener('resize', () => { if (_blocksInited) KarelBlockly.resize(); });
   }
 

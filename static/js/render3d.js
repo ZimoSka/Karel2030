@@ -143,6 +143,9 @@ class KarelRenderer {
     this.camera.updateProjectionMatrix();
   }
 
+  // Verejné API — zavolaj po zmene veľkosti kontajnera (napr. size buttony)
+  resize() { this._resize(); }
+
   _animate() {
     requestAnimationFrame(() => this._animate());
     this.controls.update();
