@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Karel 2030 — FastAPI server podľa docs/api.md (REST §2, WS §3)."""
-import os, json, asyncio, configparser, time, secrets
+import os, json, asyncio, configparser, time, secrets, shutil
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -48,6 +48,26 @@ async def _no_cache_static(request, call_next):
 _DATA_DIR      = os.environ.get('KAREL_DATA_DIR', './data')
 _PUBLISHED_DIR = os.path.join(_DATA_DIR, 'worlds')
 os.makedirs(_PUBLISHED_DIR, exist_ok=True)
+
+
+def _seed_worlds_if_empty():
+    """Volume (_PUBLISHED_DIR) je JEDINÝ zdroj svetov. Baked svety (_WORLDS_DIR
+    v image) slúžia len ako počiatočná výplň: pri prvom spustení (prázdny volume)
+    sa skopírujú do volume. Odvtedy je volume autoritatívny — zmazaný svet sa
+    už neobnoví."""
+    try:
+        has_any = any(f.lower().endswith('.karxml') for f in os.listdir(_PUBLISHED_DIR))
+    except FileNotFoundError:
+        has_any = False
+    if has_any or not os.path.isdir(_WORLDS_DIR):
+        return
+    for fname in os.listdir(_WORLDS_DIR):
+        if fname.lower().endswith('.karxml'):
+            shutil.copy(os.path.join(_WORLDS_DIR, fname),
+                        os.path.join(_PUBLISHED_DIR, fname))
+
+
+_seed_worlds_if_empty()
 
 import re as _re
 _SAFE_WID = _re.compile(r'^[A-Za-z0-9 _-]{1,64}$')
@@ -230,14 +250,14 @@ def _load_visual(world_id: str) -> dict:
 
 
 def _world_files() -> dict:
-    """id (stem súboru) → cesta k .karxml. Spája baked worlds/ + publikované
-    (data/worlds/); publikované pri zhode id prepíšu baked."""
+    """id (stem súboru) → cesta k .karxml. Jediný zdroj = volume
+    (_PUBLISHED_DIR). Baked svety sa do volume naseedujú pri prvom spustení
+    (_seed_worlds_if_empty) — žiadne miešanie dvoch úložísk."""
     out = {}
-    for d in (_WORLDS_DIR, _PUBLISHED_DIR):
-        if os.path.isdir(d):
-            for fname in sorted(os.listdir(d)):
-                if fname.lower().endswith('.karxml'):
-                    out[fname[:-7]] = os.path.join(d, fname)
+    if os.path.isdir(_PUBLISHED_DIR):
+        for fname in sorted(os.listdir(_PUBLISHED_DIR)):
+            if fname.lower().endswith('.karxml'):
+                out[fname[:-7]] = os.path.join(_PUBLISHED_DIR, fname)
     return out
 
 
