@@ -166,6 +166,27 @@ button.act { flex: 1 1 40%; font-size: 12px; padding: 6px 4px; line-height: 1.2;
 .cmd-item.cond   { color: #44dddd; }
 .cmd-item.proc   { color: #cc99ff; }
 
+/* ===== Loading screen ===== */
+#loading-screen {
+  position: fixed; inset: 0; background: var(--bg-dark);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; transition: opacity .3s;
+}
+#loading-screen.fade-out { opacity: 0; pointer-events: none; }
+#loading-screen.hidden { display: none; }
+#loading-box {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+.loading-spinner {
+  width: 48px; height: 48px;
+  border: 5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-msg { color: var(--fg); font-size: 15px; opacity: .8; }
+
 /* ===== Dialóg ===== */
 #overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.6);

@@ -264,11 +264,18 @@
            `${b}\n  \n${e}\n`;
   }
 
+  function hideLoadingScreen() {
+    const el = $('loading-screen');
+    if (!el || el.classList.contains('hidden')) return;
+    el.classList.add('fade-out');
+    setTimeout(() => el.classList.add('hidden'), 320);
+  }
+
   function wireWs() {
     ws.on('_open', () => $('conn-dot').classList.add('on'));
     ws.on('_close', () => { $('conn-dot').classList.remove('on'); setRunning(false); });
 
-    ws.on('state', m => onState(m.state, m.reason));
+    ws.on('state', m => { hideLoadingScreen(); onState(m.state, m.reason); });
     // step správy neposielajú settings/mission (full=False) — zlúčime, aby ostali
     // zachované (inak by sa po pohybe nedali otvoriť Nastavenia, B2)
     ws.on('step', m => {
@@ -838,7 +845,12 @@
       api.adminStatus().then(s => { if (s && s.admin) setAdmin(true); }).catch(() => {});
       // načítaj globálne vizuálne nastavenia (textúry, farby) zo servera
       api.getGlobalVisual().then(v => { if (v && Object.keys(v).length) renderer.applyVisualSettings(v); }).catch(() => {});
-      loadWorldsDropdown(localStorage.getItem('karel_last_world') || null);
+      const _lastWorld = localStorage.getItem('karel_last_world') || null;
+      if (_lastWorld) {
+        const lm = $('loading-msg');
+        if (lm) lm.textContent = 'Načítavam svet ' + _lastWorld + '…';
+      }
+      loadWorldsDropdown(_lastWorld);
       // učiteľ: vlastná session — session_id generuje frontend (viď NOTES.md)
       let sid = sessionStorage.getItem('karel_session');
       if (!sid) {
