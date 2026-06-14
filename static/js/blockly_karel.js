@@ -376,6 +376,7 @@ const KarelBlockly = (() => {
   function initWorkspace(divId) {
     workspace = Blockly.inject(divId, {
       toolbox: buildToolbox(),
+      toolboxPosition: 'end',   // toolbox + flyout vpravo (nezakrýva kód vľavo)
       grid: { spacing: 20, length: 3, colour: '#2a2a2a', snap: true },
       zoom: { controls: true, wheel: true, startScale: 0.65 },
       trashcan: true,
