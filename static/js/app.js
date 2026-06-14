@@ -540,19 +540,37 @@
         btn.style.display = 'none';
       };
     });
-    $('vis-file-input').onchange = (e) => {
-      const f = e.target.files && e.target.files[0]; if (!f || !_texTargetKey) return;
+    // Zmenší obrázok cez canvas (max strana 1024 px, JPEG q0.85) → malá textúra.
+    // Bez tohto sa plné rozlíšenie uloží ako base64 (desiatky MB v visual.json).
+    function _loadTextureDataUrl(file, cb) {
+      const MAX = 1024;
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const dataUrl = ev.target.result;
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          try { cb(c.toDataURL('image/jpeg', 0.85)); }
+          catch (e) { cb(ev.target.result); }   // fallback (napr. CORS)
+        };
+        img.onerror = () => cb(ev.target.result);
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    $('vis-file-input').onchange = (e) => {
+      const f = e.target.files && e.target.files[0]; if (!f || !_texTargetKey) return;
+      _loadTextureDataUrl(f, (dataUrl) => {
         const v = renderer.getVisualSettings(); const k = _texTargetKey;
         v[k].mode = 'texture'; v[k].textureUrl = dataUrl;
         _applyAndSave(v);
         const tn = $('vis-tn-' + k); if (tn) tn.textContent = '📄 ' + f.name.slice(0, 16);
         const clrBtn = document.querySelector(`.vis-tex-clr[data-key="${k}"]`);
         if (clrBtn) clrBtn.style.display = '';
-      };
-      reader.readAsDataURL(f);
+      });
     };
 
     // Vlastný GLB model
