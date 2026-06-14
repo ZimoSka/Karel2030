@@ -106,7 +106,14 @@ async def admin_login(request: Request):
     if mins:
         return _err(429, 'locked', f'Príliš veľa pokusov. Skús znova o {mins} min.')
     if not ADMIN_PWD:
-        return _err(403, 'admin_disabled', 'Admin heslo nie je na serveri nastavené.')
+        # Heslo nie je nastavené → otvorený admin režim (lokálne použitie jedným
+        # učiteľom). Klik na Admin aktivuje režim bez výzvy na heslo.
+        token = secrets.token_urlsafe(24)
+        _admin_sessions[token] = time.time() + ADMIN_TTL
+        resp = JSONResponse({'ok': True})
+        resp.set_cookie(ADMIN_COOKIE, token, httponly=True,
+                        samesite='lax', max_age=ADMIN_TTL)
+        return resp
     try:
         body = await request.json()
     except Exception:

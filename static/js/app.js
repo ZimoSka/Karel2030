@@ -670,11 +670,7 @@
     b.title = isAdmin ? t('admin_login.status_active', 'Admin režim aktívny')
                       : t('admin_login.status_login', 'Admin — prihlás sa');
   }
-  $('btn-admin').onclick = () => {
-    if (isAdmin) {   // odhlásenie
-      api.adminLogout().finally(() => { setAdmin(false); setStatus(null, t('admin_login.status_login', 'Admin — prihlás sa')); });
-      return;
-    }
+  function _showAdminLoginDialog() {
     const loginLabel = t('admin_login.btn_login', 'Prihlásiť');
     dialog(t('admin_login.title', '🔒 Admin prihlásenie'),
       `<p>${t('admin_login.prompt', 'Zadaj admin heslo:')}</p>` +
@@ -696,6 +692,22 @@
     };
     if (loginBtn) loginBtn.onclick = submit;
     setTimeout(() => { const i = $('admin-pwd'); if (i) { i.focus(); i.onkeydown = (e) => { if (e.key === 'Enter') submit(); }; } }, 50);
+  }
+
+  $('btn-admin').onclick = () => {
+    if (isAdmin) {   // odhlásenie
+      api.adminLogout().finally(() => { setAdmin(false); setStatus(null, t('admin_login.status_login', 'Admin — prihlás sa')); });
+      return;
+    }
+    // Ak server nemá nastavené heslo → aktivuj admin priamo bez výzvy
+    api.adminStatus().then(s => {
+      if (s && s.configured === false) {
+        api.adminLogin('').then(() => { setAdmin(true); setStatus(null, '✓ Admin režim zapnutý'); })
+                          .catch(() => _showAdminLoginDialog());
+      } else {
+        _showAdminLoginDialog();
+      }
+    }).catch(() => _showAdminLoginDialog());
   };
 
   // F4: otvoriť/uložiť program
