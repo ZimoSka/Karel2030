@@ -506,12 +506,13 @@
     // Live-apply vizuálnych nastavení + server-save ak je otvorený svet
     let _texTargetKey = null;
     let _visSaveTimer = null;
+    // Vizuál (modely Karla, textúry podlahy/tehál/kvádrov, farby) je GLOBÁLNY —
+    // platí pre všetky svety. Ukladá sa len do globálneho visual.json, nie per-svet.
     function _applyAndSave(v) {
       renderer.applyVisualSettings(v);
       clearTimeout(_visSaveTimer);
       _visSaveTimer = setTimeout(() => {
         api.saveGlobalVisual(v).catch(() => {});
-        if (_curWorldId) api.saveWorldVisual(_curWorldId, v).catch(() => {});
       }, 800);
     }
     document.querySelectorAll('.vis-cb').forEach(cb => {
