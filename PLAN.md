@@ -140,9 +140,45 @@ push do `ghcr.io/zimoska/karel2030:latest` (+ :SHA), manifest potvrdený.
   na volume, prežíva reload. Fix `<base href="/">` pre assety na /s/{token}.
   Overené end-to-end v kontajneri (assignment→link→workspace→reload).
 
-### T5 — Blockly editor  ⏸ po T3
-- Custom bloky pre Karel jazyk + generátor → Karel text → existujúci interpreter
-- Prepínač Text ↔ Bloky; prieskum hotový (vzor Otto Blockly/BlocklyDuino)
+### T5 — Blockly editor  🟡 ĎALŠÍ KROK (v2.x.x)
+
+**Cieľ:** druhý tab „🧩 Bloky" vedľa „Môj program" (textového editora).
+Žiak kladie bloky → automaticky sa generuje Karel textový kód (jednosmerné).
+Pri prepnutí na textový tab žiak vidí vygenerovaný kód a môže ho ďalej písať.
+
+**Knižnica:** Google Blockly (CDN alebo vendorovaná).
+
+**Architektonický prístup:**
+- `static/js/blockly_karel.js` — definícia Karel blokov + generátor
+- Tab `#tab-blocks` vedľa `#tab-program` v ProgramPanel
+- Prepínač: klik na tab → skryje/zobrazí panel, pri prepnutí Text→Bloky sa neparsuje
+  (jednosmerné: Bloky → Text, nie Text → Bloky)
+- `Blockly.inject('#blockly-div', { toolbox })` + `workspace.addChangeListener`
+  → pri každej zmene generuje `Blockly.Karel.workspaceToCode(workspace)` do editora
+- Beh programu funguje ako doteraz — číta z textového editora
+
+**Karel bloky (min. sada pre v2.1.0):**
+| Kategória | Bloky |
+|---|---|
+| Pohyb | dopredu, dozadu, vlavo, vpravo |
+| Tehly | poloz, zdvihni, poloz-velku, zdvihni-velku |
+| Značka | oznac, odznac |
+| Rýchlosť | pomaly, rychlo |
+| Štruktúry | opakuj N krat…koniec, kym podmienka rob…koniec, ak…potom…inak…koniec |
+| Podmienky | stena, tehla, volno, znacka, pravda, nepravda + nie |
+| Procedúry | prikaz … zaciatok…koniec, volanie procedúry |
+
+**Súbory na vytvorenie/zmenu:**
+- `static/js/blockly_karel.js` — NOVÝ: bloky + generátor
+- `static/index.html` — pridať Blockly script tag + `#blockly-div` + tab
+- `static/css/style.css` — styling pre Blockly div + tab prepínač
+- `static/js/app.js` — tab logika, generovanie do editora pri zmene workspace
+
+**Postupné kroky:**
+1. Základná integrácia Blockly (inject, toolbox s pohybovými blokmi, generátor → textový editor)
+2. Kompletná sada blokov (štruktúry, podmienky, procedúry)
+3. Lokalizácia toolboxu (SK/EN) podľa `prog_lang` nastavenia sveta
+4. Zakázané príkazy (`disabled_cmds`) skryť z toolboxu
 
 ---
 

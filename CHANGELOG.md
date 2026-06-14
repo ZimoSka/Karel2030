@@ -8,6 +8,33 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 2.0.0 — GUI parita s desktopom kompletná; prvý stabilný release pre školy
+
+Milestone: webová verzia Karla 2030 dosiahla plnú paritu funkcií s desktop Karel 2010.
+Nasadená na Linux server (`http://10.0.1.22:8090/`) pre žiakov a učiteľov.
+
+**Nové od v1.4.0:**
+- Globálne vizuálne nastavenia (farby/textúry) sa ukladajú na server a platia pre
+  všetkých používateľov naraz; prežijú reštart kontajnera (`data/visual.json`).
+- Grogu GLB modely pridané priamo do Docker image (nie gitignored).
+- Oprava: výber „—" v dropdowne Svety načíta prázdny builtin svet (predtým chyba).
+- Oprava: `_DATA_DIR` NameError pri štarte kontajnera s globálnymi vizuálnymi nastaveniami.
+
+**Kompletné od v1.0.0 (T3.2 GUI parita):**
+- Tlačidlá pohľadu kamery (Def/Pred/Vrch/Bok)
+- Príkazový režim (taby Graficky/Príkazovo + log)
+- Filter príkazov so skupinami + „Tvoje príkazy" z editora
+- Nastavenia sveta (6 záložiek): resize, title, limity, zakázané príkazy, kamera
+- Editor misií (6 typov podmienok, eval/when/op/negate, snapshot)
+- Otvoriť/Uložiť svet a program (lokálny disk + admin publish do volume)
+- Prepínač jazyka (UI jazyk + prog jazyk per-svet)
+- Admin režim chránený heslom (env `KarelAdminPWD`, lockout po 3 pokusoch)
+- Zdieľanie pre žiakov (persistentné linky, autosave, sledovanie vyriešenia)
+- Rich text editor pre zadanie/úspech/neúspech misie
+- Docker image na `ghcr.io/zimoska/karel2030`, GitHub Actions CI
+
+**Ďalší krok: T5 Blockly editor (v2.x.x)**
+
 ## 1.4.0 — Vizuálne nastavenia uložené na serveri (pre všetkých používateľov)
 
 - Vizuálne nastavenia (farby, textúry, viditeľnosť) sa ukladajú na server ako
