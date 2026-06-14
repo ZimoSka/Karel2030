@@ -16,6 +16,7 @@ storage = FileStorage()
 
 _ROOT       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _WORLDS_DIR = os.environ.get('KAREL_WORLDS_DIR', os.path.join(_ROOT, 'worlds'))
+_EXAMPLES_BAKED = os.environ.get('KAREL_EXAMPLES_DIR', os.path.join(_ROOT, 'examples'))
 _STATIC_DIR = os.path.join(_ROOT, 'static')
 
 
@@ -47,27 +48,30 @@ async def _no_cache_static(request, call_next):
 # Publikované svety (admin) — perzistentné na volume, popri baked worlds/
 _DATA_DIR      = os.environ.get('KAREL_DATA_DIR', './data')
 _PUBLISHED_DIR = os.path.join(_DATA_DIR, 'worlds')
+_EXAMPLES_DIR  = os.path.join(_DATA_DIR, 'examples')   # volume = jediný zdroj príkladov
 os.makedirs(_PUBLISHED_DIR, exist_ok=True)
+os.makedirs(_EXAMPLES_DIR, exist_ok=True)
 
 
-def _seed_worlds_if_empty():
-    """Volume (_PUBLISHED_DIR) je JEDINÝ zdroj svetov. Baked svety (_WORLDS_DIR
-    v image) slúžia len ako počiatočná výplň: pri prvom spustení (prázdny volume)
-    sa skopírujú do volume. Odvtedy je volume autoritatívny — zmazaný svet sa
-    už neobnoví."""
+def _seed_dir_if_empty(dst, src, suffix):
+    """Skopíruj baked súbory (src) do volume (dst) iba ak je dst prázdny.
+    Volume je odvtedy autoritatívny — zmazané položky sa neobnovia."""
     try:
-        has_any = any(f.lower().endswith('.karxml') for f in os.listdir(_PUBLISHED_DIR))
+        has_any = any(f.lower().endswith(suffix) for f in os.listdir(dst))
     except FileNotFoundError:
         has_any = False
-    if has_any or not os.path.isdir(_WORLDS_DIR):
+    if has_any or not os.path.isdir(src):
         return
-    for fname in os.listdir(_WORLDS_DIR):
-        if fname.lower().endswith('.karxml'):
-            shutil.copy(os.path.join(_WORLDS_DIR, fname),
-                        os.path.join(_PUBLISHED_DIR, fname))
+    for fname in os.listdir(src):
+        if fname.lower().endswith(suffix):
+            shutil.copy(os.path.join(src, fname), os.path.join(dst, fname))
 
 
-_seed_worlds_if_empty()
+# Volume je JEDINÝ zdroj svetov aj príkladov. Baked obsah (v image) slúži len
+# ako počiatočná výplň pri prvom spustení (prázdny volume). Odvtedy je volume
+# autoritatívny — zmazané položky sa neobnovia.
+_seed_dir_if_empty(_PUBLISHED_DIR, _WORLDS_DIR, '.karxml')
+_seed_dir_if_empty(_EXAMPLES_DIR, _EXAMPLES_BAKED, '.prg')
 
 import re as _re
 _SAFE_WID = _re.compile(r'^[A-Za-z0-9 _-]{1,64}$')
@@ -215,7 +219,19 @@ def langs_prog_one(code: str):
 
 @app.get('/api/examples')
 def examples():
-    return [{'name': n, 'program': p} for n, p in kc.EXAMPLES.items()]
+    """Príklady = .prg súbory na volume (_EXAMPLES_DIR). Názov = filename bez
+    prípony. Baked príklady sa naseedujú pri prvom spustení."""
+    out = []
+    if os.path.isdir(_EXAMPLES_DIR):
+        for fname in sorted(os.listdir(_EXAMPLES_DIR)):
+            if not fname.lower().endswith('.prg'):
+                continue
+            try:
+                with open(os.path.join(_EXAMPLES_DIR, fname), encoding='utf-8') as f:
+                    out.append({'name': fname[:-4], 'program': f.read()})
+            except Exception:
+                pass
+    return out
 
 
 _GLOBAL_VISUAL_PATH = os.path.join(_DATA_DIR, 'visual.json')

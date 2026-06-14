@@ -13,6 +13,7 @@ COPY server/     server/
 COPY static/     static/
 COPY lang/       lang/
 COPY worlds/     worlds/
+COPY examples/   examples/
 COPY VERSION     VERSION
 
 # Verzia buildu — odovzdané cez --build-arg (git SHA, čas)
