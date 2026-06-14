@@ -897,6 +897,20 @@
     $('tab-code-btn').onclick   = switchToCode;
     $('tab-blocks-btn').onclick = switchToBlocks;
 
+    // ── Size buttons (malé / stredné / celá obrazovka) ─────────────────────
+    document.querySelectorAll('.editor-size-btn').forEach(btn => {
+      btn.onclick = () => {
+        const size = btn.dataset.size;
+        document.querySelectorAll('.editor-size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.body.classList.remove('editor-medium', 'editor-full');
+        if (size === 'medium') document.body.classList.add('editor-medium');
+        if (size === 'full')   document.body.classList.add('editor-full');
+        if (_blocksInited) setTimeout(() => KarelBlockly.resize(), 250);
+        setTimeout(() => editor.refresh(), 250);
+      };
+    });
+
     // Resize Blockly keď sa zmení veľkosť okna
     window.addEventListener('resize', () => { if (_blocksInited) KarelBlockly.resize(); });
   }

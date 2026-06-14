@@ -188,6 +188,31 @@ const KarelBlockly = (() => {
         this.setColour(C_LOGIC);
       }
     };
+
+    // ── Definícia procedúry (prikaz X ... zaciatok ... koniec) ───────────────
+    Blockly.Blocks['karel_procedure'] = {
+      init: function() {
+        this.appendDummyInput()
+            .appendField('prikaz')
+            .appendField(new Blockly.FieldTextInput('MojaProcedura'), 'NAME');
+        this.appendStatementInput('BODY').setCheck(null);
+        this.appendDummyInput().appendField(KW.END);
+        this.setColour('#B87333');
+        this.setTooltip('Definícia vlastnej procedúry');
+      }
+    };
+
+    // ── Volanie procedúry ────────────────────────────────────────────────────
+    Blockly.Blocks['karel_call'] = {
+      init: function() {
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldTextInput('MojaProcedura'), 'NAME');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour('#B87333');
+        this.setTooltip('Volanie vlastnej procedúry');
+      }
+    };
   }
 
   // ── Generátor kódu ─────────────────────────────────────────────────────────
@@ -258,6 +283,16 @@ const KarelBlockly = (() => {
       const cond = gen.valueToCode(block, 'COND', gen.ORDER_ATOMIC) || KW.TRUE;
       return [KW.NOT + ' ' + cond, gen.ORDER_ATOMIC];
     };
+
+    fb['karel_procedure'] = function(block) {
+      const name = block.getFieldValue('NAME') || 'Procedura';
+      const body = gen.statementToCode(block, 'BODY');
+      return 'prikaz ' + name + '\n' + KW.BEGIN + '\n' + body + KW.END + '\n\n';
+    };
+
+    fb['karel_call'] = function(block) {
+      return (block.getFieldValue('NAME') || 'Procedura') + '\n';
+    };
   }
 
   // ── Toolbox (JSON) ─────────────────────────────────────────────────────────
@@ -312,6 +347,13 @@ const KarelBlockly = (() => {
             { kind: 'block', type: 'karel_not' },
           ]
         },
+        {
+          kind: 'category', name: 'Procedúry', colour: '#B87333',
+          contents: [
+            { kind: 'block', type: 'karel_procedure' },
+            { kind: 'block', type: 'karel_call' },
+          ]
+        },
       ]
     };
   }
@@ -326,7 +368,7 @@ const KarelBlockly = (() => {
     workspace = Blockly.inject(divId, {
       toolbox: buildToolbox(),
       grid: { spacing: 20, length: 3, colour: '#2a2a2a', snap: true },
-      zoom: { controls: true, wheel: true, startScale: 0.9 },
+      zoom: { controls: true, wheel: true, startScale: 0.65 },
       trashcan: true,
       theme: Blockly.Themes.Dark || Blockly.Theme.defineTheme('karelDark', {
         base: Blockly.Themes.Classic,
@@ -367,7 +409,13 @@ const KarelBlockly = (() => {
   function generateCode() {
     if (!workspace || !gen) return null;
     try {
-      return gen.workspaceToCode(workspace);
+      // Procedúry musia byť pred hlavným programom
+      const blocks = workspace.getTopBlocks(true);
+      const procs = blocks.filter(b => b.type === 'karel_procedure');
+      const main  = blocks.filter(b => b.type === 'karel_program');
+      const rest  = blocks.filter(b => b.type !== 'karel_procedure' && b.type !== 'karel_program');
+      const allOrdered = [...procs, ...main, ...rest];
+      return allOrdered.map(b => gen.blockToCode(b)).join('');
     } catch (e) {
       return null;
     }

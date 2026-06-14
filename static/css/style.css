@@ -130,8 +130,15 @@ button.act { flex: 1 1 40%; font-size: 12px; padding: 6px 4px; line-height: 1.2;
 #bottom {
   flex: 0 0 230px; display: flex; gap: 8px;
   padding: 8px; background: var(--bg-dark); border-top: 1px solid var(--border);
-  min-height: 0;
+  min-height: 0; transition: flex-basis .2s;
 }
+/* Veľkosti editora */
+body.editor-medium #bottom { flex-basis: 420px; }
+body.editor-full   #bottom { flex: 1 1 auto; }
+body.editor-full   #main   { display: none; }
+
+.editor-size-btn { opacity: .45; }
+.editor-size-btn.active { opacity: 1; color: var(--accent); }
 /* ===== Editor tabs (Kód / Bloky) ===== */
 #editor-wrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
 #editor-tabs {
