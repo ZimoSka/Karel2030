@@ -870,6 +870,35 @@
     }).catch(() => {});
     ws.speed(sliderToDelay(+$('speed').value));
     setTimeout(() => editor.refresh(), 100);
+
+    // ── Blockly tab ────────────────────────────────────────────────────────
+    let _blocksInited = false;
+
+    function switchToBlocks() {
+      $('code-panel').classList.add('hidden');
+      $('blocks-panel').classList.remove('hidden');
+      $('tab-code-btn').classList.remove('active');
+      $('tab-blocks-btn').classList.add('active');
+      if (!_blocksInited) {
+        _blocksInited = true;
+        KarelBlockly.init('blockly-div', code => editor.setValue(code));
+      }
+      KarelBlockly.resize();
+    }
+
+    function switchToCode() {
+      $('blocks-panel').classList.add('hidden');
+      $('code-panel').classList.remove('hidden');
+      $('tab-blocks-btn').classList.remove('active');
+      $('tab-code-btn').classList.add('active');
+      setTimeout(() => editor.refresh(), 50);
+    }
+
+    $('tab-code-btn').onclick   = switchToCode;
+    $('tab-blocks-btn').onclick = switchToBlocks;
+
+    // Resize Blockly keď sa zmení veľkosť okna
+    window.addEventListener('resize', () => { if (_blocksInited) KarelBlockly.resize(); });
   }
 
   boot();

@@ -116,12 +116,19 @@
 <!-- ===== Editor + zoznam príkazov ===== -->
 <div id="bottom">
   <div id="editor-wrap">
-    <h2>
-      <span data-i18n="program_panel.title">Môj program...</span>
+    <div id="editor-tabs">
+      <button class="editor-tab active" id="tab-code-btn">📝 <span data-i18n="program_panel.title">Kód</span></button>
+      <button class="editor-tab" id="tab-blocks-btn">🧩 Bloky</button>
+      <span class="editor-tab-spacer"></span>
       <button class="mini-btn" id="btn-prog-open" data-i18n-title="toolbar.tt_prog_open" title="Otvoriť program zo súboru">📂</button>
       <button class="mini-btn" id="btn-prog-save" data-i18n-title="toolbar.tt_prog_save" title="Uložiť program do súboru">💾</button>
-    </h2>
-    <textarea id="code"></textarea>
+    </div>
+    <div id="code-panel">
+      <textarea id="code"></textarea>
+    </div>
+    <div id="blocks-panel" class="hidden">
+      <div id="blockly-div"></div>
+    </div>
   </div>
   <div class="panel" id="cmds-panel">
     <h2 data-i18n="program_panel.cmd_list_hdr">Príkazy</h2>
@@ -183,7 +190,9 @@ loadSeq([
   ['vendor/GLTFLoader.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js'],
   ['vendor/codemirror.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js'],
   ['vendor/simple.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js'],
-  ['js/api.js'], ['js/mock.js'], ['js/render3d.js'], ['js/editor.js'], ['js/settings.js'], ['js/app.js'],
+  ['vendor/blockly.min.js', 'https://unpkg.com/blockly@12.5.1/blockly_compressed.js'],
+  ['js/api.js'], ['js/mock.js'], ['js/render3d.js'], ['js/editor.js'], ['js/settings.js'],
+  ['js/blockly_karel.js'], ['js/app.js'],
 ], function () {});
 </script>
 </body>
