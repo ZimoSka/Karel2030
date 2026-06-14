@@ -616,6 +616,10 @@
           _curWorldId = sel.value;
           localStorage.setItem('karel_last_world', sel.value);
           ws.loadWorld({ world_id: sel.value });
+        } else {
+          _curWorldId = null;
+          localStorage.removeItem('karel_last_world');
+          ws.loadWorld({});
         }
       };
     }).catch(() => {});

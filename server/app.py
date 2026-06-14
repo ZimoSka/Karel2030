@@ -599,7 +599,7 @@ async def _teacher_load_world(ws: WebSocket, session: Session, msg: dict):
             w = kc.World.from_xml(path)
             session.visual = _load_visual(wid)
         else:
-            raise ValueError('expected "karxml" or "world_id"')
+            w = kc.World.from_json(kc.BUILTIN_WORLD)
     except Exception as e:
         await ws.send_json({'v': 1, 'type': 'error', 'message': str(e)})
         return
