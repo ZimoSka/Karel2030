@@ -19,6 +19,7 @@
   let uiLang = localStorage.getItem('karel_ui_lang') || 'sk';
   const t = (k, dflt) => T[k] || dflt || k;
   let primaryKw = {};               // TOKEN → primárne slovo
+  let _syncBlocklyLang = () => {};  // prebuduje Blockly bloky po zmene jazyka (nastaví boot)
   let state = null;                 // posledný state JSON
   let running = false;
 
@@ -221,6 +222,7 @@
       updateCmdsList(lang);
       rebuildActionTitles();
       applyRestrictions(state);   // jazykové obmedzenia (Pattis) → sivé tlačidlá
+      _syncBlocklyLang();         // prebuduj blokové slová podľa prog jazyka
     }).catch(() => {});
   }
 
@@ -395,7 +397,7 @@
   function setUiLang(code) {
     uiLang = code; localStorage.setItem('karel_ui_lang', uiLang);
     if ($('ui-lang')) $('ui-lang').value = code;
-    return api.uiStrings(uiLang).then(s => { T = s; applyI18n(); updateCmdsList(); }).catch(() => {});
+    return api.uiStrings(uiLang).then(s => { T = s; applyI18n(); updateCmdsList(); _syncBlocklyLang(); }).catch(() => {});
   }
   function loadLangDropdowns() {
     api.uiLangs().then(ls => {
@@ -661,11 +663,11 @@
   // F2: publikovať / uložiť zdieľaný svet (admin) do volume.
   // Default id = práve editovaný svet → uloženie prepíše (= editovanie zdieľaného sveta).
   $('btn-world-pub').onclick = () => {
-    const id = prompt('Uložiť zdieľaný svet pod menom (existujúce meno = prepíše):',
-                      _curWorldId || state.meta.title || 'svet');
+    const id = prompt(t('toolbar.publish_prompt', 'Uložiť zdieľaný svet pod menom (existujúce meno = prepíše):'),
+                      _curWorldId || state.meta.title || t('toolbar.publish_default', 'svet'));
     if (!id) return;
     _pendingExport = (karxml) => api.publishWorld(id, karxml)
-      .then(() => { _curWorldId = id; loadWorldsDropdown(id); setStatus(null, '✓ Uložené: ' + id); })
+      .then(() => { _curWorldId = id; loadWorldsDropdown(id); setStatus(null, t('status.saved', '✓ Uložené:') + ' ' + id); })
       .catch(err => dialog(t('goal_condition.err_title', 'Chyba'), '<p>' + (err.detail || err.error || 'chyba') + '</p>', null, true));
     ws.exportWorld(editor.getValue(), renderer.getCamera());
   };
@@ -703,7 +705,7 @@
     const submit = () => {
       const pwd = ($('admin-pwd') || {}).value || '';
       api.adminLogin(pwd).then(() => {
-        hideDialog(); setAdmin(true); setStatus(null, '✓ Admin režim zapnutý');
+        hideDialog(); setAdmin(true); setStatus(null, t('status.admin_on', '✓ Admin režim zapnutý'));
       }).catch(err => {
         const m = $('admin-msg'); if (m) m.textContent = err.message || t('admin_login.error', 'Chyba prihlásenia');
         const inp = $('admin-pwd'); if (inp) { inp.value = ''; inp.focus(); }
@@ -721,7 +723,7 @@
     // Ak server nemá nastavené heslo → aktivuj admin priamo bez výzvy
     api.adminStatus().then(s => {
       if (s && s.configured === false) {
-        api.adminLogin('').then(() => { setAdmin(true); setStatus(null, '✓ Admin režim zapnutý'); })
+        api.adminLogin('').then(() => { setAdmin(true); setStatus(null, t('status.admin_on', '✓ Admin režim zapnutý')); })
                           .catch(() => _showAdminLoginDialog());
       } else {
         _showAdminLoginDialog();
@@ -879,7 +881,7 @@
       const _lastWorld = localStorage.getItem('karel_last_world') || null;
       if (_lastWorld) {
         const lm = $('loading-msg');
-        if (lm) lm.textContent = 'Načítavam svet ' + _lastWorld + '…';
+        if (lm) lm.textContent = t('status.loading_world', 'Načítavam svet') + ' ' + _lastWorld + '…';
       }
       loadWorldsDropdown(_lastWorld);
       // učiteľ: vlastná session — session_id generuje frontend (viď NOTES.md)
@@ -912,10 +914,29 @@
       $('tab-blocks-btn').classList.add('active');
       if (!_blocksInited) {
         _blocksInited = true;
-        KarelBlockly.init('blockly-div', code => editor.setValue(code));
+        KarelBlockly.init('blockly-div', code => editor.setValue(code),
+                          primaryKw, _blocklyLabels());
       }
       KarelBlockly.resize();
     }
+
+    // GUI texty pre Blockly (kategórie, tooltipy) z aktuálneho ui jazyka
+    function _blocklyLabels() {
+      return {
+        cat_motion:    t('program_panel.blocks_cat_motion', 'Pohyb'),
+        cat_action:    t('program_panel.blocks_cat_action', 'Akcie'),
+        cat_struct:    t('program_panel.blocks_cat_struct', 'Štruktúry'),
+        cat_cond:      t('program_panel.blocks_cat_cond', 'Podmienky'),
+        cat_proc:      t('program_panel.blocks_cat_proc', 'Procedúry'),
+        tip_program:   t('program_panel.blocks_tip_program', 'Hlavný program'),
+        tip_proc_def:  t('program_panel.blocks_tip_proc_def', 'Definícia vlastnej procedúry'),
+        tip_proc_call: t('program_panel.blocks_tip_proc_call', 'Volanie vlastnej procedúry'),
+      };
+    }
+    // Po zmene prog/ui jazyka prebuduj bloky (kľúčové slová + GUI texty)
+    _syncBlocklyLang = () => {
+      if (_blocksInited) KarelBlockly.setLang(primaryKw, _blocklyLabels());
+    };
 
     function switchToCode() {
       $('blocks-panel').classList.add('hidden');

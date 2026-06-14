@@ -14,11 +14,12 @@ const KarelBlockly = (() => {
   const C_COND    = '#5CB1D6';
   const C_LOGIC   = '#FF6680';
 
-  // ── Primárne kľúčové slová (default SK, aktualizuje setLang) ───────────────
+  // ── Programovacie kľúčové slová (TOKEN → slovo). Default SK; reálne hodnoty
+  // dodá init/setLang z prog jazyka sveta (lang/interpreter/*.lng). ────────────
   let KW = {
-    BEGIN:'zaciatok', END:'koniec',
+    BEGIN:'zaciatok', END:'koniec', PROCEDURE:'prikaz',
     FORWARD:'dopredu', BACK:'dozadu', LEFT:'vlavo', RIGHT:'vpravo',
-    DROP:'poloz', PICK:'zdvihni', DROP_BIG:'poloz-velku', PICK_BIG:'zdvihni-velku',
+    DROP:'poloz', PICK:'zdvihni', DROP_BIG:'kvader',
     MARK:'oznac', CLEAR:'odznac',
     SLOWLY:'pomaly', QUICKLY:'rychlo',
     REPEAT:'opakuj', TIMES:'krat',
@@ -26,6 +27,15 @@ const KarelBlockly = (() => {
     IF:'ak', THEN:'potom', ELSE:'inak',
     WALL:'stena', FREE:'volno', BRICK:'tehla', SIGN:'znacka',
     TRUE:'pravda', FALSE:'nepravda', NOT:'nie',
+  };
+
+  // ── GUI texty (názvy kategórií, tooltipy). Default SK; reálne hodnoty dodá
+  // init/setLang z ui jazyka (lang/{ui_lang}.ini → program_panel.*). ───────────
+  let _labels = {
+    cat_motion:'Pohyb', cat_action:'Akcie', cat_struct:'Štruktúry',
+    cat_cond:'Podmienky', cat_proc:'Procedúry',
+    tip_program:'Hlavný program', tip_proc_def:'Definícia vlastnej procedúry',
+    tip_proc_call:'Volanie vlastnej procedúry',
   };
 
   // ── Definície blokov ───────────────────────────────────────────────────────
@@ -43,7 +53,7 @@ const KarelBlockly = (() => {
         this.setColour('#7C4DFF');
         this.setDeletable(false);
         this.setMovable(false);
-        this.setTooltip('Hlavný program');
+        this.setTooltip(_labels.tip_program);
       }
     };
 
@@ -66,11 +76,11 @@ const KarelBlockly = (() => {
     });
 
     // ── Akčné bloky ─────────────────────────────────────────────────────────
+    // Pozn.: pick_big nie je programový príkaz (len GUI), preto tu nie je blok.
     const actionDefs = [
       ['karel_drop',      () => KW.DROP],
       ['karel_pick',      () => KW.PICK],
       ['karel_drop_big',  () => KW.DROP_BIG],
-      ['karel_pick_big',  () => KW.PICK_BIG],
       ['karel_mark',      () => KW.MARK],
       ['karel_clear',     () => KW.CLEAR],
       ['karel_slowly',    () => KW.SLOWLY],
@@ -189,16 +199,16 @@ const KarelBlockly = (() => {
       }
     };
 
-    // ── Definícia procedúry (prikaz X ... zaciatok ... koniec) ───────────────
+    // ── Definícia procedúry (prikaz X ... koniec) ───────────────────────────
     Blockly.Blocks['karel_procedure'] = {
       init: function() {
         this.appendDummyInput()
-            .appendField('prikaz')
-            .appendField(new Blockly.FieldTextInput('MojaProcedura'), 'NAME');
+            .appendField(KW.PROCEDURE)
+            .appendField(new Blockly.FieldTextInput(_PROC_DEFAULT), 'NAME');
         this.appendStatementInput('BODY').setCheck(null);
         this.appendDummyInput().appendField(KW.END);
         this.setColour('#B87333');
-        this.setTooltip('Definícia vlastnej procedúry');
+        this.setTooltip(_labels.tip_proc_def);
       }
     };
 
@@ -206,14 +216,15 @@ const KarelBlockly = (() => {
     Blockly.Blocks['karel_call'] = {
       init: function() {
         this.appendDummyInput()
-            .appendField(new Blockly.FieldTextInput('MojaProcedura'), 'NAME');
+            .appendField(new Blockly.FieldTextInput(_PROC_DEFAULT), 'NAME');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour('#B87333');
-        this.setTooltip('Volanie vlastnej procedúry');
+        this.setTooltip(_labels.tip_proc_call);
       }
     };
   }
+  const _PROC_DEFAULT = 'Procedura';
 
   // ── Generátor kódu ─────────────────────────────────────────────────────────
 
@@ -245,7 +256,6 @@ const KarelBlockly = (() => {
     fb['karel_drop']     = () => KW.DROP     + '\n';
     fb['karel_pick']     = () => KW.PICK     + '\n';
     fb['karel_drop_big'] = () => KW.DROP_BIG + '\n';
-    fb['karel_pick_big'] = () => KW.PICK_BIG + '\n';
     fb['karel_mark']     = () => KW.MARK     + '\n';
     fb['karel_clear']    = () => KW.CLEAR    + '\n';
     fb['karel_slowly']   = () => KW.SLOWLY   + '\n';
@@ -294,13 +304,13 @@ const KarelBlockly = (() => {
     };
 
     fb['karel_procedure'] = function(block) {
-      const name = block.getFieldValue('NAME') || 'Procedura';
+      const name = block.getFieldValue('NAME') || _PROC_DEFAULT;
       const body = gen.statementToCode(block, 'BODY');
-      return 'prikaz ' + name + '\n' + KW.BEGIN + '\n' + body + KW.END + '\n\n';
+      return KW.PROCEDURE + ' ' + name + '\n' + KW.BEGIN + '\n' + body + KW.END + '\n\n';
     };
 
     fb['karel_call'] = function(block) {
-      return (block.getFieldValue('NAME') || 'Procedura') + '\n';
+      return (block.getFieldValue('NAME') || _PROC_DEFAULT) + '\n';
     };
   }
 
@@ -311,7 +321,7 @@ const KarelBlockly = (() => {
       kind: 'categoryToolbox',
       contents: [
         {
-          kind: 'category', name: 'Pohyb', colour: C_MOTION,
+          kind: 'category', name: _labels.cat_motion, colour: C_MOTION,
           contents: [
             { kind: 'block', type: 'karel_forward' },
             { kind: 'block', type: 'karel_back' },
@@ -320,12 +330,11 @@ const KarelBlockly = (() => {
           ]
         },
         {
-          kind: 'category', name: 'Akcie', colour: C_ACTION,
+          kind: 'category', name: _labels.cat_action, colour: C_ACTION,
           contents: [
             { kind: 'block', type: 'karel_drop' },
             { kind: 'block', type: 'karel_pick' },
             { kind: 'block', type: 'karel_drop_big' },
-            { kind: 'block', type: 'karel_pick_big' },
             { kind: 'block', type: 'karel_mark' },
             { kind: 'block', type: 'karel_clear' },
             { kind: 'block', type: 'karel_slowly' },
@@ -333,7 +342,7 @@ const KarelBlockly = (() => {
           ]
         },
         {
-          kind: 'category', name: 'Štruktúry', colour: C_CONTROL,
+          kind: 'category', name: _labels.cat_struct, colour: C_CONTROL,
           contents: [
             {
               kind: 'block', type: 'karel_repeat',
@@ -345,7 +354,7 @@ const KarelBlockly = (() => {
           ]
         },
         {
-          kind: 'category', name: 'Podmienky', colour: C_COND,
+          kind: 'category', name: _labels.cat_cond, colour: C_COND,
           contents: [
             { kind: 'block', type: 'karel_wall' },
             { kind: 'block', type: 'karel_free' },
@@ -357,7 +366,7 @@ const KarelBlockly = (() => {
           ]
         },
         {
-          kind: 'category', name: 'Procedúry', colour: '#B87333',
+          kind: 'category', name: _labels.cat_proc, colour: '#B87333',
           contents: [
             { kind: 'block', type: 'karel_procedure' },
             { kind: 'block', type: 'karel_call' },
@@ -496,19 +505,31 @@ const KarelBlockly = (() => {
 
   // ── Verejné API ────────────────────────────────────────────────────────────
 
-  function init(divId, onCodeChange) {
+  function init(divId, onCodeChange, kw, labels) {
     _onCodeChange = onCodeChange;
+    if (kw) Object.assign(KW, kw);
+    if (labels) Object.assign(_labels, labels);
     defineBlocks();
-    createGenerator();
+    createGenerator();   // generátor číta KW za behu (closure) → netreba prebudovať
     initWorkspace(divId);
   }
 
-  function setLang(primaryKwMap) {
-    // Aktualizuje KW slovník a prebuduje etikety existujúcich blokov
-    if (!primaryKwMap) return;
-    Object.assign(KW, primaryKwMap);
-    // Bloky sa prebudujú až pri ďalšom použití (redefineBlocks nie je potrebné
-    // pre existujúci workspace — label zmeny treba riešiť inak; odložené na neskor)
+  // Zmena jazyka: prog kľúčové slová (kw, TOKEN→slovo) a/alebo GUI texty (labels).
+  // Bloky majú slová „zapečené" pri inštancii → prebudujeme: uložíme XML,
+  // predefinujeme bloky s novými slovami, načítame XML späť (zachová mená procedúr
+  // a počty opakovaní), aktualizujeme toolbox.
+  function setLang(kw, labels) {
+    if (kw) Object.assign(KW, kw);
+    if (labels) Object.assign(_labels, labels);
+    if (!workspace) return;
+    const xml = Blockly.Xml.workspaceToDom(workspace);
+    defineBlocks();
+    _suppressChange = true;
+    workspace.clear();
+    Blockly.Xml.domToWorkspace(xml, workspace);
+    _suppressChange = false;
+    if (workspace.updateToolbox) workspace.updateToolbox(buildToolbox());
+    requestAnimationFrame(() => _repositionControls());
   }
 
   function clearWorkspace() {
