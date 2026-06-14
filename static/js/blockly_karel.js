@@ -414,6 +414,69 @@ const KarelBlockly = (() => {
       const code = generateCode();
       if (code !== null) _onCodeChange(code);
     });
+
+    // Toolbox je vpravo → Blockly automaticky dá zoom+smetiak doľava, kde ich
+    // zakrýva program. Prepíšeme transform doprava (a smetiak zmenšíme).
+    _setupControlReposition();
+  }
+
+  // ── Reposícia zoom ovládačov + smetiaka doprava ────────────────────────────
+  let _ctrlObserver = null;
+
+  function _ctrlEls(svg) {
+    // .blocklyZoom matchuje jednotlivé tlačidlá → kontajner je ich rodič
+    const zoomBtn = svg.querySelector('.blocklyZoom');
+    return {
+      zoom:  zoomBtn ? zoomBtn.parentNode : null,
+      trash: svg.querySelector('.blocklyTrash'),
+    };
+  }
+
+  // Blockly dáva ovládače doľava (opačne než toolbox vpravo). Necháme Blockly
+  // vypočítané Y a prepíšeme len X na pravú stranu (vedľa toolboxu). Smetiak
+  // navyše zmenšíme.
+  function _flipRight(el, W, tbW, scale) {
+    if (!el) return;
+    const t = el.getAttribute('transform') || '';
+    const m = t.match(/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/);
+    if (!m) return;
+    const y = parseFloat(m[2]);
+    let w = 48;
+    try { w = el.getBBox().width * (scale || 1); } catch (e) { /* getBBox môže zlyhať */ }
+    const x = W - tbW - w - 14;
+    el.setAttribute('transform', `translate(${x}, ${y})${scale ? ' scale(' + scale + ')' : ''}`);
+  }
+
+  function _repositionControls() {
+    if (!workspace) return;
+    const svg = workspace.getParentSvg && workspace.getParentSvg();
+    if (!svg) return;
+    const W = svg.clientWidth;
+    if (!W) return;
+    const tb = workspace.getToolbox && workspace.getToolbox();
+    const tbW = tb ? tb.getWidth() : 0;
+    const { zoom, trash } = _ctrlEls(svg);
+    if (_ctrlObserver) _ctrlObserver.disconnect();   // nezachytávaj vlastné zápisy
+    _flipRight(zoom,  W, tbW, null);
+    _flipRight(trash, W, tbW, 0.6);
+    if (_ctrlObserver) _reobserveControls(svg);
+  }
+
+  function _reobserveControls(svg) {
+    const { zoom, trash } = _ctrlEls(svg);
+    [zoom, trash].forEach(el => {
+      if (el) _ctrlObserver.observe(el, { attributes: true, attributeFilter: ['transform'] });
+    });
+  }
+
+  function _setupControlReposition() {
+    const svg = workspace.getParentSvg && workspace.getParentSvg();
+    if (!svg) return;
+    _ctrlObserver = new MutationObserver(() => _repositionControls());
+    _reobserveControls(svg);
+    // počiatočná reposícia (po vykreslení)
+    requestAnimationFrame(() => _repositionControls());
+    setTimeout(() => _repositionControls(), 200);
   }
 
   function generateCode() {
@@ -461,6 +524,7 @@ const KarelBlockly = (() => {
 
   function resize() {
     if (workspace) Blockly.svgResize(workspace);
+    requestAnimationFrame(() => _repositionControls());
   }
 
   return { init, setLang, clearWorkspace, resize, generateCode };

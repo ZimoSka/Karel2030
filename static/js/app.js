@@ -910,6 +910,11 @@
     $('tab-blocks-btn').onclick = switchToBlocks;
 
     // ── Size buttons (malé / stredné / celá obrazovka) ─────────────────────
+    const _relayout = () => {
+      if (_blocksInited) KarelBlockly.resize();
+      editor.refresh();
+      renderer.resize();   // 3D si dorovná aspect (inak sa splošti)
+    };
     document.querySelectorAll('.editor-size-btn').forEach(btn => {
       btn.onclick = () => {
         const size = btn.dataset.size;
@@ -918,12 +923,15 @@
         document.body.classList.remove('editor-medium', 'editor-full');
         if (size === 'medium') document.body.classList.add('editor-medium');
         if (size === 'full')   document.body.classList.add('editor-full');
-        setTimeout(() => {
-          if (_blocksInited) KarelBlockly.resize();
-          editor.refresh();
-          renderer.resize();   // 3D si dorovná aspect (inak sa splošti)
-        }, 250);
+        // CSS prechod #bottom (flex-basis .2s) → relayout až po dokončení,
+        // inak svgResize prečíta starú výšku (svg ostane malé)
+        _relayout();                       // okamžite
+        setTimeout(_relayout, 260);        // fallback po prechode
       };
+    });
+    // spoľahlivý relayout po dokončení CSS prechodu veľkosti
+    $('bottom') && $('bottom').addEventListener('transitionend', e => {
+      if (e.propertyName === 'flex-basis') _relayout();
     });
 
     // Resize Blockly + 3D keď sa zmení veľkosť okna
