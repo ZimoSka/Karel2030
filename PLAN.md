@@ -140,9 +140,15 @@ push do `ghcr.io/zimoska/karel2030:latest` (+ :SHA), manifest potvrdený.
   na volume, prežíva reload. Fix `<base href="/">` pre assety na /s/{token}.
   Overené end-to-end v kontajneri (assignment→link→workspace→reload).
 
-### T5 — Blockly editor  🟡 ĎALŠÍ KROK (v2.x.x)
+### T5 — Blockly editor  ✅ HOTOVÉ (v3.0.0)
 
-**Cieľ:** druhý tab „🧩 Bloky" vedľa „Môj program" (textového editora).
+Implementované v release v3.0.0: tab „Blokovo", Scratch-like bloky (Zelos),
+kategórie Pohyb/Akcie/Štruktúry/Podmienky/Procedúry, generovanie textového kódu
+naživo, 3 veľkosti okna, vlastné procedúry. Viacjazyčnosť: kľúčové slová ←
+prog_lang (Nastavenia sveta), kategórie ← GUI jazyk. `static/js/blockly_karel.js`
++ vendorovaný `blockly.min.js`. Detaily v CHANGELOG.md.
+
+**Pôvodný zámer (splnený):** druhý tab „Bloky" vedľa „Môj program" (textového editora).
 Žiak kladie bloky → automaticky sa generuje Karel textový kód (jednosmerné).
 Pri prepnutí na textový tab žiak vidí vygenerovaný kód a môže ho ďalej písať.
 

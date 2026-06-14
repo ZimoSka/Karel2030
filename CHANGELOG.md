@@ -8,6 +8,41 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 3.0.0 — FINAL: blokový editor, viacjazyčnosť, jeden zdroj dát na volume
+
+Veľký release. Karel 2030 má vizuálny blokový editor (Scratch-štýl), plnú
+viacjazyčnosť a jednotné úložisko na Docker volume.
+
+**Blokový editor (Blockly)** — nový tab „Blokovo" vedľa „Kód":
+- Scratch-like zaoblené bloky (Zelos renderer), bloky do seba zapadajú
+- Kategórie: Pohyb, Akcie, Štruktúry (opakuj/kým/ak/ak-inak), Podmienky, Procedúry
+- Jednosmerné: skladanie blokov generuje textový Karel kód naživo do editora
+- 3 veľkosti okna (malé/stredné/celá obrazovka); toolbox + ovládače vpravo
+- Vlastné procedúry (definícia + volanie)
+- **Viacjazyčnosť správne rozdelená:**
+  - kľúčové slová blokov (dopredu/forward…) ← programovací jazyk zo Nastavení sveta
+  - kategórie a tooltipy ← GUI jazyk; nedotýka sa kľúčových slov
+- Vendorovaný `blockly.min.js` (offline)
+
+**Jeden zdroj dát = Docker volume** (žiadne dva sklady):
+- Svety: len z volume `/data/worlds/`; baked svety sa naseedujú pri prvom
+  spustení (prázdny volume), mazania sú trvalé
+- Príklady: `.prg` súbory v `/data/examples/` (predtým hardcode v Pythone),
+  názov = filename; seed z baked pri prvom spustení
+- Vizuál (modely Karla, textúry, farby): globálny `/data/visual.json` —
+  platí pre všetky svety, nie per-svet. Nahrané textúry sa zmenšujú
+  (max 1024 px, JPEG q0.85) — koniec 46 MB súborov
+
+**Ostatné:**
+- Admin bez nastaveného hesla (`KarelAdminPWD` prázdne) → klik na Admin zapne
+  admin režim bez výzvy na heslo (lokálne použitie jedným učiteľom)
+- Loading screen pri štarte (spinner + „Načítavam svet…") namiesto prázdnej
+  modrej plochy počas WS pripájania
+- Žiadne hardcoded GUI texty — všetko v `lang/*.ini` (6 jazykov, 295 kľúčov,
+  konzistentné)
+- Oprava: výber „—" v dropdowne Svety → prázdny svet; 3D nestráca pomer strán
+  pri zmene veľkosti okna; Blockly generuje aj príkazy za vnoreným cyklom
+
 ## 2.0.0 — GUI parita s desktopom kompletná; prvý stabilný release pre školy
 
 Milestone: webová verzia Karla 2030 dosiahla plnú paritu funkcií s desktop Karel 2010.

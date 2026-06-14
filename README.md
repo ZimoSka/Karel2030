@@ -100,6 +100,9 @@ use `scripts/sync_worlds.ps1` (see [CLAUDE.md](CLAUDE.md)).
 ## Features
 
 - **3D view** (Three.js) with mouse rotate/pan/zoom
+- **Block editor** (Blockly, Scratch-style) — snap blocks together, code is
+  generated live; block keywords follow the world's programming language,
+  categories follow the UI language
 - **Program editor** with syntax highlighting and a command filter
 - **Direct control** of Karel via buttons or a typed-command line
 - **Full interpreter** (procedures, loops, conditionals with `not`/`and`/`or` +
