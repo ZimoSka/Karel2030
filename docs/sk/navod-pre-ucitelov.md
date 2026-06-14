@@ -159,6 +159,24 @@ Na prípravu nového sveta: upravte Nastavenia sveta, uložte lokálne cez **�
 
 ---
 
+## Blokový editor (Blockly) pre žiakov
+
+Žiaci môžu skladať program dvoma spôsobmi, prepínateľnými záložkami **Kód / Blokovo** nad editorom:
+
+- **Kód** — textový editor (zvýrazňovanie, zoznam príkazov).
+- **Blokovo** — blokový editor v štýle Scratch, kde žiak skladá farebné bloky do seba. Bloky automaticky vytvárajú textový program (jednosmerne: bloky → text), takže žiak môže začať vizuálne a postupne prejsť na text.
+
+Čo treba vedieť ako učiteľ:
+
+- **Kľúčové slová blokov sa riadia programovacím jazykom sveta.** Ak v **Nastaveniach sveta → Jazyk** nastavíš svet na angličtinu, bloky majú `forward`, `begin`, `procedure`; v slovenčine `dopredu`, `zaciatok`, `prikaz`. Riadi to per-svet `prog_lang`, nie jazyk rozhrania.
+- **Názvy kategórií** (Pohyb, Akcie, Štruktúry, Podmienky, Procedúry) sa naopak riadia jazykom **rozhrania**.
+- Príkazy, ktoré v Nastaveniach sveta **zakážeš**, sú skryté aj z blokovej palety.
+- Blokový editor má tri veľkosti (`▁ ▄ █`); celá obrazovka skryje 3D svet, takže menší žiaci vidia len bloky.
+
+Netreba nič nastavovať — blokový editor je žiakom vždy dostupný.
+
+---
+
 ## Tipy na dobrý dizajn sveta
 
 - Pište **Intro** jasne a konkrétne — žiaci ho vidia ako prvé.

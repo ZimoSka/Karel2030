@@ -161,6 +161,24 @@ To prepare a new world from scratch: make edits in World Settings, save locally 
 
 ---
 
+## Block editor (Blockly) for students
+
+Students can build programs two ways, switchable with the **Kód / Blokovo** tabs above the editor:
+
+- **Kód** — text editor (syntax highlighting, command list).
+- **Blokovo** — a Scratch-style block editor where students snap colored blocks together. The blocks generate the text program automatically (one-way: blocks → text), so students can start visually and graduate to text.
+
+What you should know as a teacher:
+
+- **Block keywords follow the world's programming language.** If you set the world's language to English in **World Settings → Language**, the blocks read `forward`, `begin`, `procedure`; in Slovak they read `dopredu`, `zaciatok`, `prikaz`. This is driven by the per-world `prog_lang`, not the interface language.
+- **Category names** (Movement, Actions, Structures, Conditions, Procedures) follow the **interface** language instead.
+- Commands you **disable** in World Settings are hidden from the block palette too.
+- The block editor offers three sizes (`▁ ▄ █`); full screen hides the 3D world so younger students see only the blocks.
+
+There is nothing to configure — the block editor is always available to students.
+
+---
+
 ## Tips for good world design
 
 - Write the **Intro** with clear, concrete instructions. Students see it first.

@@ -64,6 +64,31 @@ Ak sú viditeľné šípkové tlačidlá v Ovládaní Karla, môžeš ho pohybov
 
 ---
 
+## Dva spôsoby písania programu: Kód alebo Blokovo
+
+Nad editorom sú dve záložky:
+
+- **Kód** — program píšeš ako text.
+- **Blokovo** — program skladáš z farebných blokov, ktoré do seba zapadajú ako puzzle.
+
+Medzi nimi sa dá kedykoľvek prepínať. Bloky vždy **automaticky vytvárajú textový kód** — keď sa prepneš z Blokovo na Kód, vidíš ten istý program napísaný slovami.
+
+### Práca s blokovým editorom
+
+1. Klikni na záložku **Blokovo**.
+2. Vpravo sú **kategórie** blokov (Pohyb, Akcie, Štruktúry, Podmienky, Procedúry). Klikni na jednu a otvorí sa.
+3. **Pretiahni** blok do pracovnej plochy a vlož ho dovnútra bloku `zaciatok … koniec`.
+4. Bloky, ktoré k sebe patria, zapadnú do seba ako puzzle.
+5. Blok zmažeš tak, že ho pretiahneš do **smetiaka** (vpravo dole) alebo späť do kategórií.
+
+Tri tlačidlá (`▁ ▄ █`) nad editorom menia veľkosť editora na **malé, stredné alebo celú obrazovku** — celá obrazovka skryje 3D svet, aby si videl len bloky.
+
+> Slová na blokoch sú v jazyku, ktorý učiteľ nastavil pre svet. Názvy kategórií sa riadia jazykom rozhrania.
+
+Keď si s blokmi spokojný, prepni na záložku **Kód** a uvidíš vygenerovaný program, alebo rovno stlač **▶ Spustiť**.
+
+---
+
 ## Písanie programu
 
 Každý Karlov program má hlavný blok:

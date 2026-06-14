@@ -64,6 +64,31 @@ If the d-pad arrows are visible in the Control panel, you can move Karel manuall
 
 ---
 
+## Two ways to build a program: Code or Blocks
+
+Above the editor there are two tabs:
+
+- **Kód (Code)** — type your program as text.
+- **Blokovo (Blocks)** — build your program by snapping colored blocks together, like a puzzle.
+
+You can switch between them any time. The blocks always **generate the text code automatically** — so when you switch from Blocks to Code, you see the same program written out.
+
+### Using the block editor
+
+1. Click the **Blokovo** tab.
+2. On the right are block **categories** (Movement, Actions, Structures, Conditions, Procedures). Click one to open it.
+3. **Drag** a block into the work area and snap it inside the `begin … end` block.
+4. Blocks that fit together click into place like puzzle pieces.
+5. To delete a block, drag it to the **trash can** (bottom-right) or drag it back to the categories.
+
+The three buttons (`▁ ▄ █`) above the editor make the editor area **small, medium, or full screen** — full screen hides the 3D world so you see only the blocks.
+
+> The words on the blocks are in the same language your teacher set for the world. The category names follow the interface language.
+
+When you are happy with your blocks, switch to the **Kód** tab to see the generated program, or just press **▶ Spustiť** to run it.
+
+---
+
 ## Writing a Karel program
 
 Every Karel program has a main block:
