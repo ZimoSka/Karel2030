@@ -159,7 +159,8 @@ def test_assignment_share_resolve_workspace():
 
 def test_assignment_errors():
     assert client.post('/api/assignments', json={}).status_code == 400
-    assert client.get('/api/assignments/neexistuje').status_code == 404
+    # neexistujúci/cudzí assignment → 403 (neprezrádza existenciu)
+    assert client.get('/api/assignments/neexistuje').status_code == 403
     aid, _ = _make_link()
     assert client.post(f'/api/assignments/{aid}/share',
                        json={}).status_code == 400

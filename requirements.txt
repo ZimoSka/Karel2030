@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
+defusedxml
 # dev/test
 httpx
 pytest

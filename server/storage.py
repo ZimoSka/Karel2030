@@ -69,8 +69,8 @@ class FileStorage:
         self._write('assignments', id, data)
         return True
 
-    def assignment_for_world(self, world_key: str) -> str | None:
-        """Nájde assignment naviazaný na svet (world_key) — najnovší ak je viac."""
+    def assignment_for_world(self, world_key: str, owner: str | None = None) -> str | None:
+        """Nájde assignment naviazaný na svet (world_key) pre daného vlastníka."""
         if not world_key:
             return None
         d = os.path.join(self.root, 'assignments')
@@ -80,14 +80,15 @@ class FileStorage:
                 continue
             aid = fname[:-5]
             data = self._read('assignments', aid)
-            if data and data.get('world_key') == world_key:
+            if data and data.get('world_key') == world_key \
+                    and (owner is None or data.get('owner') == owner):
                 t = data.get('created') or 0
                 if t > best_t:
                     best, best_t = aid, t
         return best
 
-    def list_assignments(self) -> list:
-        """Zoznam všetkých úloh (najnovšie prvé). Bez auth — vidno všetky."""
+    def list_assignments(self, owner: str | None = None) -> list:
+        """Zoznam úloh daného vlastníka (najnovšie prvé)."""
         out = []
         d = os.path.join(self.root, 'assignments')
         for fname in os.listdir(d):
@@ -95,7 +96,7 @@ class FileStorage:
                 continue
             aid = fname[:-5]
             data = self._read('assignments', aid)
-            if data:
+            if data and (owner is None or data.get('owner') == owner):
                 out.append({'id': aid, 'title': data.get('title', ''),
                             'created': data.get('created')})
         out.sort(key=lambda a: a.get('created') or 0, reverse=True)

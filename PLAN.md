@@ -130,6 +130,23 @@ push do `ghcr.io/zimoska/karel2030:latest` (+ :SHA), manifest potvrdený.
 
 ---
 
+## 🔒 Bezpečnosť — hardening (po v3.1.0)
+
+V3.1.0 vyriešené: ownership assignmentov (cookie), bound rozmerov sveta,
+defusedxml (billion-laughs/XXE), učiteľská WS auth, XFF lockout (proxy-aware),
+sanitizácia HTML zadania (XSS), limit veľkosti tela, bezpečnostné hlavičky.
+
+Zostáva (nižšia priorita):
+- **HTTPS** — nasadiť za TLS reverznú proxy (NGINX/Traefik); cookie `Secure` flag
+  zapnúť keď je HTTPS (teraz bez `Secure` kvôli HTTP). Pri proxy nastaviť
+  `KAREL_TRUSTED_PROXY=1` (XFF lockout berie poslednú IP).
+- **CSP hlavička** — pridať Content-Security-Policy (momentálne len nosniff/frame/referrer).
+- **Volume kvóta** — obmedziť veľkosť `/data` (admin/učiteľ vie nahrávať svety/textúry).
+- **Rate limiting** — na tvorbu assignmentov/linkov a parse-karxml (CPU/disk DoS).
+- **Limit počtu WS sessions** per IP (DoS cez vlákna interpretera).
+- **Parser**: tvrdý limit hĺbky zanorenia programu (teraz RecursionError, nie segfault).
+- Chybové hlášky: nevracať `str(e)` (drobný únik ciest).
+
 ## ⏸ Odložené na neskôr (po dorovnaní GUI)
 
 - **Nasadenie na linux server** — SSH kľúč (root) + `docker context`/`compose pull`;

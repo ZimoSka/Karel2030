@@ -56,13 +56,40 @@
     $('overlay').classList.remove('hidden');
   }
   function hideDialog() { $('overlay').classList.add('hidden'); }
+  // Sanitizácia HTML zadania/misie — zadanie pochádza z karxml (môže ho vytvoriť
+  // ktokoľvek cez assignment) → renderuje sa cez innerHTML → bez očistenia hrozí
+  // stored XSS (napr. <img onerror=...>). Povolíme len bezpečnú podmnožinu tagov.
+  const _ALLOWED_TAGS = new Set(['B','I','EM','STRONG','U','P','BR','HR','UL','OL','LI',
+    'H1','H2','H3','H4','H5','H6','CODE','PRE','SPAN','DIV','A','IMG','BLOCKQUOTE',
+    'TABLE','THEAD','TBODY','TR','TD','TH','FONT','SMALL','SUB','SUP']);
+  function _sanitizeNode(node) {
+    [...node.children].forEach(el => {
+      _sanitizeNode(el);
+      if (!_ALLOWED_TAGS.has(el.tagName)) {
+        el.replaceWith(...el.childNodes);    // zahoď tag, ponechaj (očistený) obsah
+        return;
+      }
+      [...el.attributes].forEach(a => {
+        const n = a.name.toLowerCase();
+        if (n.startsWith('on') || n === 'style')           el.removeAttribute(a.name);
+        else if ((n === 'href' || n === 'src') &&
+                 /^\s*(javascript|vbscript|data:text\/html)/i.test(a.value))
+          el.removeAttribute(a.name);
+      });
+    });
+  }
+  function sanitizeHtml(s) {
+    const doc = new DOMParser().parseFromString(String(s || ''), 'text/html');
+    _sanitizeNode(doc.body);
+    return doc.body.innerHTML;
+  }
   // staré .karxml môžu mať dvojito-escapovaný HTML — rozbalíme pre čitateľné zobrazenie
   function htmlReadable(s) {
     s = s || '';
     if (/&(amp|lt|gt|quot);/.test(s) && !/<[a-z]/i.test(s)) {
-      const d = document.createElement('textarea'); d.innerHTML = s; return d.value;
+      const d = document.createElement('textarea'); d.innerHTML = s; s = d.value;
     }
-    return s;
+    return sanitizeHtml(s);
   }
   $('overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') hideDialog(); });
 
@@ -890,6 +917,8 @@
         sid = Math.random().toString(36).slice(2, 14);
         sessionStorage.setItem('karel_session', sid);
       }
+      // zabezpeč učiteľskú cookie pred otvorením WS (server ju pri WS vyžaduje)
+      if (!MOCK) { try { await api.teacherSession(); } catch (e) { /* ignoruj */ } }
       ws = MOCK ? new MockWS() : new KarelWS({ sessionId: sid });
       wireWs();
     }

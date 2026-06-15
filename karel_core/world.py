@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
 """Karel core – dátový model sveta (World, WorldSettings) + .karxml I/O."""
 import os, re, json, math
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET          # stavba XML (to_xml)
+try:
+    # bezpečné parsovanie neoverených karxml — blokuje DTD/entity (billion-laughs, XXE)
+    from defusedxml.ElementTree import fromstring as _safe_fromstring, parse as _safe_parse
+except ImportError:                          # fallback ak defusedxml nie je k dispozícii
+    _safe_fromstring, _safe_parse = ET.fromstring, ET.parse
 from xml.dom import minidom
+
+# Horný limit rozmerov sveta — bráni alokácii obrích mriežok (DoS cez from_xml)
+MAX_WORLD_DIM = 200
 from copy import deepcopy
 import html as _html_mod
 from .base import Direction, KarelError, KarelStop, KarelBudget, KarelLimit
@@ -370,12 +378,20 @@ class World:
     @staticmethod
     def from_xml(xml_str):
         """Načíta svet z XML reťazca alebo cesty k súboru."""
-        if os.path.isfile(xml_str):
-            tree = ET.parse(xml_str)
+        # os.path.isfile len pre krátke reťazce — dlhý karxml nie je cesta a
+        # vyhol by sa zbytočnej syscall/chybe pri vstupe s NUL bajtmi
+        if len(xml_str) < 260 and os.path.isfile(xml_str):
+            tree = _safe_parse(xml_str)
             root = tree.getroot()
         else:
-            root = ET.fromstring(xml_str)
-        w = World(int(root.get('width')), int(root.get('height')))
+            root = _safe_fromstring(xml_str)
+        try:
+            width, height = int(root.get('width')), int(root.get('height'))
+        except (TypeError, ValueError):
+            raise ValueError('svet: chýba/neplatné width alebo height')
+        if not (1 <= width <= MAX_WORLD_DIM and 1 <= height <= MAX_WORLD_DIM):
+            raise ValueError(f'svet: rozmer mimo 1..{MAX_WORLD_DIM}')
+        w = World(width, height)
         k = root.find('karel')
         if k is not None:
             w.karel_x = int(k.get('x', 0))

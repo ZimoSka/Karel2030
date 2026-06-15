@@ -44,7 +44,25 @@ async def _no_cache_static(request, call_next):
     resp = await call_next(request)
     if request.method == 'GET' and not request.url.path.startswith('/api'):
         resp.headers['Cache-Control'] = 'no-cache'
+    # bezpečnostné hlavičky (clickjacking, MIME sniffing, referrer leak)
+    resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    resp.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+    resp.headers.setdefault('Referrer-Policy', 'same-origin')
     return resp
+
+
+# Globálny limit veľkosti tela požiadavky — bráni načítaniu obrieho tela do
+# pamäte ešte pred kontrolami v endpointoch (DoS). 2 MB pokryje aj zmenšené textúry.
+MAX_BODY_BYTES = 2 * 1024 * 1024
+
+
+@app.middleware('http')
+async def _limit_body(request, call_next):
+    if request.method in ('POST', 'PUT', 'PATCH'):
+        cl = request.headers.get('content-length')
+        if cl and cl.isdigit() and int(cl) > MAX_BODY_BYTES:
+            return _err(413, 'too_large', 'telo požiadavky je príliš veľké')
+    return await call_next(request)
 # Publikované svety (admin) — perzistentné na volume, popri baked worlds/
 _DATA_DIR      = os.environ.get('KAREL_DATA_DIR', './data')
 _PUBLISHED_DIR = os.path.join(_DATA_DIR, 'worlds')
@@ -75,6 +93,7 @@ _seed_dir_if_empty(_EXAMPLES_DIR, _EXAMPLES_BAKED, '.prg')
 
 import re as _re
 _SAFE_WID = _re.compile(r'^[A-Za-z0-9 _-]{1,64}$')
+_SAFE_TID = _re.compile(r'^[A-Za-z0-9_-]{1,64}$')   # učiteľský/token id
 
 
 def _err(status: int, code: str, detail: str = '') -> JSONResponse:
@@ -94,11 +113,20 @@ _admin_sessions: dict = {}      # token -> expiry (epoch)
 _admin_fails: dict = {}         # client_key -> {'count': int, 'blocked_until': epoch}
 
 
+# Dôvera k X-Forwarded-For: štandardne NIE (priame spojenie). Za reverznou
+# proxy nastav KAREL_TRUSTED_PROXY=1 — vtedy berieme POSLEDNÚ položku XFF
+# (tú pridala naša proxy = reálny klient), nie prvú (klientom podvrhnuteľnú).
+_TRUSTED_PROXY = os.environ.get('KAREL_TRUSTED_PROXY', '').lower() in ('1', 'true', 'yes')
+
+
 def _client_key(request: Request) -> str:
-    """Identita klienta pre lockout: prvý X-Forwarded-For, inak IP."""
-    xff = request.headers.get('x-forwarded-for')
-    if xff:
-        return xff.split(',')[0].strip()
+    """Identita klienta pre per-IP lockout. Per reálnu IP → útočník z inej IP
+    nezamkne admina; XFF sa neberie ak nie sme za dôveryhodnou proxy (inak by
+    sa lockout dal obísť podvrhnutím hlavičky)."""
+    if _TRUSTED_PROXY:
+        xff = request.headers.get('x-forwarded-for')
+        if xff:
+            return xff.split(',')[-1].strip()
     return request.client.host if request.client else 'unknown'
 
 
@@ -175,6 +203,45 @@ def admin_logout(request: Request):
         _admin_sessions.pop(tok, None)
     resp = JSONResponse({'ok': True})
     resp.delete_cookie(ADMIN_COOKIE)
+    return resp
+
+
+# =========================================================================
+# Učiteľská identita — anonymná cookie. Assignmenty (a tým žiacke linky) sú
+# viazané na učiteľa, ktorý ich vytvoril. Iný učiteľ vidí čistý zoznam.
+# =========================================================================
+TEACHER_COOKIE = 'karel_teacher'
+TEACHER_TTL    = 90 * 24 * 3600     # 90 dní
+
+
+def _teacher_id(request: Request) -> str | None:
+    tid = request.cookies.get(TEACHER_COOKIE)
+    return tid if tid and _SAFE_TID.match(tid) else None
+
+
+def _set_teacher_cookie(resp: JSONResponse, tid: str) -> None:
+    resp.set_cookie(TEACHER_COOKIE, tid, httponly=True, samesite='lax',
+                    max_age=TEACHER_TTL)
+
+
+def _owns_assignment(request: Request, aid: str) -> bool:
+    """Vlastní volajúci učiteľ daný assignment? (admin má prístup ku všetkému)."""
+    if _is_admin(request):
+        return storage.load_assignment(aid) is not None
+    a = storage.load_assignment(aid)
+    tid = _teacher_id(request)
+    return a is not None and tid is not None and a.get('owner') == tid
+
+
+@app.get('/api/teacher/session')
+def teacher_session(request: Request):
+    """Zabezpečí učiteľskú cookie (vytvorí ak chýba) a vráti id. Frontend ju
+    zavolá pri štarte (učiteľ) pred otvorením WS."""
+    tid = _teacher_id(request)
+    resp = JSONResponse({'teacher_id': tid or '(new)'})
+    if not tid:
+        tid = secrets.token_urlsafe(12)
+        _set_teacher_cookie(resp, tid)
     return resp
 
 
@@ -407,8 +474,12 @@ async def create_assignment(request: Request):
     except Exception as e:
         return _err(400, 'bad_karxml', str(e))
     title = body.get('title') or w.title
-    aid = storage.save_assignment({'karxml': karxml, 'title': title})
-    return {'assignment_id': aid}
+    tid = _teacher_id(request) or secrets.token_urlsafe(12)
+    aid = storage.save_assignment({'karxml': karxml, 'title': title, 'owner': tid})
+    resp = JSONResponse({'assignment_id': aid})
+    if not _teacher_id(request):
+        _set_teacher_cookie(resp, tid)
+    return resp
 
 
 @app.post('/api/assignments/ensure')
@@ -429,20 +500,24 @@ async def ensure_assignment(request: Request):
         return _err(400, 'bad_karxml', str(e))
     title = body.get('title') or w.title
     world_key = (body.get('world_key') or '').strip()
-    aid = storage.assignment_for_world(world_key) if world_key else None
+    tid = _teacher_id(request) or secrets.token_urlsafe(12)
+    aid = storage.assignment_for_world(world_key, owner=tid) if world_key else None
     if aid:
         storage.update_assignment(aid, {'karxml': karxml, 'title': title})
     else:
         aid = storage.save_assignment({'karxml': karxml, 'title': title,
-                                       'world_key': world_key})
-    return {'assignment_id': aid}
+                                       'world_key': world_key, 'owner': tid})
+    resp = JSONResponse({'assignment_id': aid})
+    if not _teacher_id(request):
+        _set_teacher_cookie(resp, tid)
+    return resp
 
 
 @app.post('/api/assignments/{aid}/links')
 async def add_link(aid: str, request: Request):
     """Pridá jedného žiaka (meno) → vráti jeho link."""
-    if storage.load_assignment(aid) is None:
-        return _err(404, 'not_found', f'assignment {aid!r}')
+    if not _owns_assignment(request, aid):
+        return _err(403, 'forbidden', 'nie je tvoj assignment')
     try:
         body = await request.json()
     except Exception:
@@ -453,15 +528,21 @@ async def add_link(aid: str, request: Request):
 
 
 @app.delete('/api/links/{token}')
-def delete_link(token: str):
-    """Zmaže žiakov link aj jeho prácu."""
-    if not storage.delete_link(token):
+def delete_link(token: str, request: Request):
+    """Zmaže žiakov link aj jeho prácu — len vlastník assignmentu."""
+    link = storage.resolve_token(token)
+    if link is None:
         return _err(404, 'not_found', f'token {token!r}')
+    if not _owns_assignment(request, link['assignment_id']):
+        return _err(403, 'forbidden', 'nie je tvoj link')
+    storage.delete_link(token)
     return {'ok': True}
 
 
 @app.get('/api/assignments/{aid}')
-def get_assignment(aid: str):
+def get_assignment(aid: str, request: Request):
+    if not _owns_assignment(request, aid):
+        return _err(403, 'forbidden', 'nie je tvoj assignment')
     data = storage.load_assignment(aid)
     if data is None:
         return _err(404, 'not_found', f'assignment {aid!r}')
@@ -475,8 +556,8 @@ def get_assignment(aid: str):
 
 @app.post('/api/assignments/{aid}/share')
 async def share_assignment(aid: str, request: Request):
-    if storage.load_assignment(aid) is None:
-        return _err(404, 'not_found', f'assignment {aid!r}')
+    if not _owns_assignment(request, aid):
+        return _err(403, 'forbidden', 'nie je tvoj assignment')
     try:
         body = await request.json()
     except Exception:
@@ -495,23 +576,26 @@ async def share_assignment(aid: str, request: Request):
 
 
 @app.get('/api/assignments')
-def list_assignments():
-    """Zoznam úloh — učiteľ sa vie vrátiť k linkom. (Bez auth: vidno všetky.)"""
-    return storage.list_assignments()
+def list_assignments(request: Request):
+    """Zoznam úloh DANÉHO učiteľa (podľa cookie); admin vidí všetky."""
+    owner = None if _is_admin(request) else _teacher_id(request)
+    if owner is None and not _is_admin(request):
+        return []        # bez učiteľskej cookie → prázdny zoznam
+    return storage.list_assignments(owner)
 
 
 @app.get('/api/assignments/{aid}/links')
-def assignment_links(aid: str):
-    if storage.load_assignment(aid) is None:
-        return _err(404, 'not_found', f'assignment {aid!r}')
+def assignment_links(aid: str, request: Request):
+    if not _owns_assignment(request, aid):
+        return _err(403, 'forbidden', 'nie je tvoj assignment')
     return {'links': storage.list_links(aid)}
 
 
 @app.get('/api/assignments/{aid}/progress')
-def assignment_progress(aid: str):
+def assignment_progress(aid: str, request: Request):
     """Pre každý link: meno žiaka + jeho uložený program (čo žiak spravil)."""
-    if storage.load_assignment(aid) is None:
-        return _err(404, 'not_found', f'assignment {aid!r}')
+    if not _owns_assignment(request, aid):
+        return _err(403, 'forbidden', 'nie je tvoj assignment')
     out = []
     for link in storage.list_links(aid):
         wsp = storage.load_workspace(link['token']) or {}
@@ -705,6 +789,12 @@ async def ws_student(ws: WebSocket, token: str):
 
 @app.websocket('/ws/teacher/{session_id}')
 async def ws_teacher(ws: WebSocket, session_id: str):
+    # učiteľská session vyžaduje učiteľskú cookie (nastaví ju /api/teacher/session
+    # pri štarte) → bráni neobmedzenému otváraniu sessions cudzími skriptami
+    tid = ws.cookies.get(TEACHER_COOKIE)
+    if not (tid and _SAFE_TID.match(tid)):
+        await ws.close(code=4401)
+        return
     await ws.accept()
     # učiteľ začína s prázdnym builtin svetom; svet si natiahne cez load_world
     session = Session(kc.World.from_json(kc.BUILTIN_WORLD), teacher=True)
