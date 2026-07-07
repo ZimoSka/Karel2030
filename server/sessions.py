@@ -116,6 +116,10 @@ class Session:
         except ParseErr as e:
             self._emit({'type': 'parse_error', 'message': str(e), 'line': e.line})
             return
+        except RecursionError:
+            self._emit({'type': 'parse_error', 'line': 0,
+                        'message': 'Program je príliš zložitý (hlboké zanorenie).'})
+            return
         if self.world.settings.disable_procedure and prog.procedures:
             self._emit({'type': 'parse_error', 'line': 0,
                         'message': 'Vlastné príkazy sú v tomto svete zakázané.'})

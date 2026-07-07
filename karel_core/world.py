@@ -269,7 +269,10 @@ class World:
                     marks=[[x,y] for y in range(self.height) for x in range(self.width) if self.marks[y][x]])
     @staticmethod
     def from_json(d):
-        w=World(d['width'],d['height'])
+        width, height = int(d['width']), int(d['height'])
+        if not (1 <= width <= MAX_WORLD_DIM and 1 <= height <= MAX_WORLD_DIM):
+            raise ValueError(f'svet: rozmer mimo 1..{MAX_WORLD_DIM}')
+        w=World(width,height)
         w.karel_x=d['karel_x']; w.karel_y=d['karel_y']
         w.karel_dir=Direction.from_str(d['karel_dir'])
         for x,y,s in d.get('walls',[]): w.walls[y][x].add(s)

@@ -136,23 +136,23 @@ V3.1.0 vyriešené: ownership assignmentov (cookie), bound rozmerov sveta,
 defusedxml (billion-laughs/XXE), učiteľská WS auth, XFF lockout (proxy-aware),
 sanitizácia HTML zadania (XSS), limit veľkosti tela, bezpečnostné hlavičky.
 
-Zostáva (nižšia priorita):
+V3.2.0 doriešené: rate limiting (assignmenty/linky/parse-karxml), CSP hlavička,
+limit počtu WS sessions per IP, tvrdý limit hĺbky parsera (ParseErr namiesto
+RecursionError), bound rozmerov aj v World.from_json.
+
+Zostáva (nižšia priorita / infra):
 - **⚠️ KarelAdminPWD MUSÍ byť nastavené** pri verejnom nasadení — prázdne =
   otvorený admin (ktokoľvek klikne Admin → admin práva). Najvyššie operačné riziko.
 - **HTTPS** — nasadiť za TLS reverznú proxy (NGINX/Traefik); cookie `Secure` flag
   zapnúť keď je HTTPS (teraz bez `Secure` kvôli HTTP). Pri proxy nastaviť
-  `KAREL_TRUSTED_PROXY=1` (XFF lockout berie poslednú IP).
-- **CSP hlavička** — pridať Content-Security-Policy (momentálne len nosniff/frame/referrer).
+  `KAREL_TRUSTED_PROXY=1` (XFF lockout aj WS limit berú poslednú IP).
 - **Non-root kontajner** — Dockerfile beží ako root; pridať `USER` (defense-in-depth,
-  pozor na práva k /data volume).
-- **Rate limiting** — tvorba assignmentov/linkov + parse-karxml sú neautentizované
-  (spam/disk-fill, CPU DoS). Bod #8 z analýzy je tak len čiastočne krytý.
-- **Volume kvóta** — obmedziť veľkosť `/data`.
-- **Limit počtu WS sessions** per IP (DoS cez vlákna interpretera).
-- **Parser**: tvrdý limit hĺbky zanorenia programu (teraz RecursionError, nie segfault).
-- **World.from_json**: doplniť bound rozmerov (teraz nie je user-reachable, ale pre istotu).
-- **WS Origin check** — momentálne chráni SameSite=lax cookie; pridať aj kontrolu Origin.
-- Chybové hlášky: nevracať `str(e)` (drobný únik ciest).
+  pozor na práva k /data volume — treba chown/entrypoint).
+- **Volume kvóta** — obmedziť veľkosť `/data` (infra).
+- **WS Origin check** — momentálne chráni SameSite=lax cookie + tajný token;
+  pridať aj kontrolu Origin (pozor na custom share adresu, môže rozbiť prístup).
+- Chybové hlášky: nevracať `str(e)` (drobný únik — sú to naše validačné hlášky,
+  užitočné pre učiteľa; nízka priorita).
 
 ## ⏸ Odložené na neskôr (po dorovnaní GUI)
 

@@ -48,7 +48,22 @@ async def _no_cache_static(request, call_next):
     resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
     resp.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
     resp.headers.setdefault('Referrer-Policy', 'same-origin')
+    resp.headers.setdefault('Content-Security-Policy', _CSP)
     return resp
+
+
+# CSP — obmedzí odkiaľ sa načítajú zdroje (obrana proti injektovaným externým
+# skriptom/exfiltrácii). 'unsafe-inline' pre skripty je nutné (inline bootstrap
+# v index.html); CDN hosty kvôli fallbacku vendorovaných knižníc. XSS samotné
+# rieši sanitizácia HTML zadania, CSP je defense-in-depth.
+_CSP = ("default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com "
+        "https://cdn.jsdelivr.net https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: blob: https:; "
+        "media-src 'self' data: blob:; font-src 'self' data:; "
+        "connect-src 'self'; object-src 'none'; base-uri 'self'; "
+        "frame-ancestors 'self'")
 
 
 # Globálny limit veľkosti tela požiadavky — bráni načítaniu obrieho tela do
@@ -98,6 +113,30 @@ _SAFE_TID = _re.compile(r'^[A-Za-z0-9_-]{1,64}$')   # učiteľský/token id
 
 def _err(status: int, code: str, detail: str = '') -> JSONResponse:
     return JSONResponse({'error': code, 'detail': detail}, status_code=status)
+
+
+# --- Rate limiting (in-memory, per IP + akcia) --------------------------------
+# Bráni spamu neautentizovaných endpointov (tvorba úloh/linkov, parse-karxml).
+_rate_hits: dict = {}
+
+
+def _rate_ok(request: 'Request', bucket: str, limit: int, window: float = 60.0) -> bool:
+    now = time.time()
+    key = f'{bucket}:{_client_key(request)}'
+    hits = _rate_hits.setdefault(key, [])
+    cutoff = now - window
+    hits[:] = [t for t in hits if t > cutoff]
+    if len(hits) >= limit:
+        return False
+    hits.append(now)
+    if len(_rate_hits) > 5000:            # soft cap proti rastu pamäte
+        for k in [k for k, v in _rate_hits.items() if not v or v[-1] < cutoff]:
+            _rate_hits.pop(k, None)
+    return True
+
+
+def _rate_err():
+    return _err(429, 'rate_limited', 'Príliš veľa požiadaviek. Skús neskôr.')
 
 
 # =========================================================================
@@ -442,6 +481,8 @@ async def put_global_visual(request: Request):
 
 @app.post('/api/worlds/parse-karxml')
 async def parse_karxml(request: Request):
+    if not _rate_ok(request, 'parse', 60):
+        return _rate_err()
     # body = surové .karxml (kontrakt §2)
     raw = await request.body()
     if len(raw) > MAX_KARXML_BYTES:
@@ -462,6 +503,8 @@ async def parse_karxml(request: Request):
 
 @app.post('/api/assignments')
 async def create_assignment(request: Request):
+    if not _rate_ok(request, 'assign', 20):
+        return _rate_err()
     try:
         body = await request.json()
     except Exception:
@@ -487,6 +530,8 @@ async def ensure_assignment(request: Request):
     """Get-or-create assignment naviazaný na svet (world_key).
     Vždy aktualizuje karxml/title → žiaci dostanú najnovšiu verziu sveta.
     Jedno okno zdieľania na svet: opätovné otvorenie nájde ten istý assignment."""
+    if not _rate_ok(request, 'assign', 30):
+        return _rate_err()
     try:
         body = await request.json()
     except Exception:
@@ -516,6 +561,8 @@ async def ensure_assignment(request: Request):
 @app.post('/api/assignments/{aid}/links')
 async def add_link(aid: str, request: Request):
     """Pridá jedného žiaka (meno) → vráti jeho link."""
+    if not _rate_ok(request, 'link', 30):
+        return _rate_err()
     if not _owns_assignment(request, aid):
         return _err(403, 'forbidden', 'nie je tvoj assignment')
     try:
@@ -556,6 +603,8 @@ def get_assignment(aid: str, request: Request):
 
 @app.post('/api/assignments/{aid}/share')
 async def share_assignment(aid: str, request: Request):
+    if not _rate_ok(request, 'share', 10):
+        return _rate_err()
     if not _owns_assignment(request, aid):
         return _err(403, 'forbidden', 'nie je tvoj assignment')
     try:
@@ -773,6 +822,20 @@ def _teacher_apply_settings(session: Session, msg: dict):
                 setattr(w, key, msg[key])
 
 
+# Limit súbežných WS sessions per IP — každá session drží World + spúšťa
+# vlákna interpretera (64 MB stack) → bez limitu DoS cez množstvo spojení.
+_ws_count: dict = {}
+MAX_WS_PER_IP = 12
+
+
+def _ws_ip(ws: WebSocket) -> str:
+    if _TRUSTED_PROXY:
+        xff = ws.headers.get('x-forwarded-for')
+        if xff:
+            return xff.split(',')[-1].strip()
+    return ws.client.host if ws.client else 'unknown'
+
+
 @app.websocket('/ws/{token}')
 async def ws_student(ws: WebSocket, token: str):
     link = storage.resolve_token(token)
@@ -780,11 +843,19 @@ async def ws_student(ws: WebSocket, token: str):
     if not assignment:
         await ws.close(code=4404)
         return
-    await ws.accept()
-    world_key = assignment.get('world_key', '')
-    visual = _load_visual(world_key) if world_key else {}
-    session = Session(kc.World.from_xml(assignment['karxml']), teacher=False, visual=visual)
-    await _ws_loop(ws, session, token=token)
+    ip = _ws_ip(ws)
+    if _ws_count.get(ip, 0) >= MAX_WS_PER_IP:
+        await ws.close(code=4429)
+        return
+    _ws_count[ip] = _ws_count.get(ip, 0) + 1
+    try:
+        await ws.accept()
+        world_key = assignment.get('world_key', '')
+        visual = _load_visual(world_key) if world_key else {}
+        session = Session(kc.World.from_xml(assignment['karxml']), teacher=False, visual=visual)
+        await _ws_loop(ws, session, token=token)
+    finally:
+        _ws_count[ip] = max(0, _ws_count.get(ip, 0) - 1)
 
 
 @app.websocket('/ws/teacher/{session_id}')
@@ -795,10 +866,18 @@ async def ws_teacher(ws: WebSocket, session_id: str):
     if not (tid and _SAFE_TID.match(tid)):
         await ws.close(code=4401)
         return
-    await ws.accept()
-    # učiteľ začína s prázdnym builtin svetom; svet si natiahne cez load_world
-    session = Session(kc.World.from_json(kc.BUILTIN_WORLD), teacher=True)
-    await _ws_loop(ws, session)
+    ip = _ws_ip(ws)
+    if _ws_count.get(ip, 0) >= MAX_WS_PER_IP:
+        await ws.close(code=4429)
+        return
+    _ws_count[ip] = _ws_count.get(ip, 0) + 1
+    try:
+        await ws.accept()
+        # učiteľ začína s prázdnym builtin svetom; svet si natiahne cez load_world
+        session = Session(kc.World.from_json(kc.BUILTIN_WORLD), teacher=True)
+        await _ws_loop(ws, session)
+    finally:
+        _ws_count[ip] = max(0, _ws_count.get(ip, 0) - 1)
 
 
 # =========================================================================

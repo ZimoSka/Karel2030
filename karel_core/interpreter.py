@@ -69,8 +69,14 @@ class OrN(AN):
 class ParseErr(Exception):
     def __init__(self,m,ln=0): super().__init__(f"Riadok {ln}: {m}");self.line=ln
 
+MAX_PARSE_DEPTH = 400   # tvrdý limit zanorenia — bráni RecursionError/segfault
+
 class Parser:
-    def __init__(self,toks): self.toks=toks;self.pos=0
+    def __init__(self,toks): self.toks=toks;self.pos=0;self.depth=0
+    def _descend(self,ln):
+        self.depth+=1
+        if self.depth>MAX_PARSE_DEPTH:
+            raise ParseErr("Program je príliš hlboko zanorený",ln)
     def pk(self): return self.toks[self.pos]
     def eat(self,exp=None):
         t=self.toks[self.pos]
@@ -94,10 +100,12 @@ class Parser:
         if self.pk().t in CLOSE_T: self.eat()
         return name,body
     def _stmts(self):
+        self._descend(self.pk().ln)
         s=[]
         while self.pk().t not in CLOSE_T and self.pk().t not in ('ELSE','EOF'):
             n=self._stmt()
             if n: s.append(n)
+        self.depth-=1
         return s
     def _stmt(self):
         t=self.pk()
@@ -142,12 +150,13 @@ class Parser:
         return left
     def _not_expr(self):
         if self.pk().t=='NOT':
-            self.eat(); return NotN(self._not_expr())
+            self.eat(); self._descend(self.pk().ln)
+            inner=self._not_expr(); self.depth-=1; return NotN(inner)
         return self._atom()
     def _atom(self):
         t=self.pk()
         if t.t=='LPAREN':
-            self.eat(); e=self._or_expr()
+            self.eat(); self._descend(t.ln); e=self._or_expr(); self.depth-=1
             if self.pk().t=='RPAREN': self.eat()
             else: raise ParseErr("Chýba pravá zátvorka ')'",self.pk().ln)
             return e
