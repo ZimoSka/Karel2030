@@ -106,7 +106,9 @@ const KarelSettings = (function () {
     bar.querySelector('.rt-btn:last-child');
     const area = el('div', { class: 'rt-area' });
     area.contentEditable = 'true';
-    area.innerHTML = unescapeMaybe(html || '');
+    // sanitizuj — intro/success/failure HTML môže pochádzať zo škodlivého sveta
+    // (súbor/load_world) → bez očistenia XSS na učiteľa pri otvorení Nastavení
+    area.innerHTML = (window.karelSanitizeHtml || (x => x))(unescapeMaybe(html || ''));
     const wrap = el('div', { class: 'rt-wrap' }, [bar, area]);
     return { el: wrap, get: () => area.innerHTML };
   }

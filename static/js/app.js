@@ -83,6 +83,8 @@
     _sanitizeNode(doc.body);
     return doc.body.innerHTML;
   }
+  // sprístupni sanitizér ostatným modulom (settings.js rich editor)
+  window.karelSanitizeHtml = sanitizeHtml;
   // staré .karxml môžu mať dvojito-escapovaný HTML — rozbalíme pre čitateľné zobrazenie
   function htmlReadable(s) {
     s = s || '';

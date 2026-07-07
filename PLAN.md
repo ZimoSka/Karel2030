@@ -137,14 +137,21 @@ defusedxml (billion-laughs/XXE), učiteľská WS auth, XFF lockout (proxy-aware)
 sanitizácia HTML zadania (XSS), limit veľkosti tela, bezpečnostné hlavičky.
 
 Zostáva (nižšia priorita):
+- **⚠️ KarelAdminPWD MUSÍ byť nastavené** pri verejnom nasadení — prázdne =
+  otvorený admin (ktokoľvek klikne Admin → admin práva). Najvyššie operačné riziko.
 - **HTTPS** — nasadiť za TLS reverznú proxy (NGINX/Traefik); cookie `Secure` flag
   zapnúť keď je HTTPS (teraz bez `Secure` kvôli HTTP). Pri proxy nastaviť
   `KAREL_TRUSTED_PROXY=1` (XFF lockout berie poslednú IP).
 - **CSP hlavička** — pridať Content-Security-Policy (momentálne len nosniff/frame/referrer).
-- **Volume kvóta** — obmedziť veľkosť `/data` (admin/učiteľ vie nahrávať svety/textúry).
-- **Rate limiting** — na tvorbu assignmentov/linkov a parse-karxml (CPU/disk DoS).
+- **Non-root kontajner** — Dockerfile beží ako root; pridať `USER` (defense-in-depth,
+  pozor na práva k /data volume).
+- **Rate limiting** — tvorba assignmentov/linkov + parse-karxml sú neautentizované
+  (spam/disk-fill, CPU DoS). Bod #8 z analýzy je tak len čiastočne krytý.
+- **Volume kvóta** — obmedziť veľkosť `/data`.
 - **Limit počtu WS sessions** per IP (DoS cez vlákna interpretera).
 - **Parser**: tvrdý limit hĺbky zanorenia programu (teraz RecursionError, nie segfault).
+- **World.from_json**: doplniť bound rozmerov (teraz nie je user-reachable, ale pre istotu).
+- **WS Origin check** — momentálne chráni SameSite=lax cookie; pridať aj kontrolu Origin.
 - Chybové hlášky: nevracať `str(e)` (drobný únik ciest).
 
 ## ⏸ Odložené na neskôr (po dorovnaní GUI)
