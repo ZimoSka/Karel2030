@@ -62,7 +62,9 @@ _CSP = ("default-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
         "img-src 'self' data: blob: https:; "
         "media-src 'self' data: blob:; font-src 'self' data:; "
-        "connect-src 'self'; object-src 'none'; base-uri 'self'; "
+        # blob:/data: nutné — GLTFLoader načítava vnorené textúry GLB modelu
+        # (Grogu) cez blob: URL; bez toho skin zlyhá a padne na kváder-robota
+        "connect-src 'self' blob: data:; object-src 'none'; base-uri 'self'; "
         "frame-ancestors 'self'")
 
 
