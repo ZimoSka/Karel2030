@@ -928,7 +928,7 @@
     loadExamples();
     // verzia + build (aby bolo jasné ktorý build sa testuje)
     api.version().then(v => {
-      $('version').textContent = 'v' + v.version + ' · ' + v.git_sha;
+      $('version').textContent = 'v' + v.version;
       $('version').title = 'Karel 2030 v' + v.version + '\nbuild: ' + v.git_sha +
                            (v.build_time ? '\n' + v.build_time : '');
     }).catch(() => {});

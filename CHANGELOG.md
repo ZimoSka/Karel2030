@@ -8,6 +8,12 @@ Dokumentácia pre učiteľa: [docs/teacher-web-guide.md](docs/teacher-web-guide.
 
 ---
 
+## 3.2.3 — verzia bez git hashu v badge
+
+- Badge verzie zobrazuje už len `v3.2.3` (git SHA odstránený z viditeľného
+  textu). SHA a build-time zostávajú v tooltipe (title) na diagnostiku a v
+  `GET /api/version`.
+
 ## 3.0.0 — FINAL: blokový editor, viacjazyčnosť, jeden zdroj dát na volume
 
 Veľký release. Karel 2030 má vizuálny blokový editor (Scratch-štýl), plnú
