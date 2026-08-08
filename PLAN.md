@@ -146,8 +146,8 @@ HTTP prístup ho nemá aby login fungoval).
 
 **Produkcia: Karel je publikovaný na `https://karel.zimo.sk`** cez Nginx Proxy
 Manager na home24 (10.0.1.22), kontajner s `KAREL_TRUSTED_PROXY=1`, WebSockets +
-Force SSL + HSTS zapnuté. Zatiaľ dostupné len z LAN; NAT 443 na firewalle = fáza 3.
-Detaily v `NGINX/` projekte (CHANGELOG v0.5.0). Infra spravuje samostatný repo.
+Force SSL + HSTS zapnuté. **Dostupné aj z internetu** (NAT 443 na firewalle spravil
+používateľ manuálne — fáza 3 hotová). Detaily v `NGINX/` projekte. Infra = samostatný repo.
 
 Zostáva (nižšia priorita / infra):
 - **⚠️ KarelAdminPWD MUSÍ byť nastavené** pri verejnom nasadení — prázdne =
