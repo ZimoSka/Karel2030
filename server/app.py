@@ -154,10 +154,21 @@ _admin_sessions: dict = {}      # token -> expiry (epoch)
 _admin_fails: dict = {}         # client_key -> {'count': int, 'blocked_until': epoch}
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    v = os.environ.get(name)
+    return default if v is None else v.lower() in ('1', 'true', 'yes')
+
+
 # Dôvera k X-Forwarded-For: štandardne NIE (priame spojenie). Za reverznou
 # proxy nastav KAREL_TRUSTED_PROXY=1 — vtedy berieme POSLEDNÚ položku XFF
 # (tú pridala naša proxy = reálny klient), nie prvú (klientom podvrhnuteľnú).
-_TRUSTED_PROXY = os.environ.get('KAREL_TRUSTED_PROXY', '').lower() in ('1', 'true', 'yes')
+_TRUSTED_PROXY = _env_bool('KAREL_TRUSTED_PROXY', False)
+
+# Secure flag na cookies (posielať len cez HTTPS). Default = podľa TRUSTED_PROXY:
+# za proxou sa predpokladá TLS terminácia → Secure zapnutý. Priamy HTTP prístup
+# (LAN/dev) by Secure cookie zahodil, preto tam default vypnutý. Explicitný
+# override cez KAREL_SECURE_COOKIES=0/1.
+_SECURE_COOKIES = _env_bool('KAREL_SECURE_COOKIES', _TRUSTED_PROXY)
 
 
 def _client_key(request: Request) -> str:
@@ -205,7 +216,7 @@ async def admin_login(request: Request):
         _admin_sessions[token] = time.time() + ADMIN_TTL
         resp = JSONResponse({'ok': True})
         resp.set_cookie(ADMIN_COOKIE, token, httponly=True,
-                        samesite='lax', max_age=ADMIN_TTL)
+                        samesite='lax', secure=_SECURE_COOKIES, max_age=ADMIN_TTL)
         return resp
     try:
         body = await request.json()
@@ -218,7 +229,7 @@ async def admin_login(request: Request):
         _admin_sessions[token] = time.time() + ADMIN_TTL
         resp = JSONResponse({'ok': True})
         resp.set_cookie(ADMIN_COOKIE, token, httponly=True,
-                        samesite='lax', max_age=ADMIN_TTL)
+                        samesite='lax', secure=_SECURE_COOKIES, max_age=ADMIN_TTL)
         return resp
     # neúspešný pokus
     rec = _admin_fails.setdefault(key, {'count': 0, 'blocked_until': 0})
@@ -262,7 +273,7 @@ def _teacher_id(request: Request) -> str | None:
 
 def _set_teacher_cookie(resp: JSONResponse, tid: str) -> None:
     resp.set_cookie(TEACHER_COOKIE, tid, httponly=True, samesite='lax',
-                    max_age=TEACHER_TTL)
+                    secure=_SECURE_COOKIES, max_age=TEACHER_TTL)
 
 
 def _owns_assignment(request: Request, aid: str) -> bool:

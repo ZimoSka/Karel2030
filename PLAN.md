@@ -140,6 +140,10 @@ V3.2.0 doriešené: rate limiting (assignmenty/linky/parse-karxml), CSP hlavičk
 limit počtu WS sessions per IP, tvrdý limit hĺbky parsera (ParseErr namiesto
 RecursionError), bound rozmerov aj v World.from_json.
 
+V3.2.2 doriešené: cookie `Secure` flag cez `KAREL_SECURE_COOKIES` (default =
+podľa `KAREL_TRUSTED_PROXY` → za HTTPS proxou sa zapne automaticky, priamy
+HTTP prístup ho nemá aby login fungoval).
+
 **Produkcia: Karel je publikovaný na `https://karel.zimo.sk`** cez Nginx Proxy
 Manager na home24 (10.0.1.22), kontajner s `KAREL_TRUSTED_PROXY=1`, WebSockets +
 Force SSL + HSTS zapnuté. Zatiaľ dostupné len z LAN; NAT 443 na firewalle = fáza 3.
@@ -149,14 +153,12 @@ Zostáva (nižšia priorita / infra):
 - **⚠️ KarelAdminPWD MUSÍ byť nastavené** pri verejnom nasadení — prázdne =
   otvorený admin (ktokoľvek klikne Admin → admin práva). Najvyššie operačné riziko.
   Pred vystavením von aj **rotovať** (bolo čitateľné cez `docker inspect`).
-- **Cookie `Secure` flag** — `set_cookie` (app.py ~207/220/264) má `httponly` +
-  `samesite=lax`, ale **nie `secure=True`** → cez HTTP ide cookie v plaintexte.
-  Teraz mitigované HSTS na proxy. Trvalá oprava: pridať `secure=True`, ideálne cez
-  env prepínač (napr. `KAREL_SECURE_COOKIES=1`). **(našiel NGINX audit)**
-- **docker-compose.yml nezodpovedá produkcii** — používa named volume `karel_data`
-  a port `8000:8000`, ale produkcia beží s bind mountom `/home/zimo/Karel2030/data`
-  a portom `8090:8000` cez `docker run`. Spustenie compose by vytvorilo iné
-  prostredie → napísať server-specific compose. **(našiel NGINX audit)**
+- ✅ **Cookie `Secure` flag — HOTOVÉ (v3.2.2)**. Cez `KAREL_SECURE_COOKIES`
+  (default = `KAREL_TRUSTED_PROXY`). Produkcia to má automaticky, netreba
+  ďalšiu env premennú.
+- **docker-compose.yml** nezodpovedá produkcii (named volume `karel_data`, port
+  8000) — **ponechané zámerne**: používateľ compose nepoužíva, produkcia beží cez
+  `docker run` s bind mountom a portom 8090 (8000 je obsadený). Nie je to problém.
 - **Non-root kontajner** — Dockerfile beží ako root; pridať `USER` (defense-in-depth,
   pozor na práva k /data volume — treba chown/entrypoint).
 - **Volume kvóta** — obmedziť veľkosť `/data` (infra).
