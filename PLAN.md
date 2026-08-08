@@ -140,12 +140,23 @@ V3.2.0 doriešené: rate limiting (assignmenty/linky/parse-karxml), CSP hlavičk
 limit počtu WS sessions per IP, tvrdý limit hĺbky parsera (ParseErr namiesto
 RecursionError), bound rozmerov aj v World.from_json.
 
+**Produkcia: Karel je publikovaný na `https://karel.zimo.sk`** cez Nginx Proxy
+Manager na home24 (10.0.1.22), kontajner s `KAREL_TRUSTED_PROXY=1`, WebSockets +
+Force SSL + HSTS zapnuté. Zatiaľ dostupné len z LAN; NAT 443 na firewalle = fáza 3.
+Detaily v `NGINX/` projekte (CHANGELOG v0.5.0). Infra spravuje samostatný repo.
+
 Zostáva (nižšia priorita / infra):
 - **⚠️ KarelAdminPWD MUSÍ byť nastavené** pri verejnom nasadení — prázdne =
   otvorený admin (ktokoľvek klikne Admin → admin práva). Najvyššie operačné riziko.
-- **HTTPS** — nasadiť za TLS reverznú proxy (NGINX/Traefik); cookie `Secure` flag
-  zapnúť keď je HTTPS (teraz bez `Secure` kvôli HTTP). Pri proxy nastaviť
-  `KAREL_TRUSTED_PROXY=1` (XFF lockout aj WS limit berú poslednú IP).
+  Pred vystavením von aj **rotovať** (bolo čitateľné cez `docker inspect`).
+- **Cookie `Secure` flag** — `set_cookie` (app.py ~207/220/264) má `httponly` +
+  `samesite=lax`, ale **nie `secure=True`** → cez HTTP ide cookie v plaintexte.
+  Teraz mitigované HSTS na proxy. Trvalá oprava: pridať `secure=True`, ideálne cez
+  env prepínač (napr. `KAREL_SECURE_COOKIES=1`). **(našiel NGINX audit)**
+- **docker-compose.yml nezodpovedá produkcii** — používa named volume `karel_data`
+  a port `8000:8000`, ale produkcia beží s bind mountom `/home/zimo/Karel2030/data`
+  a portom `8090:8000` cez `docker run`. Spustenie compose by vytvorilo iné
+  prostredie → napísať server-specific compose. **(našiel NGINX audit)**
 - **Non-root kontajner** — Dockerfile beží ako root; pridať `USER` (defense-in-depth,
   pozor na práva k /data volume — treba chown/entrypoint).
 - **Volume kvóta** — obmedziť veľkosť `/data` (infra).
